@@ -7,7 +7,7 @@ import {
 } from "@/server/api/trpc";
 
 export const postRouter = createTRPCRouter({
-  hello: privateProcedure
+  hello: publicProcedure
     .input(z.object({ text: z.string() }))
     .query(({ ctx }) => {
       return ctx.db.post.findMany();
