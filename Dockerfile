@@ -4,6 +4,14 @@ FROM node
 # Set the working directory
 WORKDIR /app
 
+ARG DATABASE_URL
+ARG NEXT_PUBLIC_SUPABASE_URL
+ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+RUN echo $DATABASE_URL
+RUN echo $NEXT_PUBLIC_SUPABASE_URL
+RUN echo $NEXT_PUBLIC_SUPABASE_ANON_KEY
+
 # Copy package.json and package-lock.json
 COPY package*.json ./
 
