@@ -9,6 +9,8 @@ const OauthButton: React.FC<{ provider: Provider }> = ({ provider }) => {
   const pathname = usePathname();
   const supabase = createClient();
 
+  console.log({ origin: location.origin });
+
   const handleLogin = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: provider,
