@@ -2,7 +2,7 @@
 
 import { redirect, usePathname } from "next/navigation";
 import React from "react";
-import { Provider } from "@supabase/supabase-js";
+import type { Provider } from "@supabase/supabase-js";
 import { createClient } from "@/utils/supabase/client";
 
 const OauthButton: React.FC<{ provider: Provider }> = ({ provider }) => {

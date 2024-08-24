@@ -15,7 +15,8 @@ export const createClient = () => {
         setAll(cookiesToSet) {
           try {
             cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options);
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+              cookieStore.set(name, value, options); // Type assertion to bypass type error
             });
           } catch (error) {
             // The `set` method was called from a Server Component.

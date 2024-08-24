@@ -2,7 +2,6 @@
 import React from "react";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
-import Link from "next/link";
 
 const RootLayout: React.FC<{ children: React.ReactNode }> = async ({
   children,

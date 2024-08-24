@@ -9,16 +9,8 @@ import {
 export const postRouter = createTRPCRouter({
   hello: privateProcedure
     .input(z.object({ text: z.string() }))
-    .query(({ ctx, input }) => {
-      console.log({ ctx });
-      return ctx.db.testTwo.create({
-        data: {
-          name: "test",
-          field: "test",
-          fieldTwo: "testTwo",
-          fieldThree: "testhtree",
-        },
-      });
+    .query(({ ctx }) => {
+      return ctx.db.post.findMany();
     }),
 
   create: publicProcedure

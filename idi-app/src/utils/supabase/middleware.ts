@@ -1,7 +1,6 @@
 // utils/supabase/middleware.ts
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
-import { env } from "@/env";
 
 export const createClient = (request: NextRequest) => {
   // Create an unmodified response
@@ -27,6 +26,7 @@ export const createClient = (request: NextRequest) => {
             request,
           });
           cookiesToSet.forEach(({ name, value, options }) =>
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             response.cookies.set(name, value, options),
           );
         },
