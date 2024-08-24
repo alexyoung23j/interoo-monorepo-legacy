@@ -8,7 +8,7 @@ import Profile from "./_components/profile";
 import SignOutButton from "./_components/signoutbutton";
 
 export default async function Home() {
-  // const hello = await api.post.hello({ text: "from tRPC" });
+  const hello = await api.post.hello({ text: "from tRPC" });
   const supabase = createClient();
 
   const session = await supabase.auth.getSession();

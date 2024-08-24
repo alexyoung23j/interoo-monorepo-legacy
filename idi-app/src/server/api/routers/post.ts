@@ -11,17 +11,26 @@ export const postRouter = createTRPCRouter({
     .input(z.object({ text: z.string() }))
     .query(({ ctx, input }) => {
       console.log({ ctx });
-      return {
-        greeting: `Hello ${input.text}`,
-      };
+      return ctx.db.testTwo.create({
+        data: {
+          name: "test",
+          field: "test",
+          fieldTwo: "testTwo",
+          fieldThree: "testhtree",
+        },
+      });
     }),
 
   create: publicProcedure
     .input(z.object({ name: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
-      return ctx.db.post.create({
+      return ctx.db.testTwo.create({
         data: {
           name: input.name,
+          field: "test",
+          fieldTwo: "testTwo",
+          fieldThree: "testhtree",
+          fieldFour: "testFour",
         },
       });
     }),
