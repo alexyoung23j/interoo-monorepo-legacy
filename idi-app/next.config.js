@@ -9,14 +9,6 @@ const __dirname = path.dirname(__filename);
 // Load environment variables from a parent directory
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
-// Log the environment variables to verify they are loaded
-console.log("DATABASE_URL:", process.env.DATABASE_URL);
-console.log("NEXT_PUBLIC_SUPABASE_URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
-console.log(
-  "NEXT_PUBLIC_SUPABASE_ANON_KEY:",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-);
-
 /**
  * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially useful
  * for Docker builds.

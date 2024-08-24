@@ -1,6 +1,6 @@
 {
   "scripts": {
     "build-app": "cd prisma && npx prisma generate && cd ../idi-app && pnpm i && pnpm build",
-    "start-app": "cd ../idi-app && pnpm start"
+    "start-app": "cd idi-app && pnpm start"
   }
 }
