@@ -20,13 +20,9 @@ const supabase = createClient(
 app.use(
   cors({
     origin: "*",
-    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
 );
-
-// Middleware to parse JSON bodies
-app.use(express.json());
 
 // Supabase auth middleware
 const authMiddleware = async (
@@ -59,6 +55,11 @@ app.options("*", cors());
 app.get("/", async (req: Request, res: Response) => {
   const posts = await prisma.post.findFirst();
   res.send(`Hello World! First user: ${JSON.stringify(posts)}`);
+});
+
+// Debug route
+app.get('/debug', (req, res) => {
+  res.json({ message: 'Server is running' });
 });
 
 // Protected route example
