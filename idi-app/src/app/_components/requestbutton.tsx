@@ -13,13 +13,16 @@ const RequestButton: React.FC = () => {
         data: { session },
       } = await supabase.auth.getSession();
 
-      const response = await fetch("http://localhost:8080/protected", {
-        method: "GET",
-        credentials: "include", // Add this line
-        headers: {
-          Authorization: `Bearer ${session?.access_token}`,
+      const response = await fetch(
+        process.env.NEXT_PUBLIC_BACKEND_URL + "/protected",
+        {
+          method: "GET",
+          credentials: "include", // Add this line
+          headers: {
+            Authorization: `Bearer ${session?.access_token}`,
+          },
         },
-      });
+      );
 
       console.log({ response });
 

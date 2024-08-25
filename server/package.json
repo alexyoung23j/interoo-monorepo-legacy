@@ -1,6 +1,8 @@
 {
   "scripts": {
-    "start": "ts-node src/index.ts"
+    "start": "ts-node src/index.ts",
+    "build": "tsc",
+    "start:prod": "node dist/index.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.2",
