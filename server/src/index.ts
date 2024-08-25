@@ -10,7 +10,10 @@ const rootDir = path.resolve(__dirname, "../..");
 dotenv.config({ path: path.join(rootDir, ".env") });
 
 const app = express();
-const port = 8080;
+
+// Use PORT provided in environment or default to 3000
+const port = process.env.PORT || 3000;
+
 const prisma = new PrismaClient();
 const supabase = createClient(
   process.env.SUPABASE_URL!,
@@ -68,8 +71,9 @@ app.get("/protected", authMiddleware, async (req: Request, res: Response) => {
 });
 
 // Start the server
-app.listen(port, () => {
+app.listen(port as number, "0.0.0.0", function () {
   console.log(`Server is running on http://localhost:${port}`);
+
 });
 
 // Gracefully shut down the Prisma Client
