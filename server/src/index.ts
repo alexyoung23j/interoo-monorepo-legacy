@@ -19,7 +19,7 @@ const supabase = createClient(
 
 app.use(
   cors({
-    origin: "*",
+    origin: process.env.FRONTEND_URL,
     credentials: true,
   })
 );
@@ -58,8 +58,8 @@ app.get("/", async (req: Request, res: Response) => {
 });
 
 // Debug route
-app.get('/debug', (req, res) => {
-  res.json({ message: 'Server is running' });
+app.get("/debug", (req, res) => {
+  res.json({ message: "Server is running" });
 });
 
 // Protected route example
