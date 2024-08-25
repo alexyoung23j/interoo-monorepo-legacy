@@ -11,15 +11,6 @@ export async function GET(request: Request) {
   const protocol = host.startsWith("localhost") ? "http" : "https";
   const origin = `${protocol}://${host}`;
 
-  console.log({
-    env: process.env.NODE_ENV,
-    code,
-    origin,
-    next,
-    requestUrl,
-    headers: Object.fromEntries(request.headers),
-  });
-
   if (code) {
     const supabase = createClient();
     await supabase.auth.exchangeCodeForSession(code);
