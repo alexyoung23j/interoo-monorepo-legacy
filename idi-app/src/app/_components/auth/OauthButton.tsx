@@ -1,20 +1,24 @@
 "use client";
 
-import { redirect, usePathname } from "next/navigation";
+import { redirect, usePathname, useSearchParams } from "next/navigation";
 import React from "react";
 import type { Provider } from "@supabase/supabase-js";
 import { createClient } from "@/utils/supabase/client";
 
 const OauthButton: React.FC<{ provider: Provider }> = ({ provider }) => {
-  const pathname = usePathname();
   const supabase = createClient();
 
+  const searchParams = useSearchParams();
+
+  const next = searchParams.get("next");
+
   const handleLogin = async () => {
-    console.log({ origin: location.origin });
     const { error } = await supabase.auth.signInWithOAuth({
       provider: provider,
       options: {
-        redirectTo: `/test`,
+        redirectTo: `${window.location.origin}/auth/callback${
+          next ? `?next=${encodeURIComponent(next)}` : ""
+        }`,
       },
     });
 
