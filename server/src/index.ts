@@ -3,6 +3,7 @@ import { PrismaClient } from "../../shared/generated/client";
 import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
 import path from "path";
+import cors from "cors";
 
 // Get __dirname equivalent in ES modules
 const rootDir = path.resolve(__dirname, "../..");
@@ -14,6 +15,13 @@ const prisma = new PrismaClient();
 const supabase = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_ANON_KEY!
+);
+
+app.use(
+  cors({
+    origin: "http://localhost:3000", // Replace with your frontend URL
+    credentials: true,
+  })
 );
 
 // Middleware to parse JSON bodies
@@ -32,6 +40,7 @@ const authMiddleware = async (
 
   const { data, error } = await supabase.auth.getUser(token);
   if (error) {
+    console.log("got invalid");
     return res.status(401).json({ error: "Invalid token" });
   }
 

@@ -6,12 +6,34 @@ import OauthButton from "./_components/auth/OauthButton";
 import { createClient } from "@/utils/supabase/client";
 import Profile from "./_components/profile";
 import SignOutButton from "./_components/signoutbutton";
+import RequestButton from "./_components/requestbutton";
 
 export default async function Home() {
   const hello = await api.post.hello({ text: "from tRPC" });
   const supabase = createClient();
 
   const session = await supabase.auth.getSession();
+
+  // Add this function
+  const makeRequest = async () => {
+    try {
+      const response = await fetch("http://localhost:8080/protected", {
+        method: "GET",
+      });
+
+      console.log({ response });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch protected data");
+      }
+
+      const data = await response.text();
+    } catch (error) {
+      console.error("Error fetching protected data:", error);
+    }
+  };
+
+  console.log({ session });
 
   return (
     <HydrateClient>
@@ -23,6 +45,7 @@ export default async function Home() {
           <OauthButton provider="google" />
           <Profile />
           <SignOutButton />
+          <RequestButton />
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-8">
             <Link
