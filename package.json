@@ -5,7 +5,7 @@
     "create-migration": "dotenv -e .env -- cd prisma && npx prisma migrate dev --name",
     "build-app": "cd prisma && npx prisma migrate deploy && npx prisma generate && cd ../idi-app && pnpm i && pnpm build",
     "start-app": "cd idi-app && pnpm start",
-    "build-backend": "cd prisma && && npx prisma migrate deploy && npx prisma generate && cd ../server && pnpm i && pnpm build",
+    "build-backend": "cd prisma && npx prisma migrate deploy && npx prisma generate && cd ../server && pnpm i && pnpm build",
     "start-backend": "cd server && pnpm i && pnpm start:prod"
   },
   "devDependencies": {
