@@ -3,6 +3,7 @@
     "start-dev": "cd prisma && npx prisma generate && cd ../idi-app && pnpm i && pnpm dev",
     "build-app": "cd prisma && npx prisma generate && cd ../idi-app && pnpm i && pnpm build",
     "start-app": "cd idi-app && pnpm start",
-    "start-backend": "cd prisma && npx prisma generate && cd ../server && pnpm i && pnpm start"
+    "build-backend": "cd prisma && npx prisma generate && cd ../server && pnpm i && pnpm build",
+    "start-backend": "cd server && pnpm i && pnpm start:prod"
   }
 }

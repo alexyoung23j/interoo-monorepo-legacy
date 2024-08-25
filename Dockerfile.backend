@@ -27,10 +27,10 @@ RUN pnpm install
 COPY . .
 
 # Build the application
-RUN pnpm run build
+RUN pnpm run build-backend
 
 # Expose the port the app runs on
 EXPOSE 8080
 
 # Start the application
-CMD ["pnpm", "start-app"]
+CMD ["pnpm", "start-backend"]
