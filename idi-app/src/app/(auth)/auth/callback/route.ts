@@ -12,6 +12,7 @@ export async function GET(request: Request) {
   const origin = `${protocol}://${host}`;
 
   console.log({
+    env: process.env.NODE_ENV,
     code,
     origin,
     next,
