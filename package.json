@@ -3,10 +3,10 @@
     "start-dev": "cd prisma && npx prisma generate && cd ../idi-app && pnpm i && pnpm dev",
     "start-dev-backend": "cd prisma && npx prisma generate && cd ../server && pnpm i && pnpm dev",
     "create-migration": "dotenv -e .env -- cd prisma && npx prisma migrate dev --name",
-    "build-app": "cd prisma && npx prisma migrate deploy && npx prisma generate && cd ../idi-app && pnpm i && pnpm build",
-    "start-app": "cd idi-app && pnpm start",
-    "build-backend": "cd prisma && npx prisma migrate deploy && npx prisma generate && cd ../server && pnpm i && pnpm build",
-    "start-backend": "cd server && pnpm i && pnpm start:prod"
+    "build-app": "cd prisma && npx prisma generate && cd ../idi-app && pnpm i && pnpm build",
+    "start-app": "cd prisma && npx prisma migrate deploy && cd ../idi-app && pnpm start",
+    "build-backend": "cd prisma && npx prisma generate && cd ../server && pnpm i && pnpm build",
+    "start-backend": "cd prisma && npx prisma migrate deploy && ../cd server && pnpm i && pnpm start:prod"
   },
   "devDependencies": {
     "dotenv-cli": "^7.4.2"
