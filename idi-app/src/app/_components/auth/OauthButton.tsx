@@ -6,11 +6,16 @@ import type { Provider } from "@supabase/supabase-js";
 import { createClient } from "@/utils/supabase/client";
 
 const OauthButton: React.FC<{ provider: Provider }> = ({ provider }) => {
+  const pathname = usePathname();
   const supabase = createClient();
 
   const handleLogin = async () => {
+    console.log({ origin: location.origin });
     const { error } = await supabase.auth.signInWithOAuth({
       provider: provider,
+      options: {
+        redirectTo: `/test`,
+      },
     });
 
     if (error) {
