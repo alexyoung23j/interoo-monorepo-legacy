@@ -1,5 +1,6 @@
-import express, { Request, Response } from "express";
+import express, { Request, Response, NextFunction } from "express";
 import { PrismaClient } from "../../shared/generated/client";
+import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
 import path from "path";
 
@@ -8,16 +9,45 @@ const rootDir = path.resolve(__dirname, "../..");
 dotenv.config({ path: path.join(rootDir, ".env") });
 
 const app = express();
-const port = 3000;
+const port = 8080;
 const prisma = new PrismaClient();
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_ANON_KEY!
+);
 
 // Middleware to parse JSON bodies
 app.use(express.json());
+
+// Supabase auth middleware
+const authMiddleware = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) {
+    return res.status(401).json({ error: "No token provided" });
+  }
+
+  const { data, error } = await supabase.auth.getUser(token);
+  if (error) {
+    return res.status(401).json({ error: "Invalid token" });
+  }
+
+  (req as any).user = data.user;
+  next();
+};
 
 // Basic route
 app.get("/", async (req: Request, res: Response) => {
   const posts = await prisma.post.findFirst();
   res.send(`Hello World! First user: ${JSON.stringify(posts)}`);
+});
+
+// Protected route example
+app.get("/protected", authMiddleware, async (req: Request, res: Response) => {
+  res.json({ message: "This is a protected route", user: (req as any).user });
 });
 
 // Start the server
@@ -26,12 +56,12 @@ app.listen(port, () => {
 });
 
 // Gracefully shut down the Prisma Client
-process.on('SIGINT', async () => {
+process.on("SIGINT", async () => {
   await prisma.$disconnect();
   process.exit(0);
 });
 
-process.on('SIGTERM', async () => {
+process.on("SIGTERM", async () => {
   await prisma.$disconnect();
   process.exit(0);
 });
