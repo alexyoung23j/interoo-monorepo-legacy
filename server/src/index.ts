@@ -20,6 +20,7 @@ const supabase = createClient(
 app.use(
   cors({
     origin: "*",
+    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
 );
@@ -47,6 +48,12 @@ const authMiddleware = async (
   (req as any).user = data.user;
   next();
 };
+
+// Middleware to parse JSON bodies
+app.use(express.json());
+
+// Handle preflight requests
+app.options("*", cors());
 
 // Basic route
 app.get("/", async (req: Request, res: Response) => {
