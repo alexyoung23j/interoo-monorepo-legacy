@@ -19,7 +19,7 @@ const supabase = createClient(
 
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL,
+    origin: "*",
     credentials: true,
   })
 );
