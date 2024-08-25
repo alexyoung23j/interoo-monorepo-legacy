@@ -20,6 +20,7 @@ const RequestButton: React.FC = () => {
           credentials: "include", // Add this line
           headers: {
             Authorization: `Bearer ${session?.access_token}`,
+            "Content-Type": "application/json",
           },
         },
       );
