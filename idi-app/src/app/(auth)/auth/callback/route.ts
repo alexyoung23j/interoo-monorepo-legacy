@@ -7,7 +7,7 @@ export async function GET(request: Request) {
   const next = requestUrl.searchParams.get("next");
 
   // Attempt to get the host from headers
-  const host = request.headers.get("host") || requestUrl.host;
+  const host = request.headers.get("host") ?? requestUrl.host;
   const protocol = host.startsWith("localhost") ? "http" : "https";
   const origin = `${protocol}://${host}`;
 
