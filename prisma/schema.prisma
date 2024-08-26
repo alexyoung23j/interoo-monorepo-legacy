@@ -2,182 +2,185 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
-  output   = "../shared/generated/client"
+    provider = "prisma-client-js"
+    output   = "../shared/generated/client"
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+    provider  = "postgresql"
+    url       = env("DATABASE_URL")
+    directUrl = env("DIRECT_URL")
 }
 
 model Organization {
-  id        String    @id @default(uuid())
-  name      String
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @default(now())
-  users     Profile[]
-  studies   Study[]
+    id             String    @id @default(uuid())
+    name           String
+    primaryColor   String?   @default("#F0F2F3")
+    secondaryColor String?   @default("#64748B")
+    logoUrl        String?
+    createdAt      DateTime  @default(now())
+    updatedAt      DateTime  @default(now())
+    users          Profile[]
+    studies        Study[]
 }
 
 model Profile {
-  id             String       @id @default(uuid())
-  name           String
-  email          String       @unique
-  organizationId String
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @default(now())
-  supabaseUserID String
-  organization   Organization @relation(fields: [organizationId], references: [id])
+    id             String       @id @default(uuid())
+    name           String
+    email          String       @unique
+    organizationId String
+    createdAt      DateTime     @default(now())
+    updatedAt      DateTime     @default(now())
+    supabaseUserID String
+    organization   Organization @relation(fields: [organizationId], references: [id])
 }
 
 model Study {
-  id                 String             @id @default(uuid())
-  organizationId     String
-  title              String
-  targetLength       Int?
-  welcomeDescription String?            @db.Text
-  termsAndConditions String?            @db.Text
-  welcomeImageUrl    String?
-  studyBackground    String?            @db.Text
-  videoEnabled       Boolean?           @default(false)
-  maxResponses       Int?
-  status             StudyStatus
-  shortID            String             @unique
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @default(now())
-  organization       Organization       @relation(fields: [organizationId], references: [id])
-  reportingLanguage  Language
-  languages          Language[]
-  questions          Question[]
-  interviews         InterviewSession[]
+    id                 String             @id @default(uuid())
+    organizationId     String
+    title              String
+    targetLength       Int?
+    welcomeDescription String?            @db.Text
+    termsAndConditions String?            @db.Text
+    welcomeImageUrl    String?
+    studyBackground    String?            @db.Text
+    videoEnabled       Boolean?           @default(false)
+    maxResponses       Int?
+    status             StudyStatus
+    shortID            String             @unique
+    createdAt          DateTime           @default(now())
+    updatedAt          DateTime           @default(now())
+    organization       Organization       @relation(fields: [organizationId], references: [id])
+    reportingLanguage  Language
+    languages          Language[]
+    questions          Question[]
+    interviews         InterviewSession[]
 }
 
 enum StudyStatus {
-  DRAFT
-  PUBLISHED
+    DRAFT
+    PUBLISHED
 }
 
 enum Language {
-  ENGLISH
-  // Add more languages as needed
+    ENGLISH
+    // Add more languages as needed
 }
 
 enum VideoStimulusType {
-  UPLOADED
-  EXTERNAL
+    UPLOADED
+    EXTERNAL
 }
 
 model ImageStimulus {
-  id         String   @id @default(uuid())
-  bucketUrl  String   @unique
-  title      String?
-  altText    String?
-  questionId String
-  question   Question @relation(fields: [questionId], references: [id])
+    id         String   @id @default(uuid())
+    bucketUrl  String   @unique
+    title      String?
+    altText    String?
+    questionId String
+    question   Question @relation(fields: [questionId], references: [id])
 }
 
 model VideoStimulus {
-  id         String            @id @default(uuid())
-  url        String            @unique
-  type       VideoStimulusType
-  title      String?
-  questionId String
-  question   Question          @relation(fields: [questionId], references: [id])
+    id         String            @id @default(uuid())
+    url        String            @unique
+    type       VideoStimulusType
+    title      String?
+    questionId String
+    question   Question          @relation(fields: [questionId], references: [id])
 }
 
 model WebsiteStimulus {
-  id         String   @id @default(uuid())
-  websiteUrl String   @unique
-  title      String?
-  questionId String
-  question   Question @relation(fields: [questionId], references: [id])
+    id         String   @id @default(uuid())
+    websiteUrl String   @unique
+    title      String?
+    questionId String
+    question   Question @relation(fields: [questionId], references: [id])
 }
 
 model Question {
-  id                      String                 @id @default(uuid())
-  title                   String
-  context                 String?
-  shouldFollowUp          Boolean
-  followUpLevel           FollowUpLevel          @default(AUTOMATIC)
-  body                    String?                @db.Text
-  studyId                 String
-  questionType            QuestionType
-  questionOrder           Int
-  hasStimulus             Boolean                @default(false)
-  websiteStimuli          WebsiteStimulus[]
-  imageStimuli            ImageStimulus[]
-  videoStimuli            VideoStimulus[]
-  createdAt               DateTime               @default(now())
-  updatedAt               DateTime               @default(now()) @updatedAt
-  study                   Study                  @relation(fields: [studyId], references: [id])
-  allowMultipleSelections Boolean                @default(false)
-  multipleChoiceOptions   MultipleChoiceOption[]
-  lowRange                Int?
-  highRange               Int?
-  interviews              InterviewSession[]
-  Response                Response[]
+    id                      String                 @id @default(uuid())
+    title                   String
+    context                 String?
+    shouldFollowUp          Boolean
+    followUpLevel           FollowUpLevel          @default(AUTOMATIC)
+    body                    String?                @db.Text
+    studyId                 String
+    questionType            QuestionType
+    questionOrder           Int
+    hasStimulus             Boolean                @default(false)
+    websiteStimuli          WebsiteStimulus[]
+    imageStimuli            ImageStimulus[]
+    videoStimuli            VideoStimulus[]
+    createdAt               DateTime               @default(now())
+    updatedAt               DateTime               @default(now()) @updatedAt
+    study                   Study                  @relation(fields: [studyId], references: [id])
+    allowMultipleSelections Boolean                @default(false)
+    multipleChoiceOptions   MultipleChoiceOption[]
+    lowRange                Int?
+    highRange               Int?
+    interviews              InterviewSession[]
+    Response                Response[]
 }
 
 model Response {
-  id                      String                @id @default(uuid())
-  interviewSession        InterviewSession      @relation(fields: [interviewSessionId], references: [id])
-  questionId              String
-  question                Question              @relation(fields: [questionId], references: [id])
-  fastTranscribedText     String                @db.Text
-  responseMedia           ResponseMedia?
-  multipleChoiceSelection MultipleChoiceOption? @relation(fields: [multipleChoiceOptionId], references: [id])
-  rangeSelection          Int?
-  interviewSessionId      String
-  multipleChoiceOptionId  String?
+    id                      String                @id @default(uuid())
+    interviewSession        InterviewSession      @relation(fields: [interviewSessionId], references: [id])
+    questionId              String
+    question                Question              @relation(fields: [questionId], references: [id])
+    fastTranscribedText     String                @db.Text
+    responseMedia           ResponseMedia?
+    multipleChoiceSelection MultipleChoiceOption? @relation(fields: [multipleChoiceOptionId], references: [id])
+    rangeSelection          Int?
+    interviewSessionId      String
+    multipleChoiceOptionId  String?
 }
 
 model ResponseMedia {
-  id              String   @id @default(uuid())
-  responseId      String   @unique
-  audioBucketUrl  String
-  videoBucketUrl  String?
-  transcribedText String?  @db.Text
-  response        Response @relation(fields: [responseId], references: [id])
+    id              String   @id @default(uuid())
+    responseId      String   @unique
+    audioBucketUrl  String
+    videoBucketUrl  String?
+    transcribedText String?  @db.Text
+    response        Response @relation(fields: [responseId], references: [id])
 }
 
 enum FollowUpLevel {
-  AUTOMATIC
-  SURFACE
-  LIGHT
-  DEEP
+    AUTOMATIC
+    SURFACE
+    LIGHT
+    DEEP
 }
 
 enum QuestionType {
-  OPEN_ENDED
-  MULTIPLE_CHOICE
-  RANGE
+    OPEN_ENDED
+    MULTIPLE_CHOICE
+    RANGE
 }
 
 model MultipleChoiceOption {
-  id          String     @id
-  questionId  String
-  optionText  String
-  optionOrder Int
-  question    Question   @relation(fields: [questionId], references: [id])
-  response    Response[]
+    id          String     @id
+    questionId  String
+    optionText  String
+    optionOrder Int
+    question    Question   @relation(fields: [questionId], references: [id])
+    response    Response[]
 }
 
 model InterviewSession {
-  id                        String                 @id @default(uuid())
-  studyId                   String
-  startTime                 DateTime?
-  lastUpdatedTime           DateTime?
-  status                    InterviewSessionStatus @default(NOT_STARTED)
-  latestQuestionRespondedId String?
-  study                     Study                  @relation(fields: [studyId], references: [id])
-  latestQuestionResponded   Question?              @relation(fields: [latestQuestionRespondedId], references: [id])
-  responses                 Response[]
+    id                        String                 @id @default(uuid())
+    studyId                   String
+    startTime                 DateTime?
+    lastUpdatedTime           DateTime?
+    status                    InterviewSessionStatus @default(NOT_STARTED)
+    latestQuestionRespondedId String?
+    study                     Study                  @relation(fields: [studyId], references: [id])
+    latestQuestionResponded   Question?              @relation(fields: [latestQuestionRespondedId], references: [id])
+    responses                 Response[]
 }
 
 enum InterviewSessionStatus {
-  NOT_STARTED
-  IN_PROGRESS
-  COMPLETED
+    NOT_STARTED
+    IN_PROGRESS
+    COMPLETED
 }
