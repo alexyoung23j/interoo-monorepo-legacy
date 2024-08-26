@@ -20,6 +20,9 @@ export const studiesRouter = createTRPCRouter({
         where: {
           shortID: shortenedStudyId,
         },
+        include: {
+          questions: true,
+        },
       });
 
       if (!study) {
