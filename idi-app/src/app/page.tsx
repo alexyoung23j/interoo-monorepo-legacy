@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-import { LatestPost } from "@/app/_components/post";
 import { HydrateClient, api } from "@/trpc/server";
 import OauthButton from "./_components/auth/OauthButton";
 import { createClient } from "@/utils/supabase/client";
