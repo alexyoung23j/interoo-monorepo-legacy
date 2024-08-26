@@ -56,8 +56,7 @@ app.options("*", cors());
 
 // Basic route
 app.get("/", async (req: Request, res: Response) => {
-  const posts = await prisma.post.findFirst();
-  res.send(`Hello World! First user: ${JSON.stringify(posts)}`);
+  res.send(`Hello World!`);
 });
 
 // Debug route
