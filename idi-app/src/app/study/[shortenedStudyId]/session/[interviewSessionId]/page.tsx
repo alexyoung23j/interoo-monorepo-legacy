@@ -1,7 +1,16 @@
-import { InterviewPage } from "@/app/_components/interview/InterviewLayout";
+import { InterviewLayout } from "@/app/_components/interview/InterviewLayout";
 import { api } from "@/trpc/server";
+import { NextResponse } from "next/server";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { isColorLight } from "@/app/utils/color";
 
-export default async function InterviewSessionPage({
+/**
+ * @description This is the server component for the interview session page that fetches the static data needed for the interview setup.
+ * @param param0
+ * @returns
+ */
+export default async function InterviewSessionServerPage({
   params,
 }: {
   params: { shortenedStudyId: string; interviewSessionId: string };
@@ -12,9 +21,28 @@ export default async function InterviewSessionPage({
     shortenedStudyId: shortenedStudyId as string,
   });
 
-  if (!organization) {
-    return <div>Organization not found</div>;
+  const interviewSession = await api.interviews.getInterviewSession({
+    interviewSessionId: interviewSessionId as string,
+  });
+
+  // Get the host from headers
+  const headersList = headers();
+  const host = headersList.get("host") ?? "localhost";
+  const protocol = host.startsWith("localhost") ? "http" : "https";
+  const origin = `${protocol}://${host}`;
+
+  if (!organization || !interviewSession) {
+    return redirect(`${origin}/404`);
   }
 
-  return <InterviewPage study={study} organization={organization} />;
+  const isLight = isColorLight(organization?.primaryColor ?? "");
+
+  return (
+    <InterviewLayout
+      study={study}
+      organization={organization}
+      interviewSession={interviewSession}
+      backgroundLight={isLight}
+    />
+  );
 }

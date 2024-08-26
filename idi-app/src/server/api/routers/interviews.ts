@@ -35,4 +35,24 @@ export const interviewsRouter = createTRPCRouter({
 
       return interviewSession;
     }),
+  getInterviewSession: publicProcedure
+    .input(z.object({ interviewSessionId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const { interviewSessionId } = input;
+
+      const interviewSession = await ctx.db.interviewSession.findUnique({
+        where: {
+          id: interviewSessionId,
+        },
+      });
+
+      if (!interviewSession) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Interview session not found",
+        });
+      }
+
+      return interviewSession;
+    }),
 });
