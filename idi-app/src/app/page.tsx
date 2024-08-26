@@ -76,8 +76,6 @@ export default async function Home() {
               {hello ? "query worked yo" : "Loading tRPC query..."}
             </p>
           </div>
-
-          {/* <LatestPost /> */}
         </div>
       </main>
     </HydrateClient>
