@@ -9,6 +9,7 @@
     "start-backend": "cd prisma && npx prisma migrate deploy && cd ../server && pnpm i && pnpm start:prod"
   },
   "devDependencies": {
-    "dotenv-cli": "^7.4.2"
+    "dotenv-cli": "^7.4.2",
+    "prettier": "^3.3.3"
   }
 }

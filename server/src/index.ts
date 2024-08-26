@@ -12,7 +12,7 @@ dotenv.config({ path: path.join(rootDir, ".env") });
 const app = express();
 
 // Use PORT provided in environment or default to 3000
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 8800;
 
 const prisma = new PrismaClient();
 const supabase = createClient(
