@@ -11,6 +11,7 @@ import { VideoStimuli } from "./stimuli/VideoStimuli";
 import { WebsiteStimuli } from "./stimuli/WebsiteStimuli";
 import { isColorLight } from "@/app/utils/color";
 import { MultipleChoiceSelect } from "./selections/MultipleChoiceSelect";
+import { RangeChoiceSelect } from "./selections/RangeChoiceSelect";
 
 interface DisplayQuestionProps {
   question: Question & {
@@ -57,6 +58,16 @@ export const DisplayQuestion: React.FC<DisplayQuestionProps> = ({
           interviewSession={interviewSession}
           organization={organization}
           isBackgroundLight={isBackgroundLight}
+        />
+      )}
+      {question.questionType === "RANGE" && (
+        <RangeChoiceSelect
+          question={question}
+          interviewSession={interviewSession}
+          organization={organization}
+          isBackgroundLight={isBackgroundLight}
+          lowLabel={"least"}
+          highLabel={"most"}
         />
       )}
     </div>

@@ -227,6 +227,20 @@ const mockData: { questions: MockQuestion[] } = {
       questionOrder: 5,
       hasStimulus: false,
     },
+    {
+      id: "q6",
+      title: "Range question",
+      context: "Explore the website and rate your experience.",
+      shouldFollowUp: true,
+      followUpLevel: "DEEP",
+      body: "On a scale of 1 to 10, how likely are you to recommend this website to a friend?",
+      studyId: "study1",
+      questionType: "RANGE",
+      questionOrder: 3,
+      hasStimulus: false,
+      lowRange: 1,
+      highRange: 5,
+    },
   ],
 };
 
@@ -281,7 +295,7 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
           />
         </div>
         <DisplayQuestion
-          question={mockData.questions[3] as Question}
+          question={mockData.questions[5] as Question}
           interviewSession={interviewSession}
           organization={organization}
         />
