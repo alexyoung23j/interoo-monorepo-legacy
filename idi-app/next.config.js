@@ -33,7 +33,7 @@ const config = {
     return config;
   },
   images: {
-    domains: ["placehold.co"],
+    domains: ["placehold.co", "www.taxmann.com"],
   },
 };
 

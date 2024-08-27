@@ -75,6 +75,22 @@ app.listen(port as number, "0.0.0.0", function () {
 
 });
 
+// create_response(input: audio (bytes), question_id, interview_session_id, flup_question_id)
+// transcribe audio to fast_transcribed_text (Experiment with deepgram vs ?)
+// store response to db
+// decide_follow_up_prompt()
+// potentially store FLUP question if decide_follow_up_prompt() returns a FLUP
+// return whole Response + return optional FLUP question
+
+
+// decide_follow_up_prompt(Question db object, FollowUpQuestion, transcribed text, Question Context, StudyBackground)
+// know how many questions or flups came before with the order field
+// prompt LLM to decide whether it should generate a follow up or not (and whether the question has follow ups enabled and how many follow ups are expected)
+// LLM should FLUP or 'None'
+
+// use langchain for this, experiment with different models
+// set up langsmith
+
 // Gracefully shut down the Prisma Client
 process.on("SIGINT", async () => {
   await prisma.$disconnect();

@@ -11,7 +11,7 @@ import {
 } from "@shared/generated/client";
 import Image from "next/image";
 import { InterviewProgressBar } from "./InterviewProgressBar";
-import { DisplayQuestionMaterials } from "./DisplayQuestionMaterials";
+import { DisplayQuestion } from "./DisplayQuestion";
 import InterviewBottomBar from "./InterviewBottomBar";
 
 interface InterviewLayoutProps {
@@ -66,15 +66,33 @@ const mockData: { questions: MockQuestion[] } = {
       imageStimuli: [
         {
           id: "img1",
-          bucketUrl: "https://placehold.co/1000x1000",
+          bucketUrl: "https://placehold.co/700x500",
           title: "Serene Nature Scene",
           altText: "A peaceful lake surrounded by mountains",
         },
+        // {
+        //   id: "img2",
+        //   bucketUrl: "https://placehold.co/600x500",
+        //   title: "Serene Nature Scene this one ",
+        //   altText: "A peaceful lake surrounded by mountains",
+        // },
+        // {
+        //   id: "img2",
+        //   bucketUrl: "https://placehold.co/1000x1000",
+        //   title: "Serene Nature Scene",
+        //   altText: "A peaceful lake surrounded by mountains",
+        // },
+        // {
+        //   id: "img2",
+        //   bucketUrl: "https://placehold.co/1000x1000",
+        //   title: "Serene Nature Scene",
+        //   altText: "A peaceful lake surrounded by mountains",
+        // },
       ],
     },
     {
       id: "q2",
-      title: "Multiple choice question with video stimulus",
+      title: "Question with video stimulus",
       context: "Watch the video and select the most appropriate answer.",
       shouldFollowUp: false,
       followUpLevel: "SURFACE",
@@ -86,10 +104,16 @@ const mockData: { questions: MockQuestion[] } = {
       videoStimuli: [
         {
           id: "vid1",
-          url: "https://example.com/videos/product_demo.mp4",
+          url: "https://www.taxmann.com/emailer/images/CompaniesAct.mp4",
           type: "UPLOADED",
           title: "Product Demo Video",
         },
+        // {
+        //   id: "vid12",
+        //   url: "https://www.youtube.com/watch?v=uATrIgT1tsM",
+        //   type: "EXTERNAL",
+        //   title: "Product Demo Video",
+        // },
       ],
       allowMultipleSelections: false,
       multipleChoiceOptions: [
@@ -126,6 +150,11 @@ const mockData: { questions: MockQuestion[] } = {
           id: "web1",
           websiteUrl: "https://example.com",
           title: "Example Website",
+        },
+        {
+          id: "web1",
+          websiteUrl: "https://example.com",
+          title: "Example Website 2 much longer",
         },
       ],
       lowRange: 1,
@@ -164,6 +193,26 @@ const mockData: { questions: MockQuestion[] } = {
           optionText: "Cloud synchronization",
           optionOrder: 4,
         },
+        {
+          id: "opt8",
+          optionText: "Cloud synchronization",
+          optionOrder: 4,
+        },
+        {
+          id: "opt9",
+          optionText: "Cloud synchronization",
+          optionOrder: 4,
+        },
+        {
+          id: "opt10",
+          optionText: "Cloud synchronization",
+          optionOrder: 4,
+        },
+        {
+          id: "opt11",
+          optionText: "Cloud synchronization",
+          optionOrder: 4,
+        },
       ],
     },
     {
@@ -177,6 +226,20 @@ const mockData: { questions: MockQuestion[] } = {
       questionType: "OPEN_ENDED",
       questionOrder: 5,
       hasStimulus: false,
+    },
+    {
+      id: "q6",
+      title: "Range question",
+      context: "Explore the website and rate your experience.",
+      shouldFollowUp: true,
+      followUpLevel: "DEEP",
+      body: "On a scale of 1 to 10, how likely are you to recommend this website to a friend?",
+      studyId: "study1",
+      questionType: "RANGE",
+      questionOrder: 3,
+      hasStimulus: false,
+      lowRange: 1,
+      highRange: 5,
     },
   ],
 };
@@ -231,9 +294,10 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
             }}
           />
         </div>
-        <DisplayQuestionMaterials
-          question={mockData.questions[0] as Question}
+        <DisplayQuestion
+          question={mockData.questions[5] as Question}
           interviewSession={interviewSession}
+          organization={organization}
         />
         <InterviewBottomBar organization={organization} />
       </div>
