@@ -28,16 +28,17 @@ export const VideoStimuli: React.FC<VideoStimuliProps> = ({ videoStimuli }) => {
     index: number,
   ) => {
     const getYouTubeEmbedUrl = (url: string) => {
-      const videoId = url.match(
-        /(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=|\/watch\?.+&v=))([\w-]{11})/,
-      )?.[1];
+      const regex =
+        /(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=|\/watch\?.+&v=))([\w-]{11})/;
+      const match = regex.exec(url);
+      const videoId = match ? match[1] : null;
       return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
     };
 
     return (
       <div
         key={index}
-        className="flex h-full max-h-[22rem] w-full flex-col items-center justify-start"
+        className="flex h-full max-h-[20rem] w-full flex-col items-center justify-start"
       >
         {video.type === VideoStimulusType.UPLOADED ? (
           <video
@@ -81,8 +82,9 @@ export const VideoStimuli: React.FC<VideoStimuliProps> = ({ videoStimuli }) => {
             weight="bold"
           />
         )}
-        {videoStimuli[currentIndex] &&
-          renderVideo(videoStimuli[currentIndex]!, currentIndex)}
+        {videoStimuli.map(
+          (video, index) => index === currentIndex && renderVideo(video, index),
+        )}
         {videoStimuli.length > 1 && (
           <ArrowRight
             size={24}

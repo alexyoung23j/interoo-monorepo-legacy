@@ -98,41 +98,42 @@ const mockData: { questions: MockQuestion[] } = {
       followUpLevel: "SURFACE",
       body: "Which of the following best describes the main theme of the video?",
       studyId: "study1",
-      questionType: "MULTIPLE_CHOICE",
+      questionType: "OPEN_ENDED",
       questionOrder: 2,
       hasStimulus: true,
       videoStimuli: [
-        {
-          id: "vid1",
-          url: "https://www.taxmann.com/emailer/images/CompaniesAct.mp4",
-          type: "UPLOADED",
-          title: "Product Demo Video",
-        },
         // {
-        //   id: "vid12",
-        //   url: "https://www.youtube.com/watch?v=uATrIgT1tsM",
-        //   type: "EXTERNAL",
+        //   id: "vid1",
+        //   url: "https://www.taxmann.com/emailer/images/CompaniesAct.mp4",
+        //   type: "UPLOADED",
         //   title: "Product Demo Video",
         // },
+        {
+          id: "vid12",
+          url: "https://www.youtube.com/watch?v=uATrIgT1tsM",
+          type: "EXTERNAL",
+          title: "Product Demo Video",
+        },
       ],
       allowMultipleSelections: false,
-      multipleChoiceOptions: [
-        {
-          id: "opt1",
-          optionText: "Innovation",
-          optionOrder: 1,
-        },
-        {
-          id: "opt2",
-          optionText: "Sustainability",
-          optionOrder: 2,
-        },
-        {
-          id: "opt3",
-          optionText: "User Experience",
-          optionOrder: 3,
-        },
-      ],
+
+      // multipleChoiceOptions: [
+      //   {
+      //     id: "opt1",
+      //     optionText: "Innovation",
+      //     optionOrder: 1,
+      //   },
+      //   {
+      //     id: "opt2",
+      //     optionText: "Sustainability",
+      //     optionOrder: 2,
+      //   },
+      //   {
+      //     id: "opt3",
+      //     optionText: "User Experience",
+      //     optionOrder: 3,
+      //   },
+      // ],
     },
     {
       id: "q3",
@@ -295,7 +296,7 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
           />
         </div>
         <DisplayQuestion
-          question={mockData.questions[5] as Question}
+          question={mockData.questions[1] as Question}
           interviewSession={interviewSession}
           organization={organization}
         />
