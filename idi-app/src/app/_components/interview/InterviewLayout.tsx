@@ -12,6 +12,7 @@ import {
 import Image from "next/image";
 import { InterviewProgressBar } from "./InterviewProgressBar";
 import { DisplayQuestionMaterials } from "./DisplayQuestionMaterials";
+import InterviewBottomBar from "./InterviewBottomBar";
 
 interface InterviewLayoutProps {
   study: Study & { questions: Question[] };
@@ -65,7 +66,7 @@ const mockData: { questions: MockQuestion[] } = {
       imageStimuli: [
         {
           id: "img1",
-          bucketUrl: "https://example.com/images/nature.jpg",
+          bucketUrl: "https://placehold.co/1000x1000",
           title: "Serene Nature Scene",
           altText: "A peaceful lake surrounded by mountains",
         },
@@ -217,7 +218,7 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
         </div>
       </div>
 
-      <div className="border-org-secondary bg-off-white flex h-full w-full max-w-[1200px] flex-col items-center justify-between rounded-[2px] border">
+      <div className="border-org-secondary bg-off-white flex h-full w-full max-w-[1200px] flex-col items-center justify-between rounded-[2px] border-2">
         <div className="flex w-full md:p-8">
           <InterviewProgressBar
             interviewSession={interviewSession}
@@ -230,7 +231,7 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
           question={mockData.questions[0] as Question}
           interviewSession={interviewSession}
         />
-        <div></div>
+        <InterviewBottomBar organization={organization} />
       </div>
       <div
         className={`absolute bottom-10 left-0 right-0 hidden cursor-pointer text-center text-sm font-medium opacity-30 md:block ${
