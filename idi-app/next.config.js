@@ -25,6 +25,16 @@ const config = {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   },
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      "@shared": path.resolve(__dirname, "../shared"),
+    };
+    return config;
+  },
+  images: {
+    domains: ["placehold.co"],
+  },
 };
 
 export default config;
