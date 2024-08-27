@@ -73,9 +73,21 @@ const mockData: { questions: MockQuestion[] } = {
         {
           id: "img2",
           bucketUrl: "https://placehold.co/1000x1000",
+          title: "Serene Nature Scene this one is reallly longgggg",
+          altText: "A peaceful lake surrounded by mountains",
+        },
+        {
+          id: "img2",
+          bucketUrl: "https://placehold.co/1000x1000",
           title: "Serene Nature Scene",
           altText: "A peaceful lake surrounded by mountains",
         },
+        // {
+        //   id: "img2",
+        //   bucketUrl: "https://placehold.co/1000x1000",
+        //   title: "Serene Nature Scene",
+        //   altText: "A peaceful lake surrounded by mountains",
+        // },
       ],
     },
     {
