@@ -11,7 +11,7 @@ import {
 } from "@shared/generated/client";
 import Image from "next/image";
 import { InterviewProgressBar } from "./InterviewProgressBar";
-import { DisplayQuestionMaterials } from "./DisplayQuestionMaterials";
+import { DisplayQuestion } from "./DisplayQuestion";
 import InterviewBottomBar from "./InterviewBottomBar";
 
 interface InterviewLayoutProps {
@@ -66,6 +66,12 @@ const mockData: { questions: MockQuestion[] } = {
       imageStimuli: [
         {
           id: "img1",
+          bucketUrl: "https://placehold.co/1000x1000",
+          title: "Serene Nature Scene",
+          altText: "A peaceful lake surrounded by mountains",
+        },
+        {
+          id: "img2",
           bucketUrl: "https://placehold.co/1000x1000",
           title: "Serene Nature Scene",
           altText: "A peaceful lake surrounded by mountains",
@@ -231,7 +237,7 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
             }}
           />
         </div>
-        <DisplayQuestionMaterials
+        <DisplayQuestion
           question={mockData.questions[0] as Question}
           interviewSession={interviewSession}
         />
