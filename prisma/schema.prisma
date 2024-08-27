@@ -125,13 +125,16 @@ model Question {
 }
 
 model FollowUpQuestion {
-  id               String             @id @default(uuid())
-  body             String             @db.Text
-  parentQuestionId String
-  parentQuestion   Question           @relation(fields: [parentQuestionId], references: [id])
-  responses        FollowUpResponse[]
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
+  id                    String           @id @default(uuid())
+  body                  String           @db.Text
+  followUpQuestionOrder Int
+  parentQuestionId      String
+  parentQuestion        Question         @relation(fields: [parentQuestionId], references: [id])
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  Response              Response[]
+  interviewSession      InterviewSession @relation(fields: [interviewSessionId], references: [id])
+  interviewSessionId    String
 }
 
 model Response {
@@ -145,29 +148,19 @@ model Response {
   rangeSelection          Int?
   interviewSessionId      String
   multipleChoiceOptionId  String?
-}
 
-model FollowUpResponse {
-  id                  String           @id @default(uuid())
-  interviewSession    InterviewSession @relation(fields: [interviewSessionId], references: [id])
-  followUpQuestionId  String
-  followUpQuestion    FollowUpQuestion @relation(fields: [followUpQuestionId], references: [id])
-  fastTranscribedText String           @db.Text
-  responseMedia       ResponseMedia?   @relation(fields: [responseMediaId], references: [id])
-  interviewSessionId  String
-  responseMediaId     String?
-
-  @@index([followUpQuestionId])
+  // if follow-up response
+  followUpQuestionId String?
+  followUpQuestion   FollowUpQuestion? @relation(fields: [followUpQuestionId], references: [id])
 }
 
 model ResponseMedia {
-  id               String             @id @default(uuid())
-  responseId       String             @unique
-  audioBucketUrl   String
-  videoBucketUrl   String?
-  transcribedText  String?            @db.Text
-  response         Response           @relation(fields: [responseId], references: [id])
-  FollowUpResponse FollowUpResponse[]
+  id              String   @id @default(uuid())
+  responseId      String   @unique
+  audioBucketUrl  String
+  videoBucketUrl  String?
+  transcribedText String?  @db.Text
+  response        Response @relation(fields: [responseId], references: [id])
 }
 
 enum FollowUpLevel {
@@ -193,16 +186,16 @@ model MultipleChoiceOption {
 }
 
 model InterviewSession {
-  id                        String                 @id @default(uuid())
-  studyId                   String
-  startTime                 DateTime?
-  lastUpdatedTime           DateTime?
-  status                    InterviewSessionStatus @default(NOT_STARTED)
-  latestQuestionRespondedId String?
-  study                     Study                  @relation(fields: [studyId], references: [id])
-  latestQuestionResponded   Question?              @relation(fields: [latestQuestionRespondedId], references: [id])
-  responses                 Response[]
-  FollowUpResponse          FollowUpResponse[]
+  id                String                 @id @default(uuid())
+  studyId           String
+  startTime         DateTime?
+  lastUpdatedTime   DateTime?
+  status            InterviewSessionStatus @default(NOT_STARTED)
+  currentQuestionId String?
+  study             Study                  @relation(fields: [studyId], references: [id])
+  CurrentQuestion   Question?              @relation(fields: [currentQuestionId], references: [id])
+  responses         Response[]
+  FollowUpQuestion  FollowUpQuestion[]
 }
 
 enum InterviewSessionStatus {
