@@ -1,6 +1,6 @@
 "use client";
 
-import React, { ReactNode } from "react";
+import React from "react";
 import {
   FollowUpLevel,
   InterviewSession,
@@ -199,7 +199,7 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
     >
       <div className="absolute top-4 flex w-full items-center justify-between px-4">
         <Image
-          src={organization.logoUrl as string}
+          src={organization.logoUrl!}
           alt=""
           width={150}
           height={150}
@@ -223,8 +223,12 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
           <InterviewProgressBar
             interviewSession={interviewSession}
             study={study}
-            onNext={() => {}}
-            onBack={() => {}}
+            onNext={() => {
+              console.log("chill");
+            }}
+            onBack={() => {
+              console.log("chill");
+            }}
           />
         </div>
         <DisplayQuestionMaterials

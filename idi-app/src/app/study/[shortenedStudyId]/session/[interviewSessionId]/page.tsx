@@ -1,6 +1,5 @@
 import { InterviewLayout } from "@/app/_components/interview/InterviewLayout";
 import { api } from "@/trpc/server";
-import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { isColorLight } from "@/app/utils/color";
@@ -18,11 +17,11 @@ export default async function InterviewSessionServerPage({
   const { shortenedStudyId, interviewSessionId } = params;
 
   const { study, organization } = await api.studies.getStudyDetails({
-    shortenedStudyId: shortenedStudyId as string,
+    shortenedStudyId: shortenedStudyId,
   });
 
   const interviewSession = await api.interviews.getInterviewSession({
-    interviewSessionId: interviewSessionId as string,
+    interviewSessionId: interviewSessionId,
   });
 
   // Get the host from headers

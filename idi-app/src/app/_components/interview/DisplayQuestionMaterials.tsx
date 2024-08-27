@@ -1,5 +1,5 @@
 import React from "react";
-import { Question, InterviewSession } from "@shared/generated/client";
+import type { Question, InterviewSession } from "@shared/generated/client";
 import Image from "next/image";
 
 interface DisplayQuestionMaterialsProps {
@@ -24,18 +24,17 @@ export const DisplayQuestionMaterials: React.FC<
     <div className="flex h-full w-[80%] flex-col items-center justify-center gap-4 p-4 md:w-full">
       <div className="text-center text-2xl">{question.title}</div>
 
-      {question.imageStimuli &&
-        question.imageStimuli.map((image, index) => (
-          <div key={index} className="relative h-full min-h-[200px] w-full">
-            <Image
-              src={image.bucketUrl}
-              alt={image.altText || `Image ${index + 1}`}
-              fill
-              className="object-contain"
-              unoptimized
-            />
-          </div>
-        ))}
+      {question.imageStimuli?.map((image, index) => (
+        <div key={index} className="relative h-full min-h-[200px] w-full">
+          <Image
+            src={image.bucketUrl}
+            alt={image.altText ?? `Image ${index + 1}`}
+            fill
+            className="object-contain"
+            unoptimized
+          />
+        </div>
+      ))}
     </div>
   );
 };
