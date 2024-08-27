@@ -1,5 +1,6 @@
 import React from "react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { VideoStimulusType } from "@shared/generated/client";
 
 interface StimulusModalProps {
   stimulus: {
@@ -7,6 +8,7 @@ interface StimulusModalProps {
     url: string;
     altText?: string | null;
     title?: string | null;
+    videoType?: VideoStimulusType;
   };
   trigger: React.ReactNode;
 }
@@ -25,9 +27,19 @@ export const StimulusModal: React.FC<StimulusModalProps> = ({
         />
       );
     } else if (stimulus.type === "video") {
-      return (
-        <video src={stimulus.url} controls className="max-h-[80vh] w-auto" />
-      );
+      if (stimulus.videoType === VideoStimulusType.UPLOADED) {
+        return (
+          <video src={stimulus.url} controls className="max-h-[80vh] w-auto" />
+        );
+      } else {
+        return (
+          <iframe
+            src={stimulus.url}
+            className="aspect-video w-full max-w-[80vw]"
+            allowFullScreen
+          />
+        );
+      }
     }
   };
 
