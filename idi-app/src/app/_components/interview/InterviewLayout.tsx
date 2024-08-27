@@ -66,22 +66,22 @@ const mockData: { questions: MockQuestion[] } = {
       imageStimuli: [
         {
           id: "img1",
-          bucketUrl: "https://placehold.co/1000x1000",
+          bucketUrl: "https://placehold.co/1000x500",
           title: "Serene Nature Scene",
           altText: "A peaceful lake surrounded by mountains",
         },
         {
           id: "img2",
-          bucketUrl: "https://placehold.co/1000x1000",
-          title: "Serene Nature Scene this one is reallly longgggg",
+          bucketUrl: "https://placehold.co/600x500",
+          title: "Serene Nature Scene this one ",
           altText: "A peaceful lake surrounded by mountains",
         },
-        {
-          id: "img2",
-          bucketUrl: "https://placehold.co/1000x1000",
-          title: "Serene Nature Scene",
-          altText: "A peaceful lake surrounded by mountains",
-        },
+        // {
+        //   id: "img2",
+        //   bucketUrl: "https://placehold.co/1000x1000",
+        //   title: "Serene Nature Scene",
+        //   altText: "A peaceful lake surrounded by mountains",
+        // },
         // {
         //   id: "img2",
         //   bucketUrl: "https://placehold.co/1000x1000",
