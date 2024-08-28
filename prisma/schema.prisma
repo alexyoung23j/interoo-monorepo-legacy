@@ -126,7 +126,8 @@ model Question {
 
 model FollowUpQuestion {
   id                    String           @id @default(uuid())
-  body                  String           @db.Text
+  title                 String
+  body                  String?          @db.Text
   followUpQuestionOrder Int
   questionType          QuestionType     @default(OPEN_ENDED)
   parentQuestionId      String
