@@ -87,10 +87,10 @@ export const interviewsRouter = createTRPCRouter({
           interviewSession.FollowUpQuestions.filter(
             (fq) =>
               fq.parentQuestionId === interviewSession.CurrentQuestion?.id,
-          ).at(-1) || null;
+          ).at(-1) ?? null;
 
         calculatedCurrentQuestion =
-          latestFollowUp || interviewSession.CurrentQuestion;
+          latestFollowUp ?? interviewSession.CurrentQuestion;
       }
 
       // Return the interview session with the calculated current question

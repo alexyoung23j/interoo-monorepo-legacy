@@ -167,9 +167,7 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
                 onBack={() => {
                   console.log("chill");
                 }}
-                calculatedCurrentQuestion={
-                  calculatedCurrentQuestion as CurrentQuestionType
-                }
+                calculatedCurrentQuestion={calculatedCurrentQuestion!}
               />
             </div>
             {renderInterviewContent()}
