@@ -81,6 +81,7 @@ export const InterviewStartContent: React.FC<InterviewStartContentProps> = ({
               await startInterviewSession.mutateAsync({
                 interviewSessionId: interviewSession.id,
               });
+              removeStage();
               refetchInterviewSession();
             }}
           />
@@ -166,7 +167,7 @@ const AccessContent: React.FC<{
   );
 
   return (
-    <div className="mb-10 flex w-full max-w-[80%] flex-col gap-4 md:max-w-[28rem]">
+    <div className="mb-10 flex w-full max-w-[70%] flex-col gap-4 md:max-w-[28rem]">
       <div className="text-lg">
         Please grant access to your {study.videoEnabled && "camera and"}{" "}
         microphone

@@ -37,7 +37,7 @@ export const ImageStimuli: React.FC<ImageStimuliProps> = ({ imageStimuli }) => {
               title: image.title,
             }}
             trigger={
-              <div className="flex h-full max-h-[22rem] w-full cursor-pointer flex-col items-center justify-start">
+              <div className="flex h-full max-h-[20rem] w-full cursor-pointer flex-col items-center justify-start">
                 <img
                   src={image.bucketUrl}
                   alt={image.altText ?? `Image ${index + 1}`}

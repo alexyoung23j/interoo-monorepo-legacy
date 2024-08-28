@@ -6,6 +6,7 @@ import {
   publicProcedure,
 } from "@/server/api/trpc";
 import { TRPCError } from "@trpc/server";
+import { FollowUpQuestion, Question } from "@shared/generated/client";
 
 export const interviewsRouter = createTRPCRouter({
   createInterviewSession: publicProcedure
@@ -45,8 +46,29 @@ export const interviewsRouter = createTRPCRouter({
           id: interviewSessionId,
         },
         include: {
-          CurrentQuestion: true,
-          FollowUpQuestions: true,
+          CurrentQuestion: {
+            include: {
+              imageStimuli: true,
+              videoStimuli: true,
+              websiteStimuli: true,
+              multipleChoiceOptions: true,
+            },
+          },
+          FollowUpQuestions: {
+            orderBy: {
+              followUpQuestionOrder: "asc",
+            },
+          },
+          study: {
+            include: {
+              questions: {
+                orderBy: {
+                  questionOrder: "asc",
+                },
+              },
+            },
+          },
+          responses: true,
         },
       });
 
@@ -57,7 +79,25 @@ export const interviewsRouter = createTRPCRouter({
         });
       }
 
-      return interviewSession;
+      // Calculate the current question
+      let calculatedCurrentQuestion: Question | FollowUpQuestion | null = null;
+
+      if (interviewSession.CurrentQuestion) {
+        const latestFollowUp =
+          interviewSession.FollowUpQuestions.filter(
+            (fq) =>
+              fq.parentQuestionId === interviewSession.CurrentQuestion?.id,
+          ).at(-1) ?? null;
+
+        calculatedCurrentQuestion =
+          latestFollowUp ?? interviewSession.CurrentQuestion;
+      }
+
+      // Return the interview session with the calculated current question
+      return {
+        interviewSession,
+        calculatedCurrentQuestion,
+      };
     }),
   mutateInterviewSession: publicProcedure
     .input(
