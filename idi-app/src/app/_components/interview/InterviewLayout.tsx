@@ -4,6 +4,7 @@ import React from "react";
 import {
   FollowUpLevel,
   InterviewSession,
+  InterviewSessionStatus,
   Organization,
   Question,
   QuestionType,
@@ -13,11 +14,15 @@ import Image from "next/image";
 import { InterviewProgressBar } from "./InterviewProgressBar";
 import { DisplayQuestion } from "./DisplayQuestion";
 import InterviewBottomBar from "./InterviewBottomBar";
+import { api } from "@/trpc/react";
+import { useParams } from "next/navigation";
+import ClipLoader from "react-spinners/ClipLoader";
+import { InterviewStartContent } from "./setup/InterviewStartContent";
 
 interface InterviewLayoutProps {
   study: Study & { questions: Question[] };
   organization: Organization;
-  interviewSession: InterviewSession;
+  // interviewSession: InterviewSession;
   backgroundLight: boolean;
 }
 
@@ -248,12 +253,32 @@ const mockData: { questions: MockQuestion[] } = {
 export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
   study,
   organization,
-  interviewSession,
   backgroundLight,
 }) => {
+  const params = useParams();
+  const interviewSessionId = params.interviewSessionId as string;
+
+  // This is the state for the entire interview
+  const {
+    data: interviewSession,
+    isLoading: interviewSessionLoading,
+    refetch: refetchInterviewSession,
+  } = api.interviews.getInterviewSession.useQuery({
+    interviewSessionId,
+  });
+
+  console.log({ interviewSession });
+
+  const currentQuestion = interviewSession?.CurrentQuestion;
+  const isInInterview =
+    currentQuestion !== null &&
+    interviewSession?.status === InterviewSessionStatus.IN_PROGRESS;
+
+  console.log({ isInInterview });
+
   return (
     <div
-      className="bg-org-primary relative flex h-screen items-center justify-center px-4 pb-4 pt-16 md:px-32 md:py-24"
+      className="relative flex h-screen items-center justify-center bg-org-primary px-4 pb-4 pt-16 md:px-32 md:py-24"
       style={
         {
           "--org-primary-color": organization.primaryColor,
@@ -282,25 +307,51 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
         </div>
       </div>
 
-      <div className="border-org-secondary bg-off-white flex h-full w-full max-w-[1200px] flex-col items-center justify-between rounded-[2px] border-2">
-        <div className="flex w-full md:p-8">
-          <InterviewProgressBar
-            interviewSession={interviewSession}
-            study={study}
-            onNext={() => {
-              console.log("chill");
-            }}
-            onBack={() => {
-              console.log("chill");
-            }}
-          />
-        </div>
-        <DisplayQuestion
-          question={mockData.questions[1] as Question}
-          interviewSession={interviewSession}
-          organization={organization}
-        />
-        <InterviewBottomBar organization={organization} />
+      <div className="flex h-full w-full max-w-[1200px] flex-col items-center justify-between rounded-[2px] border-2 border-org-secondary bg-off-white">
+        {interviewSessionLoading ? (
+          <div className="flex h-full items-center justify-center">
+            <ClipLoader
+              color={organization.secondaryColor as string}
+              size={40}
+              aria-label="Loading Spinner"
+              data-testid="loader"
+            />
+          </div>
+        ) : (
+          <>
+            <div className="flex w-full md:p-8">
+              <InterviewProgressBar
+                interviewSession={interviewSession as InterviewSession}
+                study={study}
+                onNext={() => {
+                  console.log("chill");
+                }}
+                onBack={() => {
+                  console.log("chill");
+                }}
+              />
+            </div>
+            {isInInterview ? (
+              <DisplayQuestion
+                question={currentQuestion as Question}
+                interviewSession={interviewSession as InterviewSession}
+                organization={organization}
+              />
+            ) : (
+              <InterviewStartContent
+                interviewSession={interviewSession as InterviewSession}
+                organization={organization}
+                study={study}
+                refetchInterviewSession={refetchInterviewSession}
+              />
+            )}
+            {isInInterview ? (
+              <InterviewBottomBar organization={organization} />
+            ) : (
+              <div className="h-20"></div>
+            )}
+          </>
+        )}
       </div>
       <div
         className={`absolute bottom-10 left-0 right-0 hidden cursor-pointer text-center text-sm font-medium opacity-30 md:block ${
