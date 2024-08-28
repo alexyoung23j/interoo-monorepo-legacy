@@ -46,7 +46,14 @@ export const interviewsRouter = createTRPCRouter({
           id: interviewSessionId,
         },
         include: {
-          CurrentQuestion: true,
+          CurrentQuestion: {
+            include: {
+              imageStimuli: true,
+              videoStimuli: true,
+              websiteStimuli: true,
+              multipleChoiceOptions: true,
+            },
+          },
           FollowUpQuestions: {
             orderBy: {
               followUpQuestionOrder: "desc",

@@ -43,6 +43,8 @@ export const DisplayQuestion: React.FC<DisplayQuestionProps> = ({
 }) => {
   const isBackgroundLight = isColorLight(organization.secondaryColor ?? "");
 
+  console.log({ question });
+
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-4 p-4 md:w-[80%] md:py-0">
       <div className="text-center text-lg md:text-2xl">{question.title}</div>
