@@ -44,6 +44,9 @@ export const interviewsRouter = createTRPCRouter({
         where: {
           id: interviewSessionId,
         },
+        include: {
+          CurrentQuestion: true,
+        },
       });
 
       if (!interviewSession) {
@@ -54,5 +57,20 @@ export const interviewsRouter = createTRPCRouter({
       }
 
       return interviewSession;
+    }),
+  mutateInterviewSession: publicProcedure
+    .input(z.object({ interviewSessionId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const { interviewSessionId } = input;
+
+      const interviewSession = await ctx.db.interviewSession.update({
+        where: {
+          id: interviewSessionId,
+        },
+        data: {
+          startTime: new Date(),
+          status: "COMPLETED",
+        },
+      });
     }),
 });

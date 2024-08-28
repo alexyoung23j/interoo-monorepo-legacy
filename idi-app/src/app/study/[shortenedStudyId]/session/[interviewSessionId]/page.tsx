@@ -40,7 +40,6 @@ export default async function InterviewSessionServerPage({
     <InterviewLayout
       study={study}
       organization={organization}
-      interviewSession={interviewSession}
       backgroundLight={isLight}
     />
   );

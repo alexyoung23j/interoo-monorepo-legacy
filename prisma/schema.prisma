@@ -196,6 +196,20 @@ model InterviewSession {
   CurrentQuestion   Question?              @relation(fields: [currentQuestionId], references: [id])
   responses         Response[]
   FollowUpQuestion  FollowUpQuestion[]
+  participant       InterviewParticipant?
+}
+
+model InterviewParticipant {
+  id                 String           @id @default(uuid())
+  interviewSessionId String           @unique
+  interviewSession   InterviewSession @relation(fields: [interviewSessionId], references: [id])
+  name               String?
+  email              String?
+
+  // Add other metadata as needed.
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum InterviewSessionStatus {
