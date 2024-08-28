@@ -3,6 +3,7 @@
 import React from "react";
 import {
   FollowUpLevel,
+  FollowUpQuestion,
   InterviewSession,
   InterviewSessionStatus,
   Organization,
@@ -250,6 +251,9 @@ const mockData: { questions: MockQuestion[] } = {
   ],
 };
 
+// TODO prolly move this to a shared directory
+export type CurrentQuestionType = Question | FollowUpQuestion;
+
 export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
   study,
   organization,
@@ -260,21 +264,23 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
 
   // This is the state for the entire interview
   const {
-    data: interviewSession,
+    data: interviewSessionData,
     isLoading: interviewSessionLoading,
     refetch: refetchInterviewSession,
   } = api.interviews.getInterviewSession.useQuery({
     interviewSessionId,
   });
 
+  const { interviewSession, calculatedCurrentQuestion } =
+    interviewSessionData ?? {};
+
   console.log({ interviewSession });
 
-  const currentQuestion = interviewSession?.CurrentQuestion;
   const isInInterview =
-    currentQuestion !== null &&
+    calculatedCurrentQuestion !== null &&
     interviewSession?.status === InterviewSessionStatus.IN_PROGRESS;
 
-  console.log({ isInInterview });
+  console.log({ calculatedCurrentQuestion });
 
   return (
     <div
@@ -321,7 +327,11 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
           <>
             <div className="flex w-full md:p-8">
               <InterviewProgressBar
-                interviewSession={interviewSession as InterviewSession}
+                interviewSession={
+                  interviewSession as InterviewSession & {
+                    FollowUpQuestions: FollowUpQuestion[];
+                  }
+                }
                 study={study}
                 onNext={() => {
                   console.log("chill");
@@ -329,11 +339,14 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
                 onBack={() => {
                   console.log("chill");
                 }}
+                calculatedCurrentQuestion={
+                  calculatedCurrentQuestion as CurrentQuestionType
+                }
               />
             </div>
             {isInInterview ? (
               <DisplayQuestion
-                question={currentQuestion as Question}
+                question={calculatedCurrentQuestion as Question}
                 interviewSession={interviewSession as InterviewSession}
                 organization={organization}
               />
