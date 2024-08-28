@@ -73,15 +73,7 @@ app.get("/protected", authMiddleware, async (req: Request, res: Response) => {
   res.json({ message: "This is a protected route", user: (req as any).user });
 });
 
-// create_response(input: audio (bytes), question_id, interview_session_id, flup_question_id)
-// transcribe audio to fast_transcribed_text (Experiment with deepgram vs ?)
-// store response to db
-// decide_follow_up_prompt()
-// potentially store FLUP question if decide_follow_up_prompt() returns a FLUP
-// return whole Response + return optional FLUP question
-
-// set up langsmith
-
+// TODO: set up langsmith
 app.post('/api/audio-response', authMiddleware, async (req: Request, res: Response) => {
   const busboy = Busboy({ 
     headers: req.headers,
@@ -145,8 +137,9 @@ app.post('/api/audio-response', authMiddleware, async (req: Request, res: Respon
 
       // Decide on follow-up prompt
       const followUpPrompt = await decideFollowUpPromptIfNecessary(
-        question,
-        followUpQuestion,
+        "question",
+        "followUpQuestion",
+        "",
         transcribedText,
         question.context || '',
         study.studyBackground || ''
@@ -176,21 +169,22 @@ async function transcribeAudio(audioBuffer: Buffer): Promise<string> {
 
 // Decide on follow-up prompt function
 async function decideFollowUpPromptIfNecessary(
-  question: any,
+  initialQuestionBody: string,
+  initialQuestionResponse: string,
   followUpQuestionsJoined: string,
   followUpResponsesJoined: string,
-  transcribedText: string,
   questionContext: string,
   studyBackground: string
 ): Promise<string | null> {
-  // Initialize LangChain components
+
+    // Initialize LangChain components
     const prompt = ChatPromptTemplate.fromTemplate(
       `You are a qualitative research interviewer bot designed to extract insights from a participant. 
       You are executing an in-depth-interview for a study and this is the study's background: [{bg}]. 
-      You have asked a question, and this is some context for the question: [{ctx}].
+      You have asked the following question: [{q}], and this is some context that the study creator set for the question: [{ctx}].
       The participant responded with: [{response}].
       There may have been follow-up questions to that question, and in turn, the participant may have responded with follow-up
-      responses. I will provide them as lists below. The lists should be the same length, and each index corresponds to a single follow-up question and follow-up response.
+      responses. I will provide them as lists (separated by '+') below. The lists should be the same length, and each index corresponds to a single follow-up question and follow-up response.
       If the lists are empty, it means there have been no follow-up questions or responses for this question.
       Follow-Up Questions: [{maybeFollowUpQuestions}]
       Follow-Up Responses: [{maybeFollowUpResponses}]
@@ -198,17 +192,45 @@ async function decideFollowUpPromptIfNecessary(
       response to the question, their follow-up responses to the follow-up questions (if they exist), the background 
       of the study, and the context of the question, that a follow up question is needed.
       Responsd with "no" if a follow-up questions is not needed and you have gotten mostly sufficient information.
-      Do not engage with the participant about anything other than this research interview.`
+      Do not engage with the participant about anything other than this research interview. If that happens, just return "no".`
     );
-    const llm = new ChatOpenAI();
+    const llm = new ChatOpenAI({model : "gpt-4o"});
     const chain = prompt.pipe(llm);
 
-    const response = await chain.invoke({ bg: studyBackground, ctx: questionContext, response: transcribedText, 
+    const response = await chain.invoke({ bg: studyBackground, q: initialQuestionBody, ctx: questionContext, response: initialQuestionResponse, 
       maybeFollowUpQuestions: followUpQuestionsJoined, maybeFollowUpResponses: followUpResponsesJoined});
 
     const extractedText = extractTextFromResponse(response.content);
     return extractedText === '' ? null : extractedText;
 }
+
+// Test endpoint for decideFollowUpPromptIfNecessary
+app.post('/test-follow-up', async (req, res) => {
+  try {
+    const {
+      questionBody,
+      followUpQuestionsJoined,
+      followUpResponsesJoined,
+      transcribedText,
+      questionContext,
+      studyBackground
+    } = req.body;
+
+    const result = await decideFollowUpPromptIfNecessary(
+      questionBody,
+      followUpQuestionsJoined,
+      followUpResponsesJoined,
+      transcribedText,
+      questionContext,
+      studyBackground
+    );
+
+    res.json({ result });
+  } catch (error) {
+    console.error('Error in test endpoint:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 function extractTextFromResponse(content: MessageContent): string | null {
   if (typeof content === 'string') {
