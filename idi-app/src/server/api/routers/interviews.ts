@@ -46,7 +46,7 @@ export const interviewsRouter = createTRPCRouter({
         },
         include: {
           CurrentQuestion: true,
-          FollowUpQuestion: true,
+          FollowUpQuestions: true,
         },
       });
 

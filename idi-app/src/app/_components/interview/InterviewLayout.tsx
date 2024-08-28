@@ -311,7 +311,7 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
         {interviewSessionLoading ? (
           <div className="flex h-full items-center justify-center">
             <ClipLoader
-              color={organization.secondaryColor as string}
+              color={organization.secondaryColor!}
               size={40}
               aria-label="Loading Spinner"
               data-testid="loader"
@@ -333,7 +333,7 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
             </div>
             {isInInterview ? (
               <DisplayQuestion
-                question={currentQuestion as Question}
+                question={currentQuestion!}
                 interviewSession={interviewSession as InterviewSession}
                 organization={organization}
               />
