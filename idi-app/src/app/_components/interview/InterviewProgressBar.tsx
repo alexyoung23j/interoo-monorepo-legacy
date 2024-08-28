@@ -28,26 +28,41 @@ export function InterviewProgressBar({
 }: InterviewProgressBarProps) {
   const calculateProgress = () => {
     const totalMainQuestions = study.questions.length;
+
     const mainQuestionInterval = 100 / totalMainQuestions;
 
     if ("parentQuestionId" in calculatedCurrentQuestion) {
       // It's a follow-up question
-      const parentIndex = study.questions.findIndex(
+      const parentQuestion = study.questions.find(
         (q) => q.id === calculatedCurrentQuestion.parentQuestionId,
       );
-      const baseProgress = (parentIndex + 1) * mainQuestionInterval;
-      const followUpProgress = mainQuestionInterval * 0.2; // 20% of the interval for follow-ups
+      if (!parentQuestion) {
+        console.error("Parent question not found");
+        return 0;
+      }
+      const baseProgress =
+        (parentQuestion.questionOrder + 1) * mainQuestionInterval;
+      const followUpProgress = mainQuestionInterval * 0.25; // 20% of the interval for follow-ups TODO: this should technically use the follow-up levels to decide the sub-interval here
       return Math.min(baseProgress + followUpProgress, 100);
     } else {
       // It's a main question
-      const currentIndex = study.questions.findIndex(
+      const currentQuestion = study.questions.find(
         (q) => q.id === calculatedCurrentQuestion.id,
       );
-      return Math.min((currentIndex + 1) * mainQuestionInterval, 100);
+      if (!currentQuestion) {
+        console.error("Current question not found");
+        return 0;
+      }
+
+      return Math.min(
+        (currentQuestion.questionOrder + 1) * mainQuestionInterval,
+        100,
+      );
     }
   };
 
   const progress = calculatedCurrentQuestion ? calculateProgress() : 5;
+  console.log({ progress });
 
   return (
     <div className="flex w-full items-center justify-between gap-6">
