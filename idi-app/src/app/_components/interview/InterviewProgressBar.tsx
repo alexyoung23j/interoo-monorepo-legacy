@@ -1,13 +1,14 @@
-import React from "react";
+import React, { useCallback } from "react";
 import {
   Study,
   InterviewSession,
   Question,
   FollowUpQuestion,
+  InterviewSessionStatus,
 } from "@shared/generated/client";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight } from "@phosphor-icons/react";
-import { CurrentQuestionType } from "./InterviewLayout";
+import { CurrentQuestionType } from "@shared/types";
 
 interface InterviewProgressBarProps {
   study: Study & { questions: Question[] };
@@ -26,10 +27,9 @@ export function InterviewProgressBar({
   onNext,
   calculatedCurrentQuestion,
 }: InterviewProgressBarProps) {
-  const calculateProgress = () => {
+  const calculateProgress = useCallback(() => {
     const totalMainQuestions = study.questions.length;
-
-    const mainQuestionInterval = 100 / totalMainQuestions;
+    const mainQuestionInterval = 100 / (totalMainQuestions + 1);
 
     if ("parentQuestionId" in calculatedCurrentQuestion) {
       // It's a follow-up question
@@ -53,15 +53,25 @@ export function InterviewProgressBar({
         console.error("Current question not found");
         return 0;
       }
-
       return Math.min(
         (currentQuestion.questionOrder + 1) * mainQuestionInterval,
         100,
       );
     }
-  };
+  }, [study.questions, calculatedCurrentQuestion]);
 
-  const progress = calculatedCurrentQuestion ? calculateProgress() : 5;
+  const progress = (() => {
+    switch (interviewSession.status) {
+      case InterviewSessionStatus.NOT_STARTED:
+        return 5;
+      case InterviewSessionStatus.IN_PROGRESS:
+        return calculatedCurrentQuestion ? calculateProgress() : 0;
+      case InterviewSessionStatus.COMPLETED:
+        return 100;
+      default:
+        return 0;
+    }
+  })();
 
   return (
     <div className="flex w-full items-center justify-between gap-6">

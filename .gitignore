@@ -1,6 +1,6 @@
 **/node_modules
 
 .env
-shared/
+shared/generated/
 
 server/dist
