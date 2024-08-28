@@ -46,6 +46,7 @@ export const interviewsRouter = createTRPCRouter({
         },
         include: {
           CurrentQuestion: true,
+          FollowUpQuestion: true,
         },
       });
 
@@ -59,18 +60,70 @@ export const interviewsRouter = createTRPCRouter({
       return interviewSession;
     }),
   mutateInterviewSession: publicProcedure
-    .input(z.object({ interviewSessionId: z.string() }))
+    .input(
+      z.object({
+        interviewSessionId: z.string(),
+        startTime: z.date().optional(),
+        lastUpdatedTime: z.date().optional(),
+        status: z.enum(["NOT_STARTED", "IN_PROGRESS", "COMPLETED"]).optional(),
+        currentQuestionId: z.string().optional(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
-      const { interviewSessionId } = input;
+      const { interviewSessionId, ...updateData } = input;
 
       const interviewSession = await ctx.db.interviewSession.update({
         where: {
           id: interviewSessionId,
         },
-        data: {
-          startTime: new Date(),
-          status: "COMPLETED",
+        data: updateData,
+      });
+
+      return interviewSession;
+    }),
+  startInterviewSessionQuestions: publicProcedure
+    .input(z.object({ interviewSessionId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const { interviewSessionId } = input;
+
+      // Find the interview session
+      const interviewSession = await ctx.db.interviewSession.findUnique({
+        where: { id: interviewSessionId },
+        include: { study: true },
+      });
+
+      if (!interviewSession) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Interview session not found",
+        });
+      }
+
+      // Find the first question (questionOrder = 0) for the associated study
+      const firstQuestion = await ctx.db.question.findFirst({
+        where: {
+          studyId: interviewSession.study.id,
+          questionOrder: 0,
         },
       });
+
+      if (!firstQuestion) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "No questions found for this study",
+        });
+      }
+
+      // Update the interview session with the first question
+      const updatedInterviewSession = await ctx.db.interviewSession.update({
+        where: { id: interviewSessionId },
+        data: {
+          currentQuestionId: firstQuestion.id,
+          status: "IN_PROGRESS",
+          lastUpdatedTime: new Date(),
+        },
+      });
+
+      return updatedInterviewSession;
     }),
 });

@@ -17,6 +17,7 @@ import InterviewBottomBar from "./InterviewBottomBar";
 import { api } from "@/trpc/react";
 import { useParams } from "next/navigation";
 import ClipLoader from "react-spinners/ClipLoader";
+import { InterviewStartContent } from "./setup/InterviewStartContent";
 
 interface InterviewLayoutProps {
   study: Study & { questions: Question[] };
@@ -273,9 +274,11 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
     currentQuestion !== null &&
     interviewSession?.status === InterviewSessionStatus.IN_PROGRESS;
 
+  console.log({ isInInterview });
+
   return (
     <div
-      className="bg-org-primary relative flex h-screen items-center justify-center px-4 pb-4 pt-16 md:px-32 md:py-24"
+      className="relative flex h-screen items-center justify-center bg-org-primary px-4 pb-4 pt-16 md:px-32 md:py-24"
       style={
         {
           "--org-primary-color": organization.primaryColor,
@@ -304,7 +307,7 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
         </div>
       </div>
 
-      <div className="border-org-secondary bg-off-white flex h-full w-full max-w-[1200px] flex-col items-center justify-between rounded-[2px] border-2">
+      <div className="flex h-full w-full max-w-[1200px] flex-col items-center justify-between rounded-[2px] border-2 border-org-secondary bg-off-white">
         {interviewSessionLoading ? (
           <div className="flex h-full items-center justify-center">
             <ClipLoader
@@ -335,9 +338,18 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
                 organization={organization}
               />
             ) : (
-              <div>This is the intro page or exit page</div>
+              <InterviewStartContent
+                interviewSession={interviewSession as InterviewSession}
+                organization={organization}
+                study={study}
+                refetchInterviewSession={refetchInterviewSession}
+              />
             )}
-            <InterviewBottomBar organization={organization} />
+            {isInInterview ? (
+              <InterviewBottomBar organization={organization} />
+            ) : (
+              <div className="h-20"></div>
+            )}
           </>
         )}
       </div>

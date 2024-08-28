@@ -19,7 +19,7 @@ export async function GET(
     });
 
     return NextResponse.redirect(
-      `${origin}/study/${shortenedStudyId}/session/${interviewSession.id}`,
+      `${origin}/study/${shortenedStudyId}/session/${interviewSession.id}?stage=intro`,
     );
   } catch (error) {
     console.error("Error creating interview session:", error);

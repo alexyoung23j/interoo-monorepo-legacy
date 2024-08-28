@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight } from "@phosphor-icons/react";
 
 interface InterviewProgressBarProps {
-  study: Study;
+  study: Study & { questions: Question[] };
   interviewSession: InterviewSession;
   onBack: () => void;
   onNext: () => void;
@@ -17,6 +17,7 @@ export function InterviewProgressBar({
   onNext,
 }: InterviewProgressBarProps) {
   const progress = 15;
+
   return (
     <div className="flex w-full items-center justify-between gap-6">
       <Button
@@ -30,7 +31,7 @@ export function InterviewProgressBar({
 
       <div className="relative h-2 w-full rounded-[1px] bg-[#EAE8E8] md:rounded-[2px]">
         <div
-          className="bg-org-secondary absolute h-full rounded-[1px] md:rounded-[2px]"
+          className="absolute h-full rounded-[1px] bg-org-secondary md:rounded-[2px]"
           style={{ width: `${progress}%` }}
         ></div>
       </div>
