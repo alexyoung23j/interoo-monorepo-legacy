@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { api } from "@/trpc/server";
+import { TRPCError } from "@trpc/server";
 
 export async function GET(
   request: Request,
@@ -22,7 +23,15 @@ export async function GET(
       `${origin}/study/${shortenedStudyId}/session/${interviewSession.id}?stage=intro`,
     );
   } catch (error) {
-    console.error("Error creating interview session:", error);
+    if (error instanceof TRPCError) {
+      if (error.message === "max-interviews-reached") {
+        return NextResponse.redirect(
+          `${origin}/study/${shortenedStudyId}/limit`,
+        );
+      }
+    }
+
+    console.error("Error creating interview session:", error, shortenedStudyId);
     // TODO: Redirect to a better page
     return NextResponse.redirect(`${origin}/404`);
   }

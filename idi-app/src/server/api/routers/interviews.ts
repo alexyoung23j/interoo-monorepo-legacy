@@ -18,12 +18,26 @@ export const interviewsRouter = createTRPCRouter({
         where: {
           shortID: shortenedStudyId,
         },
+        include: {
+          _count: {
+            select: { interviews: { where: { status: "COMPLETED" } } },
+          },
+        },
       });
 
       if (!study) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Study not found",
+        });
+      }
+
+      console.log(study.maxResponses, study._count.interviews);
+
+      if (study.maxResponses && study._count.interviews >= study.maxResponses) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "max-interviews-reached",
         });
       }
 
