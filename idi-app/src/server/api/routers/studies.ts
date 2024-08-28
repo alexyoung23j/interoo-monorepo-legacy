@@ -21,7 +21,11 @@ export const studiesRouter = createTRPCRouter({
           shortID: shortenedStudyId,
         },
         include: {
-          questions: true,
+          questions: {
+            orderBy: {
+              questionOrder: "asc",
+            },
+          },
         },
       });
 

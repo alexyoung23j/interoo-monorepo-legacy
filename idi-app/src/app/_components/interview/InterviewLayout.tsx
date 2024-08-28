@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useCallback, useMemo } from "react";
 import {
   FollowUpLevel,
   FollowUpQuestion,
@@ -254,6 +254,19 @@ const mockData: { questions: MockQuestion[] } = {
 // TODO prolly move this to a shared directory
 export type CurrentQuestionType = Question | FollowUpQuestion;
 
+interface ConversationItem {
+  text: string;
+  isResponse: boolean;
+  isFollowUp: boolean;
+}
+
+interface BaseQuestionObject {
+  text: string;
+  isResponse: boolean;
+  isFollowUp: boolean;
+  thread: ConversationItem[];
+}
+
 export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
   study,
   organization,
@@ -274,13 +287,63 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
   const { interviewSession, calculatedCurrentQuestion } =
     interviewSessionData ?? {};
 
-  console.log({ interviewSession });
-
   const isInInterview =
     calculatedCurrentQuestion !== null &&
     interviewSession?.status === InterviewSessionStatus.IN_PROGRESS;
 
-  console.log({ calculatedCurrentQuestion });
+  const conversationHistory = useMemo(() => {
+    const baseQuestions = study.questions;
+
+    const history = baseQuestions.map((question) => {
+      const baseQuestionObject: BaseQuestionObject = {
+        text: question.title,
+        isResponse: false,
+        isFollowUp: false,
+        thread: [],
+      };
+
+      const response = interviewSession?.responses.find(
+        (r) => r.questionId === question.id && r.followUpQuestionId === null,
+      );
+      if (response) {
+        baseQuestionObject.thread.push({
+          text: response.fastTranscribedText,
+          isResponse: true,
+          isFollowUp: false,
+        });
+
+        // Add follow-up questions and their responses
+        const followUps =
+          interviewSession?.FollowUpQuestions.filter(
+            (fq) => fq.parentQuestionId === question.id,
+          ) ?? [];
+        followUps.forEach((followUp) => {
+          baseQuestionObject.thread.push({
+            text: followUp.title,
+            isResponse: false,
+            isFollowUp: true,
+          });
+
+          const followUpResponse = interviewSession?.responses.find(
+            (r) => r.followUpQuestionId === followUp.id,
+          );
+          if (followUpResponse) {
+            baseQuestionObject.thread.push({
+              text: followUpResponse.fastTranscribedText,
+              isResponse: true,
+              isFollowUp: true,
+            });
+          }
+        });
+      }
+
+      return baseQuestionObject;
+    });
+
+    return history;
+  }, [study, interviewSession]);
+
+  console.log({ conversationHistory });
 
   return (
     <div

@@ -56,7 +56,7 @@ export const interviewsRouter = createTRPCRouter({
           },
           FollowUpQuestions: {
             orderBy: {
-              followUpQuestionOrder: "desc",
+              followUpQuestionOrder: "asc",
             },
           },
           study: {
@@ -68,6 +68,7 @@ export const interviewsRouter = createTRPCRouter({
               },
             },
           },
+          responses: true,
         },
       });
 
@@ -82,9 +83,11 @@ export const interviewsRouter = createTRPCRouter({
       let calculatedCurrentQuestion: Question | FollowUpQuestion | null = null;
 
       if (interviewSession.CurrentQuestion) {
-        const latestFollowUp = interviewSession.FollowUpQuestions.find(
-          (fq) => fq.parentQuestionId === interviewSession.CurrentQuestion?.id,
-        );
+        const latestFollowUp =
+          interviewSession.FollowUpQuestions.filter(
+            (fq) =>
+              fq.parentQuestionId === interviewSession.CurrentQuestion?.id,
+          ).at(-1) || null;
 
         calculatedCurrentQuestion =
           latestFollowUp || interviewSession.CurrentQuestion;

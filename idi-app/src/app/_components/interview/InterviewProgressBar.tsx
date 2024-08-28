@@ -62,7 +62,6 @@ export function InterviewProgressBar({
   };
 
   const progress = calculatedCurrentQuestion ? calculateProgress() : 5;
-  console.log({ progress });
 
   return (
     <div className="flex w-full items-center justify-between gap-6">
