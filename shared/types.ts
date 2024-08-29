@@ -1,18 +1,28 @@
 import { FollowUpQuestion, Question } from "./generated/client";
 
-export interface ConversationItem {
-    text: string;
-    isResponse: boolean;
-    isFollowUp: boolean;
-    id: string;
+export interface TranscribeAndGenerateNextQuestionRequest {
+    initialQuestion: string;
+    initialResponse?: string;
+    responseIdToStore: string
+    followUpQuestions: string[];
+    followUpResponses: string[];
+    questionContext: string;
+    studyBackground: string;
 }
-  
-export interface BaseQuestionObject {
-    text: string;
-    isResponse: boolean;
-    isFollowUp: boolean;
-    thread: ConversationItem[];
-    id: string;
+
+export interface UploadUrlRequest {
+    organizationId: string;
+    studyId: string;
+    questionId: string;
+    responseId: string;
+    audio: {
+      fileExtension: string;
+      contentType: string;
+    };
+    video?: {
+      fileExtension: string;
+      contentType: string;
+    };
 }
 
 export type CurrentQuestionType = Question | FollowUpQuestion;
