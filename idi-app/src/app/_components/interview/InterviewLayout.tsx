@@ -18,7 +18,6 @@ import { DisplayQuestion } from "./DisplayQuestion";
 import InterviewBottomBar from "./InterviewBottomBar";
 import { api } from "@/trpc/react";
 import { useParams } from "next/navigation";
-import ClipLoader from "react-spinners/ClipLoader";
 import { InterviewStartContent } from "./setup/InterviewStartContent";
 import { useConversationHistory } from "@/app/hooks/useConversationHistory";
 import InterviewFinishedContent from "./setup/InterviewFinishedContent";
@@ -67,7 +66,11 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
               interviewSession={interviewSession as InterviewSession}
               organization={organization}
             />
-            <InterviewBottomBar organization={organization} />
+            <InterviewBottomBar
+              organization={organization}
+              question={calculatedCurrentQuestion as Question}
+              interviewSession={interviewSession as InterviewSession}
+            />
           </>
         ) : null;
       case InterviewSessionStatus.NOT_STARTED:
