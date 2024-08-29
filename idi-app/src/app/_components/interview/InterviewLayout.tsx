@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useCallback, useMemo } from "react";
+import React from "react";
 import {
-  FollowUpLevel,
   FollowUpQuestion,
   InterviewSession,
   InterviewSessionStatus,
@@ -11,15 +10,12 @@ import {
   QuestionType,
   Study,
 } from "@shared/generated/client";
-import type { BaseQuestionObject, CurrentQuestionType } from "@shared/types";
-import Image from "next/image";
 import { InterviewProgressBar } from "./InterviewProgressBar";
 import { DisplayQuestion } from "./DisplayQuestion";
 import InterviewBottomBar from "./InterviewBottomBar";
 import { api } from "@/trpc/react";
 import { useParams } from "next/navigation";
 import { InterviewStartContent } from "./setup/InterviewStartContent";
-import { useConversationHistory } from "@/app/hooks/useConversationHistory";
 import InterviewFinishedContent from "./setup/InterviewFinishedContent";
 import { InterviewScreenLayout } from "./InterviewScreenLayout";
 
@@ -54,8 +50,6 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
   // Interview Phases
   const hasCurrentQuestion = calculatedCurrentQuestion !== null;
 
-  const conversationHistory = useConversationHistory(study, interviewSession);
-
   const renderInterviewContent = () => {
     switch (interviewSession?.status) {
       case InterviewSessionStatus.IN_PROGRESS:
@@ -69,7 +63,8 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
             <InterviewBottomBar
               organization={organization}
               question={calculatedCurrentQuestion as Question}
-              interviewSession={interviewSession as InterviewSession}
+              interviewSession={interviewSession}
+              study={study}
             />
           </>
         ) : null;

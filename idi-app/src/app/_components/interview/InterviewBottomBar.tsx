@@ -4,21 +4,37 @@ import React from "react";
 import { Microphone } from "@phosphor-icons/react";
 import { isColorLight } from "@/app/utils/color";
 import {
+  FollowUpQuestion,
   InterviewSession,
   Organization,
   Question,
+  Study,
+  Response,
 } from "@shared/generated/client";
 import { useAudioRecorder } from "@/app/api/useAudioRecorder";
 import SyncLoader from "react-spinners/SyncLoader";
+import { useConversationHistory } from "@/app/hooks/useConversationHistory";
+import ClipLoader from "react-spinners/ClipLoader";
 
 const InterviewBottomBar: React.FC<{
   organization: Organization;
   question: Question;
-  interviewSession: InterviewSession;
-}> = ({ organization, question, interviewSession }) => {
+  interviewSession: InterviewSession & {
+    responses: Response[];
+    FollowUpQuestions: FollowUpQuestion[];
+  };
+  study: Study & { questions: Question[] };
+}> = ({ organization, question, interviewSession, study }) => {
   const isBackgroundLight = isColorLight(organization.secondaryColor ?? "");
-  const { isRecording, startRecording, stopRecording, submitAudio } =
-    useAudioRecorder();
+  const {
+    isRecording,
+    startRecording,
+    stopRecording,
+    submitAudio,
+    awaitingResponse,
+  } = useAudioRecorder();
+
+  const conversationHistory = useConversationHistory(study, interviewSession);
 
   const startResponse = async () => {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -72,13 +88,19 @@ const InterviewBottomBar: React.FC<{
             className="h-14 w-14 rounded-sm border border-black border-opacity-25 bg-neutral-100 hover:bg-neutral-300"
             onClick={startResponse}
           >
-            <Microphone
-              className={`size-8 ${isBackgroundLight ? "text-neutral-600" : "text-off-white"}`}
-            />
+            {awaitingResponse ? (
+              <ClipLoader size={16} color="#525252" />
+            ) : (
+              <Microphone className={`size-8 text-neutral-600`} />
+            )}
           </Button>
         )}
         <div className="mt-3 text-sm text-neutral-500 md:absolute md:-bottom-[1.75rem]">
-          {isRecording ? "Click when finished speaking " : "Click to speak"}
+          {isRecording
+            ? "Click when finished speaking"
+            : awaitingResponse
+              ? "Thinking..."
+              : "Click to speak"}
         </div>
       </div>
 

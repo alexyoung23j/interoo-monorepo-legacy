@@ -6,6 +6,7 @@ interface AudioRecorderHook {
   stopRecording: () => void;
   submitAudio: (additionalData: Record<string, string>) => Promise<any>;
   error: string | null;
+  awaitingResponse: boolean; // New property
 }
 
 const MAX_RECORDING_TIME = 15 * 60 * 1000; // 15 minutes
@@ -13,6 +14,8 @@ const MAX_RECORDING_TIME = 15 * 60 * 1000; // 15 minutes
 export function useAudioRecorder(): AudioRecorderHook {
   const [isRecording, setIsRecording] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [awaitingResponse, setAwaitingResponse] = useState(false); // New state
+
   const mediaRecorder = useRef<MediaRecorder | null>(null);
   const audioChunks = useRef<Blob[]>([]);
   const recordingTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -76,6 +79,7 @@ export function useAudioRecorder(): AudioRecorderHook {
   const submitAudio = useCallback(
     async (additionalData: Record<string, string>) => {
       if (audioChunks.current.length === 0) return null;
+      setAwaitingResponse(true); // Set to true when starting submission
 
       const mimeType =
         mediaRecorder.current?.mimeType || "audio/webm;codecs=opus";
@@ -93,7 +97,7 @@ export function useAudioRecorder(): AudioRecorderHook {
 
       try {
         const response = await fetch(
-          "http://localhost:8800/api/audio-response",
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/audio-response`,
           {
             method: "POST",
             body: formData,
@@ -108,6 +112,8 @@ export function useAudioRecorder(): AudioRecorderHook {
 
         // Clear audio chunks after successful submission
         audioChunks.current = [];
+
+        setAwaitingResponse(false); // Set to false after successful response
 
         return data;
       } catch (error) {
@@ -131,6 +137,7 @@ export function useAudioRecorder(): AudioRecorderHook {
   }, []);
 
   return {
+    awaitingResponse,
     isRecording,
     startRecording,
     stopRecording,
