@@ -62,6 +62,12 @@ export function useConversationHistory(
       );
     });
 
+    const currentQuestionOrder = currentQuestion.questionOrder;
+    const nextQuestion = study.questions.find(
+      (q) => q.questionOrder === currentQuestionOrder + 1,
+    );
+    result.nextQuestionId = nextQuestion?.id ?? "";
+
     return result;
   }, [study, currentQuestionId, currentResponseId, interviewSession]);
 }

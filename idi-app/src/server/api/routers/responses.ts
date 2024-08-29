@@ -100,4 +100,64 @@ export const responsesRouter = createTRPCRouter({
 
       return;
     }),
+  createRangeResponse: publicProcedure
+    .input(
+      z.object({
+        questionId: z.string(),
+        interviewSessionId: z.string(),
+        studyId: z.string(),
+        rangeSelection: z.number(),
+        currentQuestionOrder: z.number(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const {
+        questionId,
+        interviewSessionId,
+        rangeSelection,
+        currentQuestionOrder,
+        studyId,
+      } = input;
+
+      // Create response
+      await ctx.db.response.create({
+        data: {
+          questionId,
+          interviewSessionId,
+          rangeSelection,
+          fastTranscribedText: "",
+        },
+      });
+
+      const nextQuestionOrder = currentQuestionOrder + 1;
+
+      const nextQuestion = await ctx.db.question.findFirst({
+        where: {
+          studyId,
+          questionOrder: nextQuestionOrder,
+        },
+      });
+
+      if (!nextQuestion) {
+        await ctx.db.interviewSession.update({
+          where: {
+            id: interviewSessionId,
+          },
+          data: {
+            status: "COMPLETED",
+          },
+        });
+      } else {
+        await ctx.db.interviewSession.update({
+          where: {
+            id: interviewSessionId,
+          },
+          data: {
+            currentQuestionId: nextQuestion.id,
+          },
+        });
+      }
+
+      return;
+    }),
 });

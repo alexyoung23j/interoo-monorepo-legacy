@@ -82,6 +82,8 @@ export const DisplayQuestion: React.FC<DisplayQuestionProps> = ({
           isBackgroundLight={isBackgroundLight}
           lowLabel={"least"}
           highLabel={"most"}
+          rangeSelectionValue={rangeSelectionValue}
+          setRangeSelectionValue={setRangeSelectionValue}
         />
       )}
     </div>

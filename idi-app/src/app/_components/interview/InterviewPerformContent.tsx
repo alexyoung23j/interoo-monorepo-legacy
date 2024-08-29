@@ -43,6 +43,8 @@ export const InterviewPerformContent: React.FC<
   const createMultipleChoiceResponse =
     api.responses.createMultipleChoiceResponse.useMutation();
 
+  const createRangeResponse = api.responses.createRangeResponse.useMutation();
+
   const handleSubmitMultipleChoiceResponse = async () => {
     if (!multipleChoiceOptionSelectionId) return;
     setAwaitingOptionResponse(true);
@@ -54,10 +56,28 @@ export const InterviewPerformContent: React.FC<
       currentQuestionOrder: calculatedCurrentQuestion.questionOrder,
       questionId: calculatedCurrentQuestion.id,
     });
-    setMultipleChoiceOptionSelectionId(null);
     refetchInterviewSession();
     setAwaitingOptionResponse(false);
+    setMultipleChoiceOptionSelectionId(null);
   };
+
+  const handleSubmitRangeResponse = async () => {
+    if (!rangeSelectionValue) return;
+    setAwaitingOptionResponse(true);
+
+    await createRangeResponse.mutateAsync({
+      rangeSelection: rangeSelectionValue,
+      interviewSessionId: interviewSession.id,
+      studyId: study.id,
+      currentQuestionOrder: calculatedCurrentQuestion.questionOrder,
+      questionId: calculatedCurrentQuestion.id,
+    });
+    refetchInterviewSession();
+    setAwaitingOptionResponse(false);
+    setRangeSelectionValue(null);
+  };
+
+  console.log({ calculatedCurrentQuestion });
 
   return (
     <>
@@ -81,6 +101,7 @@ export const InterviewPerformContent: React.FC<
         handleSubmitMultipleChoiceResponse={handleSubmitMultipleChoiceResponse}
         awaitingOptionResponse={awaitingOptionResponse}
         interviewSessionRefetching={interviewSessionRefetching}
+        handleSubmitRangeResponse={handleSubmitRangeResponse}
       />
     </>
   );
