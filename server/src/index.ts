@@ -9,7 +9,7 @@ import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { ChatOpenAI } from "@langchain/openai";
 import { MessageContent, MessageContentText } from "@langchain/core/messages";
 import { createClient as createDeepgramClient } from "@deepgram/sdk";
-import { TranscribeAndGenerateNextQuestionRequest } from "../../shared/types";
+import { TranscribeAndGenerateNextQuestionRequest, UploadUrlRequest } from "../../shared/types";
 
 // Configuration and Setup
 const rootDir = path.resolve(__dirname, "../..");
@@ -198,6 +198,83 @@ app.get("/", (req: Request, res: Response) => res.send(`Hello World!`));
 app.get("/debug", (req: Request, res: Response) => res.json({ message: "Server is running" }));
 app.get("/protected", authMiddleware, (req: Request, res: Response) => res.json({ message: "This is a protected route", user: (req as any).user }));
 app.post('/api/audio-response', handleAudioResponse);
+
+app.post('/api/get-upload-urls', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { 
+      organizationId, 
+      studyId, 
+      questionId, 
+      responseId, 
+      audio, 
+      video 
+    }: UploadUrlRequest = req.body;
+
+    const bucketName = process.env.SUPABASE_STORAGE_BUCKET || 'assets';
+
+    // Generate base path
+    const basePath = path.join(organizationId, studyId, questionId, responseId);
+
+    // Generate signed URL for audio
+    const audioFileName = `audio.${audio.fileExtension}`;
+    const audioFilePath = path.join(basePath, audioFileName);
+    const audioSignedUrl = await generateSignedUrl(bucketName, audioFilePath);
+
+    let videoSignedUrl = null;
+    if (video) {
+      // Generate signed URL for video if requested
+      const videoFileName = `video.${video.fileExtension}`;
+      const videoFilePath = path.join(basePath, videoFileName);
+      videoSignedUrl = await generateSignedUrl(bucketName, videoFilePath);
+    }
+
+    // Fetch the existing Response
+    const existingResponse = await prisma.response.findUnique({
+      where: { id: responseId },
+      select: { fastTranscribedText: true }
+    });
+
+    if (!existingResponse) {
+      return res.status(404).json({ error: 'Response not found' });
+    }
+
+    // Create ResponseMedia
+    const responseMedia = await prisma.responseMedia.create({
+      data: {
+        responseId: responseId,
+        audioBucketUrl: audioSignedUrl.path,
+        videoBucketUrl: videoSignedUrl ? videoSignedUrl.path : null,
+        transcribedText: existingResponse.fastTranscribedText
+      }
+    });
+
+    // Return signed URLs
+    res.json({
+      audio: audioSignedUrl,
+      video: videoSignedUrl
+    });
+
+  } catch (error) {
+    console.error('Error generating signed URLs:', error);
+    res.status(500).json({ error: 'Failed to generate upload URLs' });
+  }
+});
+
+async function generateSignedUrl(bucketName: string, filePath: string) {
+  const { data, error } = await supabase.storage
+    .from(bucketName)
+    .createSignedUploadUrl(filePath);
+
+  if (error) {
+    throw error;
+  }
+
+  return {
+    signedUrl: data.signedUrl,
+    path: data.path,
+    token: data.token
+  };
+}
 
 // Test Routes
 app.post('/test-follow-up', async (req, res) => {
