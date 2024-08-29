@@ -6,75 +6,68 @@ import {
   Study,
   Response,
 } from "@shared/generated/client";
-import { BaseQuestionObject } from "@shared/types";
+import { TranscribeAndGenerateNextQuestionRequest } from "@shared/types";
 
-/**
- * Note that this will return base questions that are not yet answered. See the "thread" field on each question
- * to establish whether they have been answered
- * @param study - The study object
- * @param interviewSession - The interview session object
- * @returns The conversation history
- */
 export function useConversationHistory(
   study: Study & { questions: Question[] },
+  currentQuestionId: string,
+  currentResponseId: string,
   interviewSession:
     | (InterviewSession & {
         responses: Response[];
         FollowUpQuestions: FollowUpQuestion[];
       })
     | undefined,
-) {
+): TranscribeAndGenerateNextQuestionRequest | null {
   return useMemo(() => {
-    const baseQuestions = study.questions;
+    const currentQuestion = study.questions.find(
+      (q) => q.id === currentQuestionId,
+    );
+    if (!currentQuestion) return null;
 
-    return baseQuestions.map((question) => {
-      const baseQuestionObject: BaseQuestionObject = {
-        text: question.title,
-        isResponse: false,
-        isFollowUp: false,
-        thread: [],
-        id: question.id,
-      };
+    const result: TranscribeAndGenerateNextQuestionRequest = {
+      initialQuestion: currentQuestion.title,
+      initialResponse: undefined,
+      responseIdToStore: currentResponseId,
+      followUpQuestions: [],
+      followUpResponses: [],
+      questionContext: currentQuestion.context || "",
+      studyBackground: study.studyBackground || "",
+      interviewSessionId: interviewSession?.id ?? "",
+      nextQuestionId: "",
+    };
 
-      const response = interviewSession?.responses.find(
-        (r) => r.questionId === question.id && r.followUpQuestionId === null,
+    // Find initial response
+    const response = interviewSession?.responses.find(
+      (r) =>
+        r.questionId === currentQuestionId && r.followUpQuestionId === null,
+    );
+    if (response) {
+      result.initialResponse = response.fastTranscribedText;
+    }
+
+    // Process follow-up questions and responses
+    const followUps =
+      interviewSession?.FollowUpQuestions.filter(
+        (fq) => fq.parentQuestionId === currentQuestionId,
+      ) ?? [];
+    followUps.forEach((followUp) => {
+      result.followUpQuestions.push(followUp.title);
+
+      const followUpResponse = interviewSession?.responses.find(
+        (r) => r.followUpQuestionId === followUp.id,
       );
-      if (response) {
-        baseQuestionObject.thread.push({
-          text: response.fastTranscribedText,
-          isResponse: true,
-          isFollowUp: false,
-          id: response.id,
-        });
-
-        // Add follow-up questions and their responses
-        const followUps =
-          interviewSession?.FollowUpQuestions.filter(
-            (fq) => fq.parentQuestionId === question.id,
-          ) ?? [];
-        followUps.forEach((followUp) => {
-          baseQuestionObject.thread.push({
-            text: followUp.title,
-            isResponse: false,
-            isFollowUp: true,
-            id: followUp.id,
-          });
-
-          const followUpResponse = interviewSession?.responses.find(
-            (r) => r.followUpQuestionId === followUp.id,
-          );
-          if (followUpResponse) {
-            baseQuestionObject.thread.push({
-              text: followUpResponse.fastTranscribedText,
-              isResponse: true,
-              isFollowUp: true,
-              id: followUpResponse.id,
-            });
-          }
-        });
-      }
-
-      return baseQuestionObject;
+      result.followUpResponses.push(
+        followUpResponse?.fastTranscribedText ?? "",
+      );
     });
-  }, [study, interviewSession]);
+
+    const currentQuestionOrder = currentQuestion.questionOrder;
+    const nextQuestion = study.questions.find(
+      (q) => q.questionOrder === currentQuestionOrder + 1,
+    );
+    result.nextQuestionId = nextQuestion?.id ?? "";
+
+    return result;
+  }, [study, currentQuestionId, currentResponseId, interviewSession]);
 }

@@ -6,6 +6,7 @@ import type {
   Organization,
 } from "@shared/generated/client";
 import { getColorWithOpacity } from "@/app/utils/color";
+import { cx } from "@/tailwind/styling";
 
 interface RangeChoiceSelectProps {
   question: Question;
@@ -14,6 +15,8 @@ interface RangeChoiceSelectProps {
   isBackgroundLight: boolean;
   lowLabel: string;
   highLabel: string;
+  rangeSelectionValue: number | null;
+  setRangeSelectionValue: (value: number | null) => void;
 }
 
 export const RangeChoiceSelect: React.FC<RangeChoiceSelectProps> = ({
@@ -23,16 +26,21 @@ export const RangeChoiceSelect: React.FC<RangeChoiceSelectProps> = ({
   isBackgroundLight,
   lowLabel,
   highLabel,
+  rangeSelectionValue,
+  setRangeSelectionValue,
 }) => {
   const newColor = getColorWithOpacity(organization.secondaryColor ?? "", 0.15);
+  const hoverColor = getColorWithOpacity(
+    organization.secondaryColor ?? "",
+    0.25,
+  );
   const selectedColor = getColorWithOpacity(
     organization.secondaryColor ?? "",
-    0.4,
+    0.6,
   );
 
   const handleSelection = (value: number) => {
-    // TODO: Implement selection logic
-    console.log("Selected value:", value);
+    setRangeSelectionValue(value);
   };
 
   if (question.lowRange === null || question.highRange === null) {
@@ -46,29 +54,33 @@ export const RangeChoiceSelect: React.FC<RangeChoiceSelectProps> = ({
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center">
-      <div className="scrollbar-hide flex max-w-full overflow-x-auto">
+      <div className="md:scrollbar flex max-w-full overflow-x-auto scrollbar-hide">
         <div className="flex items-start gap-2 px-2 py-4">
           {range.map((value) => (
             <div key={value} className="flex flex-col items-center">
               <Button
                 variant="unstyled"
-                className={`flex h-12 w-12 items-center justify-center rounded-[1px] border border-black border-opacity-50 bg-[var(--button-bg)] text-black transition-colors hover:bg-[var(--button-hover-bg)]`}
+                className={cx(
+                  "flex h-12 w-12 items-center justify-center rounded-[1px] border border-black border-opacity-50 text-black transition-colors",
+                  {
+                    "bg-[var(--button-bg)] hover:bg-[var(--button-hover-bg)]":
+                      rangeSelectionValue !== value,
+                    "bg-[var(--button-selected-bg)]":
+                      rangeSelectionValue === value,
+                  },
+                )}
                 onClick={() => handleSelection(value)}
                 style={
                   {
                     "--button-bg": newColor,
-                    "--button-hover-bg": selectedColor,
+                    "--button-selected-bg": selectedColor,
+                    "--button-hover-bg": hoverColor,
                   } as React.CSSProperties
                 }
               >
                 {value}
               </Button>
-              {value === question.lowRange && (
-                <span className="mt-2 text-xs opacity-50">{lowLabel}</span>
-              )}
-              {value === question.highRange && (
-                <span className="mt-2 text-xs opacity-50">{highLabel}</span>
-              )}
+              {/* ... existing code for labels ... */}
             </div>
           ))}
         </div>

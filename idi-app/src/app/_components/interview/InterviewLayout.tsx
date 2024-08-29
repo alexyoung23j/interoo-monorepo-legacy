@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useCallback, useMemo } from "react";
+import React from "react";
 import {
-  FollowUpLevel,
   FollowUpQuestion,
   InterviewSession,
   InterviewSessionStatus,
@@ -11,18 +10,15 @@ import {
   QuestionType,
   Study,
 } from "@shared/generated/client";
-import type { BaseQuestionObject, CurrentQuestionType } from "@shared/types";
-import Image from "next/image";
 import { InterviewProgressBar } from "./InterviewProgressBar";
 import { DisplayQuestion } from "./DisplayQuestion";
 import InterviewBottomBar from "./InterviewBottomBar";
 import { api } from "@/trpc/react";
 import { useParams } from "next/navigation";
-import ClipLoader from "react-spinners/ClipLoader";
 import { InterviewStartContent } from "./setup/InterviewStartContent";
-import { useConversationHistory } from "@/app/hooks/useConversationHistory";
 import InterviewFinishedContent from "./setup/InterviewFinishedContent";
 import { InterviewScreenLayout } from "./InterviewScreenLayout";
+import { InterviewPerformContent } from "./InterviewPerformContent";
 
 interface InterviewLayoutProps {
   study: Study & { questions: Question[] };
@@ -44,6 +40,7 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
   const {
     data: interviewSessionData,
     isLoading: interviewSessionLoading,
+    isRefetching: interviewSessionRefetching,
     refetch: refetchInterviewSession,
   } = api.interviews.getInterviewSession.useQuery({
     interviewSessionId,
@@ -55,20 +52,18 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
   // Interview Phases
   const hasCurrentQuestion = calculatedCurrentQuestion !== null;
 
-  const conversationHistory = useConversationHistory(study, interviewSession);
-
   const renderInterviewContent = () => {
     switch (interviewSession?.status) {
       case InterviewSessionStatus.IN_PROGRESS:
         return hasCurrentQuestion ? (
-          <>
-            <DisplayQuestion
-              question={calculatedCurrentQuestion as Question}
-              interviewSession={interviewSession as InterviewSession}
-              organization={organization}
-            />
-            <InterviewBottomBar organization={organization} />
-          </>
+          <InterviewPerformContent
+            calculatedCurrentQuestion={calculatedCurrentQuestion as Question}
+            interviewSession={interviewSession}
+            organization={organization}
+            study={study}
+            refetchInterviewSession={refetchInterviewSession}
+            interviewSessionRefetching={interviewSessionRefetching}
+          />
         ) : null;
       case InterviewSessionStatus.NOT_STARTED:
         return (

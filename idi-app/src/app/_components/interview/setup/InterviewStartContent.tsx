@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { getColorWithOpacity } from "@/app/utils/color";
 import { Microphone } from "@phosphor-icons/react";
 import { api } from "@/trpc/react";
+import ClipLoader from "react-spinners/ClipLoader";
 
 export enum Stage {
   Intro = "intro",
@@ -34,6 +35,7 @@ export const InterviewStartContent: React.FC<InterviewStartContentProps> = ({
   const router = useRouter();
   const searchParams = useSearchParams();
   const [stage, setStage] = useState<Stage>(Stage.Intro);
+  const [isInitializing, setIsInitializing] = useState(false);
 
   const startInterviewSession =
     api.interviews.startInterviewSessionQuestions.useMutation();
@@ -74,9 +76,9 @@ export const InterviewStartContent: React.FC<InterviewStartContentProps> = ({
           <AccessContent
             study={study}
             organization={organization}
+            isInitializing={isInitializing}
             onGrantAccess={async () => {
-              // todo actually grant access
-
+              setIsInitializing(true);
               // Kick off the interview session by assigning the first question to CurrentQuestion
               await startInterviewSession.mutateAsync({
                 interviewSessionId: interviewSession.id,
@@ -158,13 +160,75 @@ const FormContent: React.FC = () => {
 const AccessContent: React.FC<{
   study: Study;
   organization: Organization;
+  isInitializing: boolean;
   onGrantAccess: () => void;
-}> = ({ study, organization, onGrantAccess }) => {
+}> = ({ study, organization, isInitializing, onGrantAccess }) => {
   const newColor = getColorWithOpacity(organization.secondaryColor ?? "", 0.15);
   const selectedColor = getColorWithOpacity(
     organization.secondaryColor ?? "",
     0.4,
   );
+  const [accessError, setAccessError] = useState<string | null>(null);
+
+  const [showInstructions, setShowInstructions] = useState(false);
+
+  const browserInstructions = () => {
+    const isChrome = navigator.userAgent.indexOf("Chrome") > -1;
+    const isFirefox = navigator.userAgent.indexOf("Firefox") > -1;
+    const isSafari = navigator.userAgent.indexOf("Safari") > -1 && !isChrome;
+
+    if (isChrome) {
+      return (
+        <ol className="list-decimal pl-5 text-sm">
+          <li>Click the lock icon in the address bar</li>
+          <li>Select "Site settings"</li>
+          <li>Change the camera and microphone permissions to "Allow"</li>
+          <li>Refresh the page</li>
+        </ol>
+      );
+    } else if (isFirefox) {
+      return (
+        <ol className="list-decimal pl-5 text-sm">
+          <li>Click the shield icon in the address bar</li>
+          <li>Click "Site Information"</li>
+          <li>Change the camera and microphone permissions to "Allow"</li>
+          <li>Refresh the page</li>
+        </ol>
+      );
+    } else if (isSafari) {
+      return (
+        <ol className="list-decimal pl-5 text-sm">
+          <li>Open Safari Preferences</li>
+          <li>Go to the "Websites" tab</li>
+          <li>Find "Camera" and "Microphone" in the left sidebar</li>
+          <li>Locate this website and set permissions to "Allow"</li>
+          <li>Refresh the page</li>
+        </ol>
+      );
+    } else {
+      return (
+        <p className="text-sm">
+          Please check your browser settings to allow camera and microphone
+          access for this site.
+        </p>
+      );
+    }
+  };
+
+  const handleGrantAccess = async () => {
+    try {
+      await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: study.videoEnabled ?? false,
+      });
+      onGrantAccess();
+    } catch (error) {
+      console.error("Error accessing camera and microphone:", error);
+      setAccessError(
+        "Please allow access to continue. You can change this in your browser settings.",
+      );
+    }
+  };
 
   return (
     <div className="mb-10 flex w-full max-w-[70%] flex-col gap-4 md:max-w-[28rem]">
@@ -175,10 +239,26 @@ const AccessContent: React.FC<{
       <div className="text-sm text-neutral-500 md:text-base">
         Your responses are private and recorded only for our internal analysis.
       </div>
+      {accessError && (
+        <div className="text-sm text-red-500">
+          {accessError}
+          <button
+            className="ml-2 text-blue-500 underline"
+            onClick={() => setShowInstructions(!showInstructions)}
+          >
+            {showInstructions ? "Hide instructions" : "Show instructions"}
+          </button>
+        </div>
+      )}
+      {showInstructions && (
+        <div className="mt-2 rounded bg-gray-100 p-3">
+          {browserInstructions()}
+        </div>
+      )}
       <Button
         variant="unstyled"
         className={`mt-8 flex min-h-10 w-fit max-w-md gap-3 rounded-[1px] border border-black border-opacity-50 bg-[var(--button-bg)] text-black transition-colors hover:bg-[var(--button-hover-bg)]`}
-        onClick={onGrantAccess}
+        onClick={handleGrantAccess}
         style={
           {
             "--button-bg": newColor,
@@ -186,7 +266,18 @@ const AccessContent: React.FC<{
           } as React.CSSProperties
         }
       >
-        Allow Access <Microphone />
+        {isInitializing ? (
+          <ClipLoader
+            color="#000000"
+            size={20}
+            aria-label="Loading Spinner"
+            data-testid="loader"
+          />
+        ) : (
+          <>
+            "Allow Access" <Microphone />
+          </>
+        )}
       </Button>
     </div>
   );
