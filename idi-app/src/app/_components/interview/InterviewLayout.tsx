@@ -18,6 +18,7 @@ import { useParams } from "next/navigation";
 import { InterviewStartContent } from "./setup/InterviewStartContent";
 import InterviewFinishedContent from "./setup/InterviewFinishedContent";
 import { InterviewScreenLayout } from "./InterviewScreenLayout";
+import { InterviewPerformContent } from "./InterviewPerformContent";
 
 interface InterviewLayoutProps {
   study: Study & { questions: Question[] };
@@ -39,6 +40,7 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
   const {
     data: interviewSessionData,
     isLoading: interviewSessionLoading,
+    isRefetching: interviewSessionRefetching,
     refetch: refetchInterviewSession,
   } = api.interviews.getInterviewSession.useQuery({
     interviewSessionId,
@@ -54,20 +56,14 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
     switch (interviewSession?.status) {
       case InterviewSessionStatus.IN_PROGRESS:
         return hasCurrentQuestion ? (
-          <>
-            <DisplayQuestion
-              question={calculatedCurrentQuestion as Question}
-              interviewSession={interviewSession as InterviewSession}
-              organization={organization}
-            />
-            <InterviewBottomBar
-              organization={organization}
-              question={calculatedCurrentQuestion as Question}
-              interviewSession={interviewSession}
-              study={study}
-              refetchInterviewSession={refetchInterviewSession}
-            />
-          </>
+          <InterviewPerformContent
+            calculatedCurrentQuestion={calculatedCurrentQuestion as Question}
+            interviewSession={interviewSession}
+            organization={organization}
+            study={study}
+            refetchInterviewSession={refetchInterviewSession}
+            interviewSessionRefetching={interviewSessionRefetching}
+          />
         ) : null;
       case InterviewSessionStatus.NOT_STARTED:
         return (

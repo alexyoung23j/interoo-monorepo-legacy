@@ -33,6 +33,8 @@ export function useConversationHistory(
       followUpResponses: [],
       questionContext: currentQuestion.context || "",
       studyBackground: study.studyBackground || "",
+      interviewSessionId: interviewSession?.id ?? "",
+      nextQuestionId: "",
     };
 
     // Find initial response

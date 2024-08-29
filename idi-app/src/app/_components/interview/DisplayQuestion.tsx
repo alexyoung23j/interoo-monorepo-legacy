@@ -34,12 +34,20 @@ interface DisplayQuestionProps {
   };
   interviewSession: InterviewSession;
   organization: Organization;
+  multipleChoiceOptionSelectionId: string | null;
+  setMultipleChoiceOptionSelectionId: (id: string | null) => void;
+  rangeSelectionValue: number | null;
+  setRangeSelectionValue: (value: number | null) => void;
 }
 
 export const DisplayQuestion: React.FC<DisplayQuestionProps> = ({
   question,
   interviewSession,
   organization,
+  multipleChoiceOptionSelectionId,
+  setMultipleChoiceOptionSelectionId,
+  rangeSelectionValue,
+  setRangeSelectionValue,
 }) => {
   const isBackgroundLight = isColorLight(organization.secondaryColor ?? "");
 
@@ -60,6 +68,10 @@ export const DisplayQuestion: React.FC<DisplayQuestionProps> = ({
           interviewSession={interviewSession}
           organization={organization}
           isBackgroundLight={isBackgroundLight}
+          multipleChoiceOptionSelectionId={multipleChoiceOptionSelectionId}
+          setMultipleChoiceOptionSelectionId={
+            setMultipleChoiceOptionSelectionId
+          }
         />
       )}
       {question.questionType === "RANGE" && (
