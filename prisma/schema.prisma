@@ -133,7 +133,7 @@ model FollowUpQuestion {
   parentQuestionId      String
   parentQuestion        Question         @relation(fields: [parentQuestionId], references: [id])
   createdAt             DateTime         @default(now())
-  updatedAt             DateTime         @updatedAt
+  updatedAt             DateTime         @default(now())
   Response              Response[]
   interviewSession      InterviewSession @relation(fields: [interviewSessionId], references: [id])
   interviewSessionId    String

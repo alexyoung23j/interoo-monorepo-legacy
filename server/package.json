@@ -5,6 +5,7 @@
     "start:prod": "node dist/index.js"
   },
   "dependencies": {
+    "@deepgram/sdk": "^3.5.1",
     "@langchain/core": "^0.2.30",
     "@langchain/openai": "^0.2.8",
     "@supabase/supabase-js": "^2.45.2",

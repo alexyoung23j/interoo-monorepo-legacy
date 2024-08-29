@@ -1,5 +1,6 @@
 import express, { Request, Response, NextFunction } from "express";
 import { PrismaClient } from "../../shared/generated/client";
+import { Response as InterviewResponse } from "../../shared/generated/client";
 import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
 import path from "path";
@@ -8,6 +9,8 @@ import Busboy from 'busboy';
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { ChatOpenAI } from "@langchain/openai";
 import { MessageContent, MessageContentText } from "@langchain/core/messages";
+import { createClient as createDeepgramClient } from "@deepgram/sdk";
+
 
 // Get __dirname equivalent in ES modules
 const rootDir = path.resolve(__dirname, "../..");
@@ -18,11 +21,17 @@ const app = express();
 // Use PORT provided in environment or default to 3000
 const port = process.env.PORT || 8800;
 
+// Create Prisma client
 const prisma = new PrismaClient();
+
+// Create Supabase client 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_ANON_KEY!
 );
+
+// Create Deepgram client
+const deepgram = createDeepgramClient(process.env.DEEPGRAM_API_KEY!);
 
 app.use(
   cors({
@@ -74,7 +83,12 @@ app.get("/protected", authMiddleware, async (req: Request, res: Response) => {
 });
 
 // TODO: set up langsmith
-app.post('/api/audio-response', authMiddleware, async (req: Request, res: Response) => {
+app.post('/api/audio-response', async (req: Request, res: Response) => {
+  const startTime = Date.now();
+  let transcriptionTime = 0;
+  let dbOperationsTime = 0;
+  let followUpDecisionTime = 0;
+
   const busboy = Busboy({ 
     headers: req.headers,
     limits: {
@@ -111,11 +125,14 @@ app.post('/api/audio-response', authMiddleware, async (req: Request, res: Respon
         return res.status(400).json({ error: 'Missing required fields' });
       }
 
-      // Stub: Transcribe audio to text
+      // Transcribe audio to text
+      const transcriptionStartTime = Date.now();
       const transcribedText = await transcribeAudio(audioBuffer);
+      transcriptionTime = Date.now() - transcriptionStartTime;
 
-      // Create and store Response
-      const response = await prisma.response.create({
+      // DB operations
+      const dbStartTime = Date.now();
+      const latestResponse = await prisma.response.create({
         data: {
           interviewSessionId,
           questionId,
@@ -125,27 +142,71 @@ app.post('/api/audio-response', authMiddleware, async (req: Request, res: Respon
       });
 
       // Fetch necessary data for follow-up decision
-      const question = await prisma.question.findUnique({ where: { id: questionId } });
-      const followUpQuestion = followUpQuestionId 
-        ? await prisma.followUpQuestion.findUnique({ where: { id: followUpQuestionId } })
-        : null;
-      const study = await prisma.study.findFirst({ where: { questions: { some: { id: questionId } } } });
+      // TODO: check if shouldFollowUp is true and shouldFollowUpLevel
+      const question = await prisma.question.findUnique({ where: { id: questionId }, include: { study: true } });
+      const study = question?.study; // Get the study directly from the question
+
+      const sortedFollowUpQuestions = await prisma.followUpQuestion.findMany({
+        where: {
+          interviewSessionId: interviewSessionId,
+          parentQuestionId: questionId,
+        },
+        orderBy: {
+          followUpQuestionOrder: 'asc', // Sort by followUpQuestionOrder
+        },
+      });
+
+      // Get initial response if current response is a follow-up
+      let initialResponse: InterviewResponse | null = null;
+      if (followUpQuestionId) {
+        initialResponse = await prisma.response.findFirst({
+          where: {
+            interviewSessionId: interviewSessionId,
+            questionId: questionId,
+          },
+        });
+      }
+
+      // Get follow-up responses and sort based on the order of follow-up questions
+      const followUpResponses = await prisma.response.findMany({
+        where: {
+          followUpQuestionId: {
+            in: sortedFollowUpQuestions.map(q => q.id),
+          },
+        },
+      });
+      const sortedFollowUpResponses = followUpResponses.sort((a, b) => {
+        const questionA = sortedFollowUpQuestions.find(q => q.id === a.followUpQuestionId);
+        const questionB = sortedFollowUpQuestions.find(q => q.id === b.followUpQuestionId);
+        return (questionA?.followUpQuestionOrder || 0) - (questionB?.followUpQuestionOrder || 0);
+      });
+
+      dbOperationsTime = Date.now() - dbStartTime;
 
       if (!question || !study) {
         return res.status(404).json({ error: 'Question or study not found' });
       }
 
       // Decide on follow-up prompt
+      const followUpStartTime = Date.now();
       const followUpPrompt = await decideFollowUpPromptIfNecessary(
-        "question",
-        "followUpQuestion",
-        "",
-        transcribedText,
+        question.body || "",
+        initialResponse?.fastTranscribedText || "",
+        sortedFollowUpQuestions.map(q => q.body || ''),
+        sortedFollowUpResponses.map(r => r.fastTranscribedText || ''),
         question.context || '',
         study.studyBackground || ''
       );
+      followUpDecisionTime = Date.now() - followUpStartTime;
 
-      res.json({ response, followUpPrompt });
+      const totalTime = Date.now() - startTime;
+      console.log(`Audio processing times:
+        Total time: ${totalTime}ms
+        Transcription time: ${transcriptionTime}ms
+        DB operations time: ${dbOperationsTime}ms
+        Follow-up decision time: ${followUpDecisionTime}ms`);
+
+      res.json({ latestResponse, followUpPrompt });
     } catch (error) {
       console.error('Error processing audio response:', error);
       res.status(500).json({ error: 'Internal server error' });
@@ -160,77 +221,72 @@ app.post('/api/audio-response', authMiddleware, async (req: Request, res: Respon
   req.pipe(busboy);
 });
 
-// Stub: Transcribe audio function
+// Transcribe audio function
 async function transcribeAudio(audioBuffer: Buffer): Promise<string> {
-  // TODO: Implement audio transcription using Deepgram or an alternative service
-  // For now, return a placeholder text
-  return "This is a placeholder for the transcribed text.";
+  try {
+    const { result } = await deepgram.listen.prerecorded.transcribeFile(
+      audioBuffer,
+      {
+        model: "nova-2",
+      }
+    );
+
+    return result?.results.channels[0].alternatives[0].transcript ?? '';
+  } catch (error) {
+    console.error('Error transcribing audio:', error);
+    throw new Error('Failed to transcribe audio');
+  }
 }
 
 // Decide on follow-up prompt function
 async function decideFollowUpPromptIfNecessary(
   initialQuestionBody: string,
   initialQuestionResponse: string,
-  followUpQuestionsJoined: string,
-  followUpResponsesJoined: string,
+  followUpQuestions: string[],
+  followUpResponses: string[],
   questionContext: string,
   studyBackground: string
 ): Promise<string | null> {
 
+    // Build the conversation history
+    let conversationHistory = `Initial Question: ${initialQuestionBody}\nInitial Response: ${initialQuestionResponse}\n`;
+    for (let i = 0; i < followUpQuestions.length; i++) {
+        conversationHistory += `Follow-up Question ${i + 1}: ${followUpQuestions[i]}\n`;
+        conversationHistory += `Follow-up Response ${i + 1}: ${followUpResponses[i]}\n`;
+    }
+
     // Initialize LangChain components
-    const prompt = ChatPromptTemplate.fromTemplate(
-      `You are a qualitative research interviewer bot designed to extract insights from a participant. 
-      You are executing an in-depth-interview for a study and this is the study's background: [{bg}]. 
-      You have asked the following question: [{q}], and this is some context that the study creator set for the question: [{ctx}].
-      The participant responded with: [{response}].
-      There may have been follow-up questions to that question, and in turn, the participant may have responded with follow-up
-      responses. I will provide them as lists (separated by '+') below. The lists should be the same length, and each index corresponds to a single follow-up question and follow-up response.
-      If the lists are empty, it means there have been no follow-up questions or responses for this question.
-      Follow-Up Questions: [{maybeFollowUpQuestions}]
-      Follow-Up Responses: [{maybeFollowUpResponses}]
-      Respond with "yes: <Question text of follow up question here>" if you think based on the participant's
-      response to the question, their follow-up responses to the follow-up questions (if they exist), the background 
-      of the study, and the context of the question, that a follow up question is needed.
-      Responsd with "no" if a follow-up questions is not needed and you have gotten mostly sufficient information.
-      Do not engage with the participant about anything other than this research interview. If that happens, just return "no".`
-    );
-    const llm = new ChatOpenAI({model : "gpt-4o"});
+    const promptTemplate = `You are a qualitative research interviewer bot designed to extract insights from a participant. 
+      You are executing an in-depth-interview for a study and this is the study's background: {bg}
+      
+      Here is the context for the question you asked: {ctx}
+      
+      Here is the conversation history so far:
+      {conversation_history}
+      
+      Based on this conversation history, the background of the study, and the context of the question, 
+      decide if a follow-up question is needed.
+      
+      Respond with "yes: <Question text of follow up question here>" if you think a follow-up question is needed.
+      Respond with "no" if a follow-up question is not needed and you have gotten mostly sufficient information.
+      Do not engage with the participant about anything other than this research interview. If that happens, just return "no".`;
+
+    const prompt = ChatPromptTemplate.fromTemplate(promptTemplate);
+
+    console.log("Prompt template:", promptTemplate);
+
+    const llm = new ChatOpenAI({model: "gpt-4o"});
     const chain = prompt.pipe(llm);
 
-    const response = await chain.invoke({ bg: studyBackground, q: initialQuestionBody, ctx: questionContext, response: initialQuestionResponse, 
-      maybeFollowUpQuestions: followUpQuestionsJoined, maybeFollowUpResponses: followUpResponsesJoined});
+    const response = await chain.invoke({ 
+      bg: studyBackground, 
+      ctx: questionContext, 
+      conversation_history: conversationHistory
+    });
 
     const extractedText = extractTextFromResponse(response.content);
     return extractedText === '' ? null : extractedText;
 }
-
-// Test endpoint for decideFollowUpPromptIfNecessary
-app.post('/test-follow-up', async (req, res) => {
-  try {
-    const {
-      questionBody,
-      followUpQuestionsJoined,
-      followUpResponsesJoined,
-      transcribedText,
-      questionContext,
-      studyBackground
-    } = req.body;
-
-    const result = await decideFollowUpPromptIfNecessary(
-      questionBody,
-      followUpQuestionsJoined,
-      followUpResponsesJoined,
-      transcribedText,
-      questionContext,
-      studyBackground
-    );
-
-    res.json({ result });
-  } catch (error) {
-    console.error('Error in test endpoint:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
 
 function extractTextFromResponse(content: MessageContent): string | null {
   if (typeof content === 'string') {
@@ -243,6 +299,71 @@ function extractTextFromResponse(content: MessageContent): string | null {
   }
   return null;
 }
+
+
+// --- Test endpoints ---
+
+// Test endpoint for decideFollowUpPromptIfNecessary
+app.post('/test-follow-up', async (req, res) => {
+  try {
+    const {
+      questionBody,
+      followUpQuestions,
+      followUpResponses,
+      transcribedText,
+      questionContext,
+      studyBackground
+    } = req.body;
+
+    const result = await decideFollowUpPromptIfNecessary(
+      questionBody,
+      followUpQuestions,
+      followUpResponses,
+      transcribedText,
+      questionContext,
+      studyBackground
+    );
+
+    res.json({ result });
+  } catch (error) {
+    console.error('Error in test endpoint:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Test endpoint for audio transcription
+app.post('/test-transcribe', (req: Request, res: Response) => {
+  const busboy = Busboy({ headers: req.headers });
+  let audioBuffer: Buffer | null = null;
+
+  busboy.on('file', (fieldname, file, filename) => {
+    if (fieldname === 'audio') {
+      const chunks: Buffer[] = [];
+      file.on('data', (chunk) => {
+        chunks.push(chunk);
+      });
+      file.on('end', () => {
+        audioBuffer = Buffer.concat(chunks);
+      });
+    }
+  });
+
+  busboy.on('finish', async () => {
+    if (!audioBuffer) {
+      return res.status(400).json({ error: 'No audio file provided' });
+    }
+
+    try {
+      const transcribedText = await transcribeAudio(audioBuffer);
+      res.json({ transcribedText });
+    } catch (error) {
+      console.error('Error transcribing audio:', error);
+      res.status(500).json({ error: 'Failed to transcribe audio' });
+    }
+  });
+
+  req.pipe(busboy);
+});
 
 // Start the server
 app.listen(port as number, "0.0.0.0", function () {
