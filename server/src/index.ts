@@ -1,6 +1,5 @@
 import express, { Request, Response, NextFunction } from "express";
 import { PrismaClient } from "../../shared/generated/client";
-import { Response as InterviewResponse } from "../../shared/generated/client";
 import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
 import path from "path";
@@ -10,6 +9,7 @@ import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { ChatOpenAI } from "@langchain/openai";
 import { MessageContent, MessageContentText } from "@langchain/core/messages";
 import { createClient as createDeepgramClient } from "@deepgram/sdk";
+import { TranscribeAndGenerateNextQuestionRequest } from "../../shared/types";
 
 
 // Get __dirname equivalent in ES modules
@@ -86,7 +86,6 @@ app.get("/protected", authMiddleware, async (req: Request, res: Response) => {
 app.post('/api/audio-response', async (req: Request, res: Response) => {
   const startTime = Date.now();
   let transcriptionTime = 0;
-  let dbOperationsTime = 0;
   let followUpDecisionTime = 0;
 
   const busboy = Busboy({ 
@@ -97,9 +96,13 @@ app.post('/api/audio-response', async (req: Request, res: Response) => {
   });
 
   let audioBuffer: Buffer | null = null;
-  let questionId: string | null = null;
-  let interviewSessionId: string | null = null;
-  let followUpQuestionId: string | null = null;
+  const requestData: TranscribeAndGenerateNextQuestionRequest = {
+    initialQuestion: '',
+    followUpQuestions: [],
+    followUpResponses: [],
+    questionContext: '',
+    studyBackground: ''
+  };
 
   busboy.on('file', (fieldname, file, filename) => {
     if (fieldname === 'audio') {
@@ -114,15 +117,22 @@ app.post('/api/audio-response', async (req: Request, res: Response) => {
   });
 
   busboy.on('field', (fieldname, val) => {
-    if (fieldname === 'questionId') questionId = val;
-    if (fieldname === 'interviewSessionId') interviewSessionId = val;
-    if (fieldname === 'followUpQuestionId') followUpQuestionId = val;
+    if (fieldname in requestData) {
+      switch(fieldname) {
+        case 'followUpQuestions':
+        case 'followUpResponses':
+          (requestData as any)[fieldname] = JSON.parse(val);
+          break;
+        default:
+          (requestData as any)[fieldname] = val;
+      }
+    }
   });
 
   busboy.on('finish', async () => {
     try {
-      if (!audioBuffer || !questionId || !interviewSessionId) {
-        return res.status(400).json({ error: 'Missing required fields' });
+      if (!audioBuffer || !requestData.initialQuestion) {
+        return res.status(400).json({ error: 'Missing audio or initial question' });
       }
 
       // Transcribe audio to text
@@ -130,72 +140,15 @@ app.post('/api/audio-response', async (req: Request, res: Response) => {
       const transcribedText = await transcribeAudio(audioBuffer);
       transcriptionTime = Date.now() - transcriptionStartTime;
 
-      // DB operations
-      const dbStartTime = Date.now();
-      const latestResponse = await prisma.response.create({
-        data: {
-          interviewSessionId,
-          questionId,
-          followUpQuestionId,
-          fastTranscribedText: transcribedText,
-        },
-      });
-
-      // Fetch necessary data for follow-up decision
-      // TODO: check if shouldFollowUp is true and shouldFollowUpLevel
-      const question = await prisma.question.findUnique({ where: { id: questionId }, include: { study: true } });
-      const study = question?.study; // Get the study directly from the question
-
-      const sortedFollowUpQuestions = await prisma.followUpQuestion.findMany({
-        where: {
-          interviewSessionId: interviewSessionId,
-          parentQuestionId: questionId,
-        },
-        orderBy: {
-          followUpQuestionOrder: 'asc', // Sort by followUpQuestionOrder
-        },
-      });
-
-      // Get initial response if current response is a follow-up
-      let initialResponse: InterviewResponse | null = null;
-      if (followUpQuestionId) {
-        initialResponse = await prisma.response.findFirst({
-          where: {
-            interviewSessionId: interviewSessionId,
-            questionId: questionId,
-          },
-        });
-      }
-
-      // Get follow-up responses and sort based on the order of follow-up questions
-      const followUpResponses = await prisma.response.findMany({
-        where: {
-          followUpQuestionId: {
-            in: sortedFollowUpQuestions.map(q => q.id),
-          },
-        },
-      });
-      const sortedFollowUpResponses = followUpResponses.sort((a, b) => {
-        const questionA = sortedFollowUpQuestions.find(q => q.id === a.followUpQuestionId);
-        const questionB = sortedFollowUpQuestions.find(q => q.id === b.followUpQuestionId);
-        return (questionA?.followUpQuestionOrder || 0) - (questionB?.followUpQuestionOrder || 0);
-      });
-
-      dbOperationsTime = Date.now() - dbStartTime;
-
-      if (!question || !study) {
-        return res.status(404).json({ error: 'Question or study not found' });
-      }
-
       // Decide on follow-up prompt
       const followUpStartTime = Date.now();
       const followUpPrompt = await decideFollowUpPromptIfNecessary(
-        question.body || "",
-        initialResponse?.fastTranscribedText || "",
-        sortedFollowUpQuestions.map(q => q.body || ''),
-        sortedFollowUpResponses.map(r => r.fastTranscribedText || ''),
-        question.context || '',
-        study.studyBackground || ''
+        requestData.initialQuestion,
+        requestData.initialResponse || "",
+        requestData.followUpQuestions,
+        requestData.followUpResponses,
+        requestData.questionContext,
+        requestData.studyBackground
       );
       followUpDecisionTime = Date.now() - followUpStartTime;
 
@@ -203,10 +156,9 @@ app.post('/api/audio-response', async (req: Request, res: Response) => {
       console.log(`Audio processing times:
         Total time: ${totalTime}ms
         Transcription time: ${transcriptionTime}ms
-        DB operations time: ${dbOperationsTime}ms
         Follow-up decision time: ${followUpDecisionTime}ms`);
 
-      res.json({ latestResponse, followUpPrompt });
+      res.json({ transcribedText, followUpPrompt });
     } catch (error) {
       console.error('Error processing audio response:', error);
       res.status(500).json({ error: 'Internal server error' });
