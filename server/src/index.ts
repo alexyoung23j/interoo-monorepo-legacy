@@ -113,6 +113,7 @@ const extractTextFromResponse = (content: MessageContent): string | null => {
 const handleAudioResponse = async (req: Request, res: Response) => {
   const startTime = Date.now();
   let transcriptionTime = 0;
+  let dbUpdateTime = 0;
   let followUpDecisionTime = 0;
 
   const busboy = Busboy({ 
@@ -121,13 +122,9 @@ const handleAudioResponse = async (req: Request, res: Response) => {
   });
 
   let audioBuffer: Buffer | null = null;
-  const requestData: TranscribeAndGenerateNextQuestionRequest = {
-    initialQuestion: '',
+  const requestData: Partial<TranscribeAndGenerateNextQuestionRequest> = {
     followUpQuestions: [],
     followUpResponses: [],
-    questionContext: '',
-    studyBackground: '',
-    responseIdToStore: ''
   };
 
   busboy.on('file', (fieldname, file, filename) => {
@@ -139,34 +136,64 @@ const handleAudioResponse = async (req: Request, res: Response) => {
   });
 
   busboy.on('field', (fieldname, val) => {
-    if (fieldname in requestData) {
-      switch(fieldname) {
-        case 'followUpQuestions':
-        case 'followUpResponses':
-          (requestData as any)[fieldname] = JSON.parse(val);
-          break;
-        default:
-          (requestData as any)[fieldname] = val;
-      }
+    switch(fieldname) {
+      case 'followUpQuestions':
+      case 'followUpResponses':
+        try {
+          requestData[fieldname] = JSON.parse(val);
+        } catch (error) {
+          console.warn(`Failed to parse ${fieldname}, setting as empty array`);
+          requestData[fieldname] = [];
+        }
+        break;
+      case 'initialResponse':
+        requestData.initialResponse = val || undefined;
+        break;
+      case 'initialQuestion':
+      case 'nextQuestionId':
+      case 'interviewSessionId':
+      case 'questionContext':
+      case 'studyBackground':
+      case 'responseIdToStore':
+        requestData[fieldname] = val;
+        break;
     }
   });
 
   busboy.on('finish', async () => {
-    try {
-      if (!audioBuffer || !requestData.initialQuestion || !requestData.questionContext || !requestData.studyBackground) {
-        return res.status(400).json({ error: 'Missing required fields' });
-      }
+    if (!audioBuffer || !requestData.initialQuestion || !requestData.questionContext || !requestData.studyBackground || !requestData.responseIdToStore || !requestData.nextQuestionId || !requestData.interviewSessionId) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
 
+    try {
       const transcriptionStartTime = Date.now();
       const transcribedText = await transcribeAudio(audioBuffer);
       transcriptionTime = Date.now() - transcriptionStartTime;
+
+      // Update the Response row with the transcribed text and the InterviewSession with the next question
+      const dbUpdateStartTime = Date.now();
+      await prisma.$transaction(async (prisma) => {
+        await prisma.response.update({
+          where: { id: requestData.responseIdToStore },
+          data: { fastTranscribedText: transcribedText }
+        });
+
+        await prisma.interviewSession.update({
+          where: { id: requestData.interviewSessionId },
+          data: { 
+            currentQuestionId: requestData.nextQuestionId,
+            lastUpdatedTime: new Date()
+          }
+        });
+      });
+      dbUpdateTime = Date.now() - dbUpdateStartTime;
 
       const followUpStartTime = Date.now();
       const followUpPrompt = await decideFollowUpPromptIfNecessary(
         requestData.initialQuestion,
         requestData.initialResponse || "",
-        requestData.followUpQuestions,
-        requestData.followUpResponses,
+        requestData.followUpQuestions || [],
+        requestData.followUpResponses || [],
         requestData.questionContext,
         requestData.studyBackground
       );
@@ -176,12 +203,17 @@ const handleAudioResponse = async (req: Request, res: Response) => {
       console.log(`Audio processing times:
         Total time: ${totalTime}ms
         Transcription time: ${transcriptionTime}ms
+        DB update time: ${dbUpdateTime}ms
         Follow-up decision time: ${followUpDecisionTime}ms`);
 
       res.json({ transcribedText, followUpPrompt });
     } catch (error) {
       console.error('Error processing audio response:', error);
-      res.status(500).json({ error: 'Internal server error' });
+      if (error instanceof Error) {
+        res.status(500).json({ error: 'Internal server error', message: error.message });
+      } else {
+        res.status(500).json({ error: 'Internal server error' });
+      }
     }
   });
 
@@ -318,12 +350,12 @@ app.post('/test-transcribe', (req: Request, res: Response) => {
 app.listen(port as number, "0.0.0.0", () => console.log(`Server is running on http://localhost:${port}`));
 
 // Graceful Shutdown
-process.on("SIGINT", async () => {
+process.on('SIGINT', async () => {
   await prisma.$disconnect();
   process.exit(0);
 });
 
-process.on("SIGTERM", async () => {
+process.on('SIGTERM', async () => {
   await prisma.$disconnect();
   process.exit(0);
 });
