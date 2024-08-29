@@ -35,6 +35,8 @@ export function useAudioRecorder({
 
   const startRecording = useCallback(async () => {
     try {
+      setIsRecording(true);
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
       let mimeType;
@@ -65,7 +67,6 @@ export function useAudioRecorder({
       };
 
       mediaRecorder.current.start(1000); // Collect data every second
-      setIsRecording(true);
 
       recordingTimeout.current = setTimeout(
         () => stopRecording(),
@@ -73,6 +74,7 @@ export function useAudioRecorder({
       );
     } catch (err) {
       console.error("Error starting recording:", err);
+      setIsRecording(false);
       setError(
         "Failed to start recording. Please check your microphone permissions.",
       );
