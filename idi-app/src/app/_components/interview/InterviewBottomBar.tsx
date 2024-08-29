@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import React from "react";
+import React, { useState } from "react";
 import { Microphone } from "@phosphor-icons/react";
 import { isColorLight } from "@/app/utils/color";
 import {
@@ -15,6 +15,7 @@ import { useAudioRecorder } from "@/app/api/useAudioRecorder";
 import SyncLoader from "react-spinners/SyncLoader";
 import { useConversationHistory } from "@/app/hooks/useConversationHistory";
 import ClipLoader from "react-spinners/ClipLoader";
+import { api } from "@/trpc/react";
 
 const InterviewBottomBar: React.FC<{
   organization: Organization;
@@ -24,17 +25,38 @@ const InterviewBottomBar: React.FC<{
     FollowUpQuestions: FollowUpQuestion[];
   };
   study: Study & { questions: Question[] };
-}> = ({ organization, question, interviewSession, study }) => {
+  refetchInterviewSession: () => void;
+}> = ({
+  organization,
+  question,
+  interviewSession,
+  study,
+  refetchInterviewSession,
+}) => {
   const isBackgroundLight = isColorLight(organization.secondaryColor ?? "");
+  const [currentResponseId, setCurrentResponseId] = useState<string | null>(
+    null,
+  );
+  const createResponse = api.responses.createResponse.useMutation();
+
+  console.log({ interviewSession });
+
   const {
     isRecording,
     startRecording,
     stopRecording,
     submitAudio,
     awaitingResponse,
-  } = useAudioRecorder();
+  } = useAudioRecorder({ interviewSessionId: interviewSession.id ?? "" });
 
-  const conversationHistory = useConversationHistory(study, interviewSession);
+  const conversationHistory = useConversationHistory(
+    study,
+    question.id,
+    currentResponseId ?? "",
+    interviewSession,
+  );
+
+  console.log({ conversationHistory });
 
   const startResponse = async () => {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -46,6 +68,11 @@ const InterviewBottomBar: React.FC<{
       await navigator.mediaDevices.getUserMedia({ audio: true });
       // If we get here, we have microphone access
       await startRecording();
+      const response = await createResponse.mutateAsync({
+        questionId: question.id,
+        interviewSessionId: interviewSession.id,
+      });
+      setCurrentResponseId(response.id);
     } catch (err) {
       console.error("Error accessing microphone:", err);
       // Handle the error, perhaps by showing a message to the user
@@ -56,7 +83,11 @@ const InterviewBottomBar: React.FC<{
 
   const stopResponse = async () => {
     await stopRecording();
-    // await submitAudio();
+    if (conversationHistory) {
+      const data = await submitAudio(conversationHistory);
+      console.log({ data });
+      refetchInterviewSession();
+    }
   };
 
   return (

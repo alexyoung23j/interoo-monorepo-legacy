@@ -1,17 +1,25 @@
+import { api } from "@/trpc/react";
+import { TranscribeAndGenerateNextQuestionRequest } from "@shared/types";
 import { useState, useRef, useCallback, useEffect } from "react";
 
 interface AudioRecorderHook {
   isRecording: boolean;
   startRecording: () => Promise<void>;
   stopRecording: () => void;
-  submitAudio: (additionalData: Record<string, string>) => Promise<any>;
+  submitAudio: (
+    additionalData: TranscribeAndGenerateNextQuestionRequest,
+  ) => Promise<any>;
   error: string | null;
   awaitingResponse: boolean; // New property
 }
 
 const MAX_RECORDING_TIME = 15 * 60 * 1000; // 15 minutes
 
-export function useAudioRecorder(): AudioRecorderHook {
+export function useAudioRecorder({
+  interviewSessionId,
+}: {
+  interviewSessionId: string;
+}): AudioRecorderHook {
   const [isRecording, setIsRecording] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [awaitingResponse, setAwaitingResponse] = useState(false); // New state
@@ -19,6 +27,11 @@ export function useAudioRecorder(): AudioRecorderHook {
   const mediaRecorder = useRef<MediaRecorder | null>(null);
   const audioChunks = useRef<Blob[]>([]);
   const recordingTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  const { refetch: refetchInterviewSession } =
+    api.interviews.getInterviewSession.useQuery({
+      interviewSessionId,
+    });
 
   const startRecording = useCallback(async () => {
     try {
@@ -77,7 +90,7 @@ export function useAudioRecorder(): AudioRecorderHook {
   }, []);
 
   const submitAudio = useCallback(
-    async (additionalData: Record<string, string>) => {
+    async (additionalData: TranscribeAndGenerateNextQuestionRequest) => {
       if (audioChunks.current.length === 0) return null;
       setAwaitingResponse(true); // Set to true when starting submission
 
@@ -110,10 +123,14 @@ export function useAudioRecorder(): AudioRecorderHook {
 
         const data = await response.json();
 
+        console.log({ data });
+
         // Clear audio chunks after successful submission
         audioChunks.current = [];
 
-        setAwaitingResponse(false); // Set to false after successful response
+        refetchInterviewSession().then(() => {
+          setAwaitingResponse(false); // Set to false after successful response
+        });
 
         return data;
       } catch (error) {

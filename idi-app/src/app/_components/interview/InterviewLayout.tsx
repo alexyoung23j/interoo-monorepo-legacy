@@ -65,6 +65,7 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
               question={calculatedCurrentQuestion as Question}
               interviewSession={interviewSession}
               study={study}
+              refetchInterviewSession={refetchInterviewSession}
             />
           </>
         ) : null;
