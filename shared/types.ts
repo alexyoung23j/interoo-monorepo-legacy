@@ -8,6 +8,7 @@ export interface TranscribeAndGenerateNextQuestionRequest {
     followUpResponses: string[];
     interviewSessionId: string;
     nextQuestionId: string;
+    followUpLevel: string;
     questionContext: string;
     studyBackground: string;
 }

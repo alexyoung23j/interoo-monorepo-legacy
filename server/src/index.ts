@@ -9,7 +9,8 @@ import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { ChatOpenAI } from "@langchain/openai";
 import { MessageContent, MessageContentText } from "@langchain/core/messages";
 import { createClient as createDeepgramClient } from "@deepgram/sdk";
-import { TranscribeAndGenerateNextQuestionRequest, UploadUrlRequest } from "../../shared/types";
+import { TranscribeAndGenerateNextQuestionRequest, UploadUrlRequest,  } from "../../shared/types";
+import { FollowUpLevel } from "../../shared/generated/client";
 
 // Configuration and Setup
 const rootDir = path.resolve(__dirname, "../..");
@@ -110,6 +111,21 @@ const extractTextFromResponse = (content: MessageContent): string | null => {
   return null;
 };
 
+const getFollowUpLevelValue = (level: string): number => {
+  switch (level.toUpperCase()) {
+    case FollowUpLevel.AUTOMATIC:
+      return 3;
+    case FollowUpLevel.SURFACE:
+      return 1;
+    case FollowUpLevel.LIGHT:
+      return 2;
+    case FollowUpLevel.DEEP:
+      return 5;
+    default:
+      return 1
+  }
+};
+
 const handleAudioResponse = async (req: Request, res: Response) => {
   const startTime = Date.now();
   let transcriptionTime = 0;
@@ -150,11 +166,12 @@ const handleAudioResponse = async (req: Request, res: Response) => {
         requestData.initialResponse = val || undefined;
         break;
       case 'initialQuestion':
-      case 'nextQuestionId':
-      case 'interviewSessionId':
       case 'questionContext':
       case 'studyBackground':
       case 'responseIdToStore':
+      case 'interviewSessionId':
+      case 'nextQuestionId':
+      case 'followUpLevel':
         requestData[fieldname] = val;
         break;
     }
@@ -188,16 +205,21 @@ const handleAudioResponse = async (req: Request, res: Response) => {
       });
       dbUpdateTime = Date.now() - dbUpdateStartTime;
 
-      const followUpStartTime = Date.now();
-      const followUpPrompt = await decideFollowUpPromptIfNecessary(
-        requestData.initialQuestion,
-        requestData.initialResponse || "",
-        requestData.followUpQuestions || [],
-        requestData.followUpResponses || [],
-        requestData.questionContext,
-        requestData.studyBackground
-      );
-      followUpDecisionTime = Date.now() - followUpStartTime;
+      let followUpPrompt = null;
+      const followUpLevelValue = getFollowUpLevelValue(requestData.followUpLevel || FollowUpLevel.AUTOMATIC);
+
+      if ((requestData.followUpResponses?.length || 0) < followUpLevelValue) {
+        const followUpStartTime = Date.now();
+        followUpPrompt = await decideFollowUpPromptIfNecessary(
+          requestData.initialQuestion,
+          requestData.initialResponse || "",
+          requestData.followUpQuestions || [],
+          requestData.followUpResponses || [],
+          requestData.questionContext,
+          requestData.studyBackground
+        );
+        followUpDecisionTime = Date.now() - followUpStartTime;
+      }
 
       const totalTime = Date.now() - startTime;
       console.log(`Audio processing times:
@@ -209,11 +231,7 @@ const handleAudioResponse = async (req: Request, res: Response) => {
       res.json({ transcribedText, followUpPrompt });
     } catch (error) {
       console.error('Error processing audio response:', error);
-      if (error instanceof Error) {
-        res.status(500).json({ error: 'Internal server error', message: error.message });
-      } else {
-        res.status(500).json({ error: 'Internal server error' });
-      }
+      res.status(500).json({ error: 'Internal server error', message: String(error) });
     }
   });
 
