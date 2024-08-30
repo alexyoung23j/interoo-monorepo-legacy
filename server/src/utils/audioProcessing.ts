@@ -22,6 +22,7 @@ export const decideFollowUpPromptIfNecessary = async (
     transcribedText: string
   ): Promise<{ shouldFollowUp: boolean; followUpQuestion?: string }> => {
     const conversationHistory = buildConversationHistory(requestData.thread, transcribedText);
+    console.log({conversationHistory})
     const promptTemplate = buildPromptTemplate();
     const parser = StructuredOutputParser.fromNamesAndDescriptions({
       shouldFollowUp: "boolean indicating whether a follow-up question is needed, true or false",
@@ -51,7 +52,7 @@ export const decideFollowUpPromptIfNecessary = async (
   
     const result = {
         shouldFollowUp: response.shouldFollowUp === 'true' || response.shouldFollowUp === 'yes', // Redundant for dumb model
-        followUpQuestion: response.followUpQuestion !== 'null' ? response.followUpQuestion : undefined
+        followUpQuestion: response.followUpQuestion !== 'null' || response.followUpQuestion !== undefined ? response.followUpQuestion : undefined
       };
       
       return result;

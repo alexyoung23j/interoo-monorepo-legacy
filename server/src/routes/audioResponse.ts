@@ -84,7 +84,8 @@ const handleAudioResponse = async (req: Request, res: Response) => {
       const followUpLevelValue = getFollowUpLevelValue(requestData.followUpLevel);
 
       let response: TranscribeAndGenerateNextQuestionResponse = {
-        isFollowUp: false
+        isFollowUp: false,
+        transcribedText: transcribedText
       };
 
       if (!requestData.shouldFollowUp || requestData.thread.length > followUpLevelValue) {
