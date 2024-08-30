@@ -1,11 +1,8 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import type {
-  Question,
-  InterviewSession,
-  Organization,
-} from "@shared/generated/client";
-import { getColorWithOpacity, isColorLight } from "@/app/utils/color";
+import type { Question, Organization } from "@shared/generated/client";
+import { getColorWithOpacity } from "@/app/utils/color";
+import { cx } from "@/tailwind/styling";
 
 interface MultipleChoiceSelectProps {
   question: Question & {
@@ -17,24 +14,31 @@ interface MultipleChoiceSelectProps {
   };
   organization: Organization;
   isBackgroundLight: boolean;
-  multipleChoiceOptionSelectionId: string;
-  setMultipleChoiceOptionSelectionId: (id: string) => void;
+  multipleChoiceOptionSelectionId: string | null;
+  setMultipleChoiceOptionSelectionId: (id: string | null) => void;
 }
 
 export const MultipleChoiceSelect: React.FC<MultipleChoiceSelectProps> = ({
   question,
   organization,
   isBackgroundLight,
+  multipleChoiceOptionSelectionId,
+  setMultipleChoiceOptionSelectionId,
 }) => {
   const newColor = getColorWithOpacity(organization.secondaryColor ?? "", 0.15);
+  const hoverColor = getColorWithOpacity(
+    organization.secondaryColor ?? "",
+    0.25,
+  );
   const selectedColor = getColorWithOpacity(
     organization.secondaryColor ?? "",
-    0.4,
+    0.6,
   );
 
   const handleSelection = (optionId: string) => {
-    // TODO: Implement selection logic
-    console.log("Selected option:", optionId);
+    setMultipleChoiceOptionSelectionId(
+      multipleChoiceOptionSelectionId === optionId ? null : optionId,
+    );
   };
 
   if (
@@ -46,20 +50,27 @@ export const MultipleChoiceSelect: React.FC<MultipleChoiceSelectProps> = ({
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-start gap-3">
-      <div className="text-sm text-black opacity-50">
-        {question.allowMultipleSelections ? "select multiple" : "select one"}
-      </div>
+      <div className="text-sm text-black opacity-50">select one</div>
       <div className="flex max-h-80 w-fit min-w-[70%] flex-col items-center justify-start gap-3 overflow-y-auto px-2 py-4 scrollbar-hide">
         {question.multipleChoiceOptions.map((option) => (
           <Button
             key={option.id}
             variant="unstyled"
-            className={`flex min-h-12 w-full max-w-md gap-3 rounded-[1px] border border-black border-opacity-50 bg-[var(--button-bg)] text-black transition-colors hover:bg-[var(--button-hover-bg)]`}
+            className={cx(
+              "flex min-h-12 w-full max-w-md gap-3 rounded-[1px] border border-black border-opacity-50 text-black transition-colors",
+              {
+                "bg-[var(--button-bg)] hover:bg-[var(--button-hover-bg)]":
+                  multipleChoiceOptionSelectionId !== option.id,
+                "bg-[var(--button-selected-bg)]":
+                  multipleChoiceOptionSelectionId === option.id,
+              },
+            )}
             onClick={() => handleSelection(option.id)}
             style={
               {
                 "--button-bg": newColor,
-                "--button-hover-bg": selectedColor,
+                "--button-selected-bg": selectedColor,
+                "--button-hover-bg": hoverColor,
               } as React.CSSProperties
             }
           >

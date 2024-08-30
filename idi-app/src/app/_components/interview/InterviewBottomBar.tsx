@@ -7,7 +7,6 @@ import { api } from "@/trpc/react";
 import { cx } from "@/tailwind/styling";
 import { isColorLight } from "@/app/utils/color";
 import { useAudioRecorder } from "@/app/api/useAudioRecorder";
-import { useConversationHistory } from "@/app/hooks/useConversationHistory";
 import {
   type FollowUpQuestion,
   InterviewSession,

@@ -14,6 +14,8 @@ import {
   currentQuestionAtom,
   responsesAtom,
   interviewSessionAtom,
+  currentResponseAtom,
+  followUpQuestionsAtom,
 } from "@/app/state/atoms";
 import { useAtom } from "jotai";
 
@@ -34,6 +36,11 @@ export const InterviewPerformContent: React.FC<
 }) => {
   const [currentQuestion, setCurrentQuestion] = useAtom(currentQuestionAtom);
   const [interviewSession, setInterviewSession] = useAtom(interviewSessionAtom);
+  const [responses, setResponses] = useAtom(responsesAtom);
+  const [currentResponse, setCurrentResponse] = useAtom(currentResponseAtom);
+  const [followUpQuestions, setFollowUpQuestions] = useAtom(
+    followUpQuestionsAtom,
+  );
 
   const [multipleChoiceOptionSelectionId, setMultipleChoiceOptionSelectionId] =
     useState<string | null>(null);
@@ -51,13 +58,23 @@ export const InterviewPerformContent: React.FC<
     if (!multipleChoiceOptionSelectionId) return;
     setAwaitingOptionResponse(true);
 
-    await createMultipleChoiceResponse.mutateAsync({
-      multipleChoiceOptionSelectionId: multipleChoiceOptionSelectionId,
-      interviewSessionId: interviewSession?.id ?? "",
-      studyId: study.id,
-      currentQuestionOrder: (currentQuestion as Question).questionOrder,
-      questionId: (currentQuestion as Question).id,
-    });
+    const { nextQuestion, wasFinalQuestion } =
+      await createMultipleChoiceResponse.mutateAsync({
+        multipleChoiceOptionSelectionId: multipleChoiceOptionSelectionId,
+        interviewSessionId: interviewSession?.id ?? "",
+        studyId: study.id,
+        currentQuestionOrder: (currentQuestion as Question).questionOrder,
+        questionId: (currentQuestion as Question).id,
+      });
+    setCurrentQuestion(nextQuestion);
+
+    if (wasFinalQuestion) {
+      setInterviewSession({
+        ...interviewSession!,
+        status: "COMPLETED",
+      });
+    }
+
     setAwaitingOptionResponse(false);
     setMultipleChoiceOptionSelectionId(null);
   };
@@ -66,14 +83,23 @@ export const InterviewPerformContent: React.FC<
     if (!rangeSelectionValue) return;
     setAwaitingOptionResponse(true);
 
-    await createRangeResponse.mutateAsync({
-      rangeSelection: rangeSelectionValue,
-      interviewSessionId: interviewSession?.id ?? "",
-      studyId: study.id,
-      currentQuestionOrder: (currentQuestion as Question).questionOrder,
-      questionId: (currentQuestion as Question).id,
-    });
-    refetchInterviewSession();
+    const { nextQuestion, wasFinalQuestion } =
+      await createRangeResponse.mutateAsync({
+        rangeSelection: rangeSelectionValue,
+        interviewSessionId: interviewSession?.id ?? "",
+        studyId: study.id,
+        currentQuestionOrder: (currentQuestion as Question).questionOrder,
+        questionId: (currentQuestion as Question).id,
+      });
+    setCurrentQuestion(nextQuestion);
+
+    if (wasFinalQuestion) {
+      setInterviewSession({
+        ...interviewSession!,
+        status: "COMPLETED",
+      });
+    }
+
     setAwaitingOptionResponse(false);
     setRangeSelectionValue(null);
   };
