@@ -12,6 +12,8 @@ import { getColorWithOpacity } from "@/app/utils/color";
 import { Microphone } from "@phosphor-icons/react";
 import { api } from "@/trpc/react";
 import ClipLoader from "react-spinners/ClipLoader";
+import { currentQuestionAtom, interviewSessionAtom } from "@/app/state/atoms";
+import { useAtom } from "jotai";
 
 export enum Stage {
   Intro = "intro",
@@ -20,14 +22,12 @@ export enum Stage {
 }
 
 interface InterviewStartContentProps {
-  interviewSession: InterviewSession;
   organization: Organization;
   study: Study;
   refetchInterviewSession: () => void;
 }
 
 export const InterviewStartContent: React.FC<InterviewStartContentProps> = ({
-  interviewSession,
   organization,
   study,
   refetchInterviewSession,
@@ -36,6 +36,9 @@ export const InterviewStartContent: React.FC<InterviewStartContentProps> = ({
   const searchParams = useSearchParams();
   const [stage, setStage] = useState<Stage>(Stage.Intro);
   const [isInitializing, setIsInitializing] = useState(false);
+  const [interviewSession, setInterviewSession] = useAtom(interviewSessionAtom);
+
+  const [, setCurrentQuestion] = useAtom(currentQuestionAtom);
 
   const startInterviewSession =
     api.interviews.startInterviewSessionQuestions.useMutation();
@@ -79,12 +82,19 @@ export const InterviewStartContent: React.FC<InterviewStartContentProps> = ({
             isInitializing={isInitializing}
             onGrantAccess={async () => {
               setIsInitializing(true);
+
               // Kick off the interview session by assigning the first question to CurrentQuestion
-              await startInterviewSession.mutateAsync({
-                interviewSessionId: interviewSession.id,
+              const firstQuestion = await startInterviewSession.mutateAsync({
+                interviewSessionId: interviewSession?.id ?? "",
+              });
+              setCurrentQuestion(firstQuestion);
+
+              // Update the interview session status to IN_PROGRESS
+              setInterviewSession({
+                ...interviewSession!,
+                status: "IN_PROGRESS",
               });
               removeStage();
-              refetchInterviewSession();
             }}
           />
         );

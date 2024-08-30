@@ -138,6 +138,7 @@ export function useAudioRecorder({
       } catch (error) {
         console.error("Error submitting audio:", error);
         setError("Failed to submit audio. Please try again.");
+        setAwaitingResponse(false);
         throw error;
       }
     },

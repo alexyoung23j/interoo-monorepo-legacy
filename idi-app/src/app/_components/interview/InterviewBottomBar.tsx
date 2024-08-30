@@ -17,14 +17,12 @@ import {
   Response,
   QuestionType,
 } from "@shared/generated/client";
+import { showErrorToast } from "@/app/utils/toastUtils";
+import { currentQuestionAtom, interviewSessionAtom } from "@/app/state/atoms";
+import { useAtom } from "jotai";
 
 interface InterviewBottomBarProps {
   organization: Organization;
-  question: Question;
-  interviewSession: InterviewSession & {
-    responses: Response[];
-    FollowUpQuestions: FollowUpQuestion[];
-  };
   study: Study & { questions: Question[] };
   refetchInterviewSession: () => void;
   multipleChoiceOptionSelectionId: string | null;
@@ -37,8 +35,7 @@ interface InterviewBottomBarProps {
 
 const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
   organization,
-  question,
-  interviewSession,
+
   study,
   refetchInterviewSession,
   multipleChoiceOptionSelectionId,
@@ -48,6 +45,9 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
   interviewSessionRefetching,
   handleSubmitRangeResponse,
 }) => {
+  const [currentQuestion, setCurrentQuestion] = useAtom(currentQuestionAtom);
+  const [interviewSession, setInterviewSession] = useAtom(interviewSessionAtom);
+
   const isBackgroundLight = isColorLight(organization.secondaryColor ?? "");
   const [currentResponseId, setCurrentResponseId] = useState<string | null>(
     null,
@@ -61,13 +61,13 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
     stopRecording,
     submitAudio,
     awaitingResponse: awaitingLLMResponse,
-  } = useAudioRecorder({ interviewSessionId: interviewSession.id ?? "" });
+  } = useAudioRecorder({ interviewSessionId: interviewSession?.id ?? "" });
 
   const conversationHistory = useConversationHistory(
     study,
-    question.id,
+    currentQuestion?.id ?? "",
     currentResponseId ?? "",
-    interviewSession,
+    interviewSession!,
   );
 
   const startResponse = async () => {
@@ -80,8 +80,8 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
       await navigator.mediaDevices.getUserMedia({ audio: true });
       await startRecording();
       const response = await createOpenEndedResponse.mutateAsync({
-        questionId: question.id,
-        interviewSessionId: interviewSession.id,
+        questionId: currentQuestion?.id ?? "",
+        interviewSessionId: interviewSession?.id ?? "",
       });
       setCurrentResponseId(response.id);
     } catch (err) {
@@ -91,11 +91,17 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
   };
 
   const stopResponse = async () => {
-    await stopRecording();
+    stopRecording();
     if (conversationHistory) {
-      const data = await submitAudio(conversationHistory);
-      console.log({ data });
-      refetchInterviewSession();
+      try {
+        console.log({ conversationHistory });
+        const data = await submitAudio(conversationHistory);
+        refetchInterviewSession();
+        console.log({ data });
+      } catch (err) {
+        console.error("Error submitting audio:", err);
+        showErrorToast("Error submitting audio. Please try again.");
+      }
     }
   };
 
@@ -203,7 +209,7 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
   );
 
   const renderQuestionTypeButton = () => {
-    switch (question.questionType) {
+    switch (currentQuestion?.questionType) {
       case QuestionType.OPEN_ENDED:
         return renderOpenEndedButton();
       case QuestionType.MULTIPLE_CHOICE:

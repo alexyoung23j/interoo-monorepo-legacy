@@ -35,6 +35,7 @@ export function useConversationHistory(
       studyBackground: study.studyBackground || "",
       interviewSessionId: interviewSession?.id ?? "",
       nextQuestionId: "",
+      followUpLevel: currentQuestion.followUpLevel,
     };
 
     // Find initial response

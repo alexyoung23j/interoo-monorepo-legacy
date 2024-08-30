@@ -61,7 +61,7 @@ export function InterviewProgressBar({
   }, [study.questions, calculatedCurrentQuestion]);
 
   const progress = (() => {
-    switch (interviewSession.status) {
+    switch (interviewSession?.status) {
       case InterviewSessionStatus.NOT_STARTED:
         return 5;
       case InterviewSessionStatus.IN_PROGRESS:
