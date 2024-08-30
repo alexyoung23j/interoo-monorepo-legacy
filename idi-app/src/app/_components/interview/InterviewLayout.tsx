@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   FollowUpQuestion,
   InterviewSession,
@@ -8,6 +8,7 @@ import {
   Organization,
   Question,
   QuestionType,
+  Response,
   Study,
 } from "@shared/generated/client";
 import { InterviewProgressBar } from "./InterviewProgressBar";
@@ -21,24 +22,32 @@ import { InterviewScreenLayout } from "./InterviewScreenLayout";
 import { InterviewPerformContent } from "./InterviewPerformContent";
 import {
   currentQuestionAtom,
+  followUpQuestionsAtom,
   initializeInterviewAtom,
   interviewSessionAtom,
   responsesAtom,
 } from "@/app/state/atoms";
 import { useAtom } from "jotai";
+import { CurrentQuestionType } from "@shared/types";
 
 interface InterviewLayoutProps {
   study: Study & { questions: Question[] };
   organization: Organization;
   backgroundLight: boolean;
+  fetchedInterviewSession: {
+    interviewSession: InterviewSession & {
+      FollowUpQuestions: FollowUpQuestion[];
+      responses: Response[];
+    };
+    calculatedCurrentQuestion: CurrentQuestionType | null;
+  };
 }
-
-// TODO prolly move this to a shared directory
 
 export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
   study,
   organization,
   backgroundLight,
+  fetchedInterviewSession,
 }) => {
   const params = useParams();
   const interviewSessionId = params.interviewSessionId as string;
@@ -46,30 +55,33 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
   const [currentQuestion, setCurrentQuestion] = useAtom(currentQuestionAtom);
   const [responses, setResponses] = useAtom(responsesAtom);
   const [interviewSession, setInterviewSession] = useAtom(interviewSessionAtom);
-  const [, initializeInterview] = useAtom(initializeInterviewAtom);
+  const [followUpQuestions, setFollowUpQuestions] = useAtom(
+    followUpQuestionsAtom,
+  );
 
-  const { data, isLoading } = api.interviews.getInterviewSession.useQuery({
-    interviewSessionId,
-  });
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (data) {
-      const { interviewSession, calculatedCurrentQuestion } = data;
+    if (fetchedInterviewSession) {
+      const { interviewSession: fetchedSession, calculatedCurrentQuestion } =
+        fetchedInterviewSession;
+      setInterviewSession(fetchedSession);
       setCurrentQuestion(calculatedCurrentQuestion ?? null);
-      setResponses(interviewSession?.responses ?? []);
-      setInterviewSession(interviewSession ?? null);
+      setResponses(fetchedSession.responses ?? []);
+      setFollowUpQuestions(fetchedSession.FollowUpQuestions ?? []);
     }
-  }, [data, setCurrentQuestion, setResponses, setInterviewSession]);
 
-  useEffect(() => {
-    initializeInterview(interviewSessionId);
-  }, [interviewSessionId, initializeInterview]);
+    setIsLoading(false);
+  }, [fetchedInterviewSession, interviewSessionId]);
 
-  console.log({ interviewSession });
   // Interview Phases
   const hasCurrentQuestion = currentQuestion !== null;
 
   const renderInterviewContent = () => {
+    if (isLoading) {
+      return <div>Loading...</div>;
+    }
+
     switch (interviewSession?.status) {
       case InterviewSessionStatus.IN_PROGRESS:
         return hasCurrentQuestion ? (
@@ -77,7 +89,7 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
             organization={organization}
             study={study}
             refetchInterviewSession={() => {}}
-            interviewSessionRefetching={false}
+            interviewSessionRefetching={isLoading}
           />
         ) : null;
       case InterviewSessionStatus.NOT_STARTED:
@@ -87,6 +99,7 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
               organization={organization}
               study={study}
               refetchInterviewSession={() => {}}
+              isLoading={isLoading}
             />
             <div className="h-20"></div>
           </>
@@ -112,6 +125,7 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
               organization={organization}
               study={study}
               refetchInterviewSession={() => {}}
+              isLoading={isLoading}
             />
             <div className="h-20"></div>
           </>

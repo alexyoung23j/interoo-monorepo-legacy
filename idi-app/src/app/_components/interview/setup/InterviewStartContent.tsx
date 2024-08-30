@@ -13,7 +13,7 @@ import { Microphone } from "@phosphor-icons/react";
 import { api } from "@/trpc/react";
 import ClipLoader from "react-spinners/ClipLoader";
 import { currentQuestionAtom, interviewSessionAtom } from "@/app/state/atoms";
-import { useAtom } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 
 export enum Stage {
   Intro = "intro",
@@ -25,19 +25,21 @@ interface InterviewStartContentProps {
   organization: Organization;
   study: Study;
   refetchInterviewSession: () => void;
+  isLoading: boolean;
 }
 
 export const InterviewStartContent: React.FC<InterviewStartContentProps> = ({
   organization,
   study,
   refetchInterviewSession,
+  isLoading,
 }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [stage, setStage] = useState<Stage>(Stage.Intro);
   const [isInitializing, setIsInitializing] = useState(false);
-  const [interviewSession, setInterviewSession] = useAtom(interviewSessionAtom);
-
+  const [, setInterviewSession] = useAtom(interviewSessionAtom);
+  const interviewSession = useAtomValue(interviewSessionAtom);
   const [, setCurrentQuestion] = useAtom(currentQuestionAtom);
 
   const startInterviewSession =
@@ -82,7 +84,6 @@ export const InterviewStartContent: React.FC<InterviewStartContentProps> = ({
             isInitializing={isInitializing}
             onGrantAccess={async () => {
               setIsInitializing(true);
-
               // Kick off the interview session by assigning the first question to CurrentQuestion
               const firstQuestion = await startInterviewSession.mutateAsync({
                 interviewSessionId: interviewSession?.id ?? "",

@@ -41,6 +41,7 @@ export default async function InterviewSessionServerPage({
       study={study}
       organization={organization}
       backgroundLight={isLight}
+      fetchedInterviewSession={interviewSession}
     />
   );
 }

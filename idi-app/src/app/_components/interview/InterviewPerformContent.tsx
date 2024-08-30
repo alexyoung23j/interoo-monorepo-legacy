@@ -58,7 +58,6 @@ export const InterviewPerformContent: React.FC<
       currentQuestionOrder: (currentQuestion as Question).questionOrder,
       questionId: (currentQuestion as Question).id,
     });
-    refetchInterviewSession();
     setAwaitingOptionResponse(false);
     setMultipleChoiceOptionSelectionId(null);
   };

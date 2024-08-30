@@ -4,7 +4,12 @@ import {
   TranscribeAndGenerateNextQuestionResponse,
 } from "@shared/types";
 import { useState, useRef, useCallback, useEffect } from "react";
-import { currentQuestionAtom } from "../state/atoms";
+import {
+  currentQuestionAtom,
+  currentResponseAtom,
+  followUpQuestionsAtom,
+  responsesAtom,
+} from "../state/atoms";
 import { useAtom } from "jotai";
 import { Question } from "@shared/generated/client";
 
@@ -30,6 +35,11 @@ export function useAudioRecorder({
   const [error, setError] = useState<string | null>(null);
   const [awaitingResponse, setAwaitingResponse] = useState(false); // New state
   const [, setCurrentQuestion] = useAtom(currentQuestionAtom);
+  const [responses, setResponses] = useAtom(responsesAtom);
+  const [currentResponse, setCurrentResponse] = useAtom(currentResponseAtom);
+  const [followUpQuestions, setFollowUpQuestions] = useAtom(
+    followUpQuestionsAtom,
+  );
 
   const mediaRecorder = useRef<MediaRecorder | null>(null);
   const audioChunks = useRef<Blob[]>([]);
@@ -130,6 +140,7 @@ export function useAudioRecorder({
 
         if (data.isFollowUp && data.followUpQuestion) {
           setCurrentQuestion(data.followUpQuestion);
+          setFollowUpQuestions([...followUpQuestions, data.followUpQuestion]);
         } else {
           const nextQuestionId = data.nextQuestionId;
           const nextQuestion = baseQuestions.find(
@@ -141,6 +152,13 @@ export function useAudioRecorder({
         // Clear audio chunks after successful submission
         audioChunks.current = [];
         setAwaitingResponse(false);
+        setResponses(
+          responses.map((response) =>
+            response.id === currentResponse?.id
+              ? { ...response, fastTranscribedText: data.transcribedText }
+              : response,
+          ),
+        );
 
         return data;
       } catch (error) {

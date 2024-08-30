@@ -18,9 +18,20 @@ import {
   QuestionType,
 } from "@shared/generated/client";
 import { showErrorToast } from "@/app/utils/toastUtils";
-import { currentQuestionAtom, interviewSessionAtom } from "@/app/state/atoms";
+import {
+  currentQuestionAtom,
+  currentResponseAtom,
+  followUpQuestionsAtom,
+  interviewSessionAtom,
+  responsesAtom,
+} from "@/app/state/atoms";
 import { useAtom } from "jotai";
-import { CurrentQuestionType } from "@shared/types";
+import {
+  ConversationState,
+  CurrentQuestionType,
+  TranscribeAndGenerateNextQuestionRequest,
+} from "@shared/types";
+import { calculateTranscribeAndGenerateNextQuestionRequest } from "@/app/utils/functions";
 
 interface InterviewBottomBarProps {
   organization: Organization;
@@ -36,7 +47,6 @@ interface InterviewBottomBarProps {
 
 const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
   organization,
-
   study,
   refetchInterviewSession,
   multipleChoiceOptionSelectionId,
@@ -48,11 +58,14 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
 }) => {
   const [currentQuestion, setCurrentQuestion] = useAtom(currentQuestionAtom);
   const [interviewSession, setInterviewSession] = useAtom(interviewSessionAtom);
+  const [responses, setResponses] = useAtom(responsesAtom);
+  const [currentResponse, setCurrentResponse] = useAtom(currentResponseAtom);
+  const [followUpQuestions, setFollowUpQuestions] = useAtom(
+    followUpQuestionsAtom,
+  );
 
   const isBackgroundLight = isColorLight(organization.secondaryColor ?? "");
-  const [currentResponseId, setCurrentResponseId] = useState<string | null>(
-    null,
-  );
+
   const createOpenEndedResponse =
     api.responses.createOpenEndedResponse.useMutation();
 
@@ -63,15 +76,6 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
     submitAudio,
     awaitingResponse: awaitingLLMResponse,
   } = useAudioRecorder({ baseQuestions: study.questions });
-
-  const conversationHistory = useConversationHistory(
-    study,
-    currentQuestion as CurrentQuestionType,
-    currentResponseId ?? "",
-    interviewSession!,
-  );
-
-  console.log({ conversationHistory });
 
   const startResponse = async () => {
     if (!navigator.mediaDevices?.getUserMedia) {
@@ -92,13 +96,15 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
             interviewSessionId: interviewSession?.id ?? "",
             followUpQuestionId: currentQuestion.id,
           });
-          setCurrentResponseId(response.id);
+          setCurrentResponse(response);
+          setResponses([...responses, response]);
         } else {
           const response = await createOpenEndedResponse.mutateAsync({
             questionId: currentQuestion?.id ?? "",
             interviewSessionId: interviewSession?.id ?? "",
           });
-          setCurrentResponseId(response.id);
+          setCurrentResponse(response);
+          setResponses([...responses, response]);
         }
       }
     } catch (err) {
@@ -109,17 +115,25 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
 
   const stopResponse = async () => {
     stopRecording();
-    console.log({ conversationHistory });
-    if (conversationHistory) {
-      try {
-        console.log({ conversationHistory });
-        const data = await submitAudio(conversationHistory);
-        refetchInterviewSession();
-        console.log({ data });
-      } catch (err) {
-        console.error("Error submitting audio:", err);
-        showErrorToast("Error submitting audio. Please try again.");
-      }
+    try {
+      console.log("stop here");
+
+      const requestBody = calculateTranscribeAndGenerateNextQuestionRequest({
+        currentQuestion,
+        interviewSession,
+        study,
+        responses,
+        followUpQuestions,
+        currentResponseId: currentResponse?.id ?? "",
+      });
+
+      console.log({ requestBody });
+      const data = await submitAudio(requestBody);
+
+      console.log({ data });
+    } catch (err) {
+      console.error("Error submitting audio:", err);
+      showErrorToast("Error submitting audio. Please try again.");
     }
   };
 

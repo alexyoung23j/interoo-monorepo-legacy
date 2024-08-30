@@ -15,7 +15,6 @@ interface MultipleChoiceSelectProps {
       optionOrder: number;
     }[];
   };
-  interviewSession: InterviewSession;
   organization: Organization;
   isBackgroundLight: boolean;
   multipleChoiceOptionSelectionId: string;
@@ -24,7 +23,6 @@ interface MultipleChoiceSelectProps {
 
 export const MultipleChoiceSelect: React.FC<MultipleChoiceSelectProps> = ({
   question,
-  interviewSession,
   organization,
   isBackgroundLight,
 }) => {
