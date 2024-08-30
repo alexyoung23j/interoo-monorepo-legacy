@@ -1,63 +1,49 @@
 import { FollowUpQuestion, Question, VideoStimulusType, FollowUpLevel } from "./generated/client";
 
+export type ConversationState = Array<{ 
+  questionText: string;
+  responseText?: string;
+  questionId: string;
+  responseId?: string;
+}>
+
 export interface TranscribeAndGenerateNextQuestionRequest {
-    initialQuestion: string;
-    initialQuestionId: string;
-    initialResponse: string | null;
-    responseIdToStore: string;
-    followUpQuestions: string[];
-    followUpResponses: string[];
-    interviewSessionId: string;
-    nextQuestionId: string;
-    followUpLevel: FollowUpLevel;
-    questionContext: string;
-    studyBackground: string;
-    shouldFollowUp: boolean;
+  nextBaseQuestionId: string;
+  currentBaseQuestionId: string;
+  currentBaseQuestionContext: string;
+  interviewSessionId: string;
+  followUpLevel: string;
+  studyBackground: string;
+  shouldFollowUp: boolean;
+  currentResponseId: string;
+  thread: ConversationState
 }
 
 export class TranscribeAndGenerateNextQuestionRequestBuilder {
   private data: TranscribeAndGenerateNextQuestionRequest = {
-    initialQuestion: "",
-    initialQuestionId: "",
-    initialResponse: null,
-    responseIdToStore: "",
-    followUpQuestions: [],
-    followUpResponses: [],
+    nextBaseQuestionId: "",
+    currentBaseQuestionId: "",
+    currentBaseQuestionContext: "",
     interviewSessionId: "",
-    nextQuestionId: "",
-    followUpLevel: FollowUpLevel.AUTOMATIC,
-    questionContext: "",
+    followUpLevel: "",
     studyBackground: "",
-    shouldFollowUp: false
+    shouldFollowUp: false,
+    currentResponseId: "",
+    thread: []
   };
 
-  setInitialQuestion(val: string): this {
-    this.data.initialQuestion = val;
+  setNextBaseQuestionId(val: string): this {
+    this.data.nextBaseQuestionId = val;
     return this;
   }
 
-  setInitialQuestionId(val: string): this {
-    this.data.initialQuestionId = val;
+  setCurrentBaseQuestionId(val: string): this {
+    this.data.currentBaseQuestionId = val;
     return this;
   }
 
-  setInitialResponse(val: string | null): this {
-    this.data.initialResponse = val;
-    return this;
-  }
-
-  setResponseIdToStore(val: string): this {
-    this.data.responseIdToStore = val;
-    return this;
-  }
-
-  setFollowUpQuestions(val: string[]): this {
-    this.data.followUpQuestions = val;
-    return this;
-  }
-
-  setFollowUpResponses(val: string[]): this {
-    this.data.followUpResponses = val;
+  setCurrentBaseQuestionContext(val: string): this {
+    this.data.currentBaseQuestionContext = val;
     return this;
   }
 
@@ -66,18 +52,8 @@ export class TranscribeAndGenerateNextQuestionRequestBuilder {
     return this;
   }
 
-  setNextQuestionId(val: string): this {
-    this.data.nextQuestionId = val;
-    return this;
-  }
-
-  setFollowUpLevel(val: FollowUpLevel): this {
+  setFollowUpLevel(val: string): this {
     this.data.followUpLevel = val;
-    return this;
-  }
-
-  setQuestionContext(val: string): this {
-    this.data.questionContext = val;
     return this;
   }
 
@@ -91,7 +67,16 @@ export class TranscribeAndGenerateNextQuestionRequestBuilder {
     return this;
   }
 
-  // Add this method
+  setCurrentResponseId(val: string): this {
+    this.data.currentResponseId = val;
+    return this;
+  }
+
+  setThread(val: ConversationState): this {
+    this.data.thread = val;
+    return this;
+  }
+
   set<K extends keyof TranscribeAndGenerateNextQuestionRequest>(
     key: K,
     value: TranscribeAndGenerateNextQuestionRequest[K]

@@ -3,9 +3,8 @@ import { Request, Response } from "express";
 import Busboy from 'busboy';
 import { transcribeAudio, decideFollowUpPromptIfNecessary, getFollowUpLevelValue } from "../utils/audioProcessing";
 import { FollowUpLevel } from "../../../shared/generated/client";
-import { TranscribeAndGenerateNextQuestionRequest, TranscribeAndGenerateNextQuestionResponse } from "../../../shared/types";
 import { prisma } from "..";
-import { TranscribeAndGenerateNextQuestionRequestBuilder } from "../../../shared/types";
+import { TranscribeAndGenerateNextQuestionRequestBuilder, ConversationState, TranscribeAndGenerateNextQuestionResponse, TranscribeAndGenerateNextQuestionRequest } from "../../../shared/types";
 
 const router = Router();
 
@@ -33,38 +32,36 @@ const handleAudioResponse = async (req: Request, res: Response) => {
 
   busboy.on('field', (fieldname, val) => {
     switch(fieldname) {
-      case 'followUpQuestions':
-      case 'followUpResponses':
-        try {
-          requestDataBuilder.set(fieldname, JSON.parse(val));
-        } catch (error) {
-          console.warn(`Failed to parse ${fieldname}, setting as empty array`);
-          requestDataBuilder.set(fieldname, []);
-        }
-        break;
-      case 'shouldFollowUp':
-        requestDataBuilder.set(fieldname, val === 'true');
-        break;
-      case 'followUpLevel':
-        requestDataBuilder.set(fieldname, val as FollowUpLevel);
-        break;
-      case 'initialResponse':
-      case 'initialQuestionId':
-      case 'initialQuestion':
-      case 'questionContext':
-      case 'studyBackground':
-      case 'responseIdToStore':
+      case 'nextBaseQuestionId':
+      case 'currentBaseQuestionId':
+      case 'currentBaseQuestionContext':
       case 'interviewSessionId':
-      case 'nextQuestionId':
+      case 'followUpLevel':
+      case 'studyBackground':
+      case 'currentResponseId':
         requestDataBuilder.set(fieldname as keyof TranscribeAndGenerateNextQuestionRequest, val);
         break;
+      case 'shouldFollowUp':
+        requestDataBuilder.setShouldFollowUp(val === 'true');
+        break;
+      case 'thread':
+        try {
+          const thread: ConversationState = JSON.parse(val);
+          requestDataBuilder.setThread(thread);
+        } catch (error) {
+          console.warn('Failed to parse thread, setting as empty array');
+          requestDataBuilder.setThread([]);
+        }
+        break;
+      default:
+        console.warn(`Unexpected field: ${fieldname}`);
     }
   });
 
   busboy.on('finish', async () => {
     const requestData = requestDataBuilder.build();
 
-    if (!audioBuffer || !requestData.initialQuestion || !requestData.initialQuestionId || !requestData.studyBackground || !requestData.responseIdToStore || !requestData.nextQuestionId || !requestData.interviewSessionId) {
+    if (!audioBuffer || !requestData.currentBaseQuestionId || !requestData.studyBackground || !requestData.nextBaseQuestionId || !requestData.nextBaseQuestionId || !requestData.interviewSessionId || !requestData.currentResponseId) {
       console.log({ requestData });
       return res.status(400).json({ error: 'Missing required fields' });
     }
@@ -78,7 +75,7 @@ const handleAudioResponse = async (req: Request, res: Response) => {
       const dbUpdateStartTime = Date.now();
      
       const newResponse = await prisma.response.update({
-          where: { id: requestData.responseIdToStore },
+          where: { id: requestData.currentResponseId },
           data: { fastTranscribedText: transcribedText }
         });
       
@@ -90,29 +87,22 @@ const handleAudioResponse = async (req: Request, res: Response) => {
         isFollowUp: false
       };
 
-      if (!requestData.shouldFollowUp || requestData.followUpResponses.length > followUpLevelValue || requestData.followUpQuestions.length === 0) {
-        response.isFollowUp = requestData.followUpQuestions.length > 0;
-        response.nextQuestionId = requestData.nextQuestionId;
+      if (!requestData.shouldFollowUp || requestData.thread.length > followUpLevelValue) {
+        response.isFollowUp = requestData.thread.length > 0;
+        response.nextQuestionId = requestData.nextBaseQuestionId;
         // We don't have follow ups, so just move to the next question
         prisma.$transaction(async (prisma) => {
           await prisma.interviewSession.update({
             where: { id: requestData.interviewSessionId },
-            data: { currentQuestionId: requestData.nextQuestionId }
+            data: { currentQuestionId: requestData.nextBaseQuestionId }
           });
         });
       } else {
         const followUpStartTime = Date.now();
-        const { shouldFollowUp, followUpQuestion } = await decideFollowUpPromptIfNecessary(
-          requestData.initialQuestion,
-          requestData.initialResponse ?? "",
-          requestData.followUpQuestions,
-          requestData.followUpResponses,
-          requestData.questionContext,
-          requestData.studyBackground
-        );
+        const { shouldFollowUp, followUpQuestion } = await decideFollowUpPromptIfNecessary(requestData, transcribedText);
         followUpDecisionTime = Date.now() - followUpStartTime;
 
-        if (shouldFollowUp) {
+        if (shouldFollowUp && followUpQuestion) {
           response.isFollowUp = true;
 
           const updatedSession = await prisma.interviewSession.update({
@@ -120,10 +110,10 @@ const handleAudioResponse = async (req: Request, res: Response) => {
             data: {
               FollowUpQuestions: {
                 create: {
-                  title: followUpQuestion ?? '',
+                  title: followUpQuestion,
                   body: "",
-                  followUpQuestionOrder: requestData.followUpQuestions.length + 1,
-                  parentQuestionId: requestData.initialQuestionId,
+                  followUpQuestionOrder: requestData.thread.length + 1,
+                  parentQuestionId: requestData.currentBaseQuestionId,
                   Response: {
                     connect: { id: newResponse.id }
                   }
@@ -141,13 +131,13 @@ const handleAudioResponse = async (req: Request, res: Response) => {
           const newFollowUp = updatedSession.FollowUpQuestions[0];
           response.followUpQuestion = newFollowUp;
         } else {
-          response.isFollowUp = requestData.followUpQuestions.length > 0;
-          response.nextQuestionId = requestData.nextQuestionId;
+          response.isFollowUp = requestData.thread.length > 0;
+          response.nextQuestionId = requestData.nextBaseQuestionId;
           // We don't have follow ups, so just move to the next question
           prisma.$transaction(async (prisma) => {
             await prisma.interviewSession.update({
               where: { id: requestData.interviewSessionId },
-              data: { currentQuestionId: requestData.nextQuestionId }
+              data: { currentQuestionId: requestData.nextBaseQuestionId }
             });
           });
         }
