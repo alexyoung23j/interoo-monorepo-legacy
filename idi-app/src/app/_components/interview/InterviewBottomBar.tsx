@@ -116,8 +116,6 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
   const stopResponse = async () => {
     stopRecording();
     try {
-      console.log("stop here");
-
       const requestBody = calculateTranscribeAndGenerateNextQuestionRequest({
         currentQuestion,
         interviewSession,
@@ -127,10 +125,9 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
         currentResponseId: currentResponse?.id ?? "",
       });
 
-      console.log({ requestBody });
       const data = await submitAudio(requestBody);
 
-      console.log({ data });
+      console.log({ requestBody, response: data });
     } catch (err) {
       console.error("Error submitting audio:", err);
       showErrorToast("Error submitting audio. Please try again.");

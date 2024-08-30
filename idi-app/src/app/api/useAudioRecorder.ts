@@ -78,7 +78,7 @@ export function useAudioRecorder({
         }
       };
 
-      mediaRecorder.current.start(1000); // Collect data every second
+      mediaRecorder.current.start(100); // Collect data every second
 
       recordingTimeout.current = setTimeout(
         () => stopRecording(),
@@ -95,11 +95,14 @@ export function useAudioRecorder({
 
   const stopRecording = useCallback(() => {
     if (mediaRecorder.current && mediaRecorder.current.state !== "inactive") {
-      mediaRecorder.current.stop();
       setIsRecording(false);
       if (recordingTimeout.current) {
         clearTimeout(recordingTimeout.current);
       }
+      // Add a short delay before stopping the recorder
+      setTimeout(() => {
+        mediaRecorder.current?.stop();
+      }, 200); // 100ms delay
     }
   }, []);
 
@@ -118,10 +121,16 @@ export function useAudioRecorder({
         `recording.${mimeType.split("/")[1]}`,
       );
 
-      Object.entries(additionalData).forEach(([key, value]) => {
-        formData.append(key, value);
-      });
+      // Handle the thread field separately
+      const { thread, ...otherData } = additionalData;
 
+      // Stringify the thread data
+      formData.append("thread", JSON.stringify(thread));
+
+      // Append other data
+      Object.entries(otherData).forEach(([key, value]) => {
+        formData.append(key, String(value));
+      });
       try {
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/audio-response`,
@@ -168,7 +177,7 @@ export function useAudioRecorder({
         throw error;
       }
     },
-    [],
+    [responses, currentResponse, followUpQuestions],
   );
 
   useEffect(() => {

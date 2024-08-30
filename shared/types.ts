@@ -1,7 +1,7 @@
 import { FollowUpQuestion, Question, VideoStimulusType, FollowUpLevel } from "./generated/client";
 
 export type ConversationState = Array<{ 
-  questionText: string;
+  questionText?: string;
   responseText?: string;
   questionId: string;
   responseId?: string;
@@ -90,25 +90,6 @@ export class TranscribeAndGenerateNextQuestionRequestBuilder {
   }
 }
 
-export type ConversationState = Array<{ 
-  questionText: string;
-  responseText?: string;
-  questionId: string;
-  responseId?: string;
-}>
-
-export interface TranscribeAndGenerateNextQuestionRequest {
-  nextBaseQuestionId: string;
-  currentBaseQuestionId: string;
-  currentBaseQuestionContext: string;
-  interviewSessionId: string;
-  followUpLevel: string;
-  studyBackground: string;
-  shouldFollowUp: boolean;
-  currentResponseId: string;
-  thread: ConversationState
-}
-
 
 export interface UploadUrlRequest {
     organizationId: string;
@@ -128,7 +109,8 @@ export interface UploadUrlRequest {
 export interface TranscribeAndGenerateNextQuestionResponse {
   nextQuestionId?: string;
   isFollowUp: boolean;
-  followUpQuestion?: FollowUpQuestion
+  followUpQuestion?: FollowUpQuestion,
+  transcribedText: string
 }
 
 // NEed to keep up to date with Prisma schema

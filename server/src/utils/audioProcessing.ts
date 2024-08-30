@@ -47,18 +47,25 @@ export const decideFollowUpPromptIfNecessary = async (
       conversation_history: conversationHistory,
       format_instructions: parser.getFormatInstructions(),
     });
-  
-    console.log("Follow-up decision:", response);
-  
+    
+    let parsedResponse;
+    try {
+      parsedResponse = typeof response === 'string' ? JSON.parse(response) : response;
+    } catch (error) {
+      console.error('Error parsing LLM response:', error);
+      return { shouldFollowUp: false };
+    }
+
     const result = {
-        shouldFollowUp: response.shouldFollowUp === 'true' || response.shouldFollowUp === 'yes', // Redundant for dumb model
-        followUpQuestion: response.followUpQuestion !== 'null' || response.followUpQuestion !== undefined ? response.followUpQuestion : undefined
-      };
-      
+      shouldFollowUp: parsedResponse.shouldFollowUp === true || parsedResponse.shouldFollowUp === 'true',
+      followUpQuestion: parsedResponse.followUpQuestion !== null ? parsedResponse.followUpQuestion : undefined
+    };
+
       return result;
 }
 
 const buildConversationHistory = (thread: ConversationState, transcribedText: string): string => {
+  console.log("the thread", thread)
   let history = '';
   for (const item of thread) {
     history += `Question: ${item.questionText}\n`;

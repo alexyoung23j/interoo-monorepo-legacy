@@ -88,7 +88,7 @@ export function calculateTranscribeAndGenerateNextQuestionRequest({
       });
 
       const followUpResponse = responses.find(
-        (r) => r.questionId === followUp.id,
+        (r) => r.followUpQuestionId === followUp.id,
       );
       if (followUpResponse) {
         currentQuestionThreadState.push({
