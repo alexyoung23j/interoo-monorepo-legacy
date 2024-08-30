@@ -1,7 +1,8 @@
-import { FollowUpQuestion, Question } from "./generated/client";
+import { FollowUpQuestion, Question, VideoStimulusType } from "./generated/client";
 
 export interface TranscribeAndGenerateNextQuestionRequest {
     initialQuestion: string;
+    initialQuestionId: string;
     initialResponse?: string;
     responseIdToStore: string
     followUpQuestions: string[];
@@ -11,6 +12,7 @@ export interface TranscribeAndGenerateNextQuestionRequest {
     followUpLevel: string;
     questionContext: string;
     studyBackground: string;
+    shouldFollowUp: boolean;
 }
 
 export interface UploadUrlRequest {
@@ -28,4 +30,33 @@ export interface UploadUrlRequest {
     };
 }
 
-export type CurrentQuestionType = Question | FollowUpQuestion;
+export interface TranscribeAndGenerateNextQuestionResponse {
+  nextQuestionId?: string;
+  isFollowUp: boolean;
+  followUpQuestion?: FollowUpQuestion
+}
+
+// NEed to keep up to date with Prisma schema
+export type BaseQuestionExtended = Question & {
+  imageStimuli?: {
+    bucketUrl: string;
+    altText?: string | null;
+    title?: string | null;
+  }[];
+  videoStimuli?: {
+    url: string;
+    title?: string | null;
+    type: VideoStimulusType;
+  }[];
+  websiteStimuli?: {
+    websiteUrl: string;
+    title?: string | null;
+  }[];
+  multipleChoiceOptions?: {
+    id: string;
+    optionText: string;
+    optionOrder: number;
+  }[];
+}
+
+export type CurrentQuestionType = BaseQuestionExtended | FollowUpQuestion;

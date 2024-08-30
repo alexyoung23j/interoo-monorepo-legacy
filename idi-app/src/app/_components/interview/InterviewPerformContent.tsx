@@ -10,13 +10,14 @@ import {
   Response,
 } from "@shared/generated/client";
 import { api } from "@/trpc/react";
+import {
+  currentQuestionAtom,
+  responsesAtom,
+  interviewSessionAtom,
+} from "@/app/state/atoms";
+import { useAtom } from "jotai";
 
 interface InterviewPerformContentProps {
-  calculatedCurrentQuestion: Question;
-  interviewSession: InterviewSession & {
-    responses: Response[];
-    FollowUpQuestions: FollowUpQuestion[];
-  };
   study: Study & { questions: Question[] };
   organization: Organization;
   refetchInterviewSession: () => void;
@@ -26,13 +27,14 @@ interface InterviewPerformContentProps {
 export const InterviewPerformContent: React.FC<
   InterviewPerformContentProps
 > = ({
-  calculatedCurrentQuestion,
-  interviewSession,
   organization,
   study,
   refetchInterviewSession,
   interviewSessionRefetching,
 }) => {
+  const [currentQuestion, setCurrentQuestion] = useAtom(currentQuestionAtom);
+  const [interviewSession, setInterviewSession] = useAtom(interviewSessionAtom);
+
   const [multipleChoiceOptionSelectionId, setMultipleChoiceOptionSelectionId] =
     useState<string | null>(null);
   const [rangeSelectionValue, setRangeSelectionValue] = useState<number | null>(
@@ -51,10 +53,10 @@ export const InterviewPerformContent: React.FC<
 
     await createMultipleChoiceResponse.mutateAsync({
       multipleChoiceOptionSelectionId: multipleChoiceOptionSelectionId,
-      interviewSessionId: interviewSession.id,
+      interviewSessionId: interviewSession?.id ?? "",
       studyId: study.id,
-      currentQuestionOrder: calculatedCurrentQuestion.questionOrder,
-      questionId: calculatedCurrentQuestion.id,
+      currentQuestionOrder: (currentQuestion as Question).questionOrder,
+      questionId: (currentQuestion as Question).id,
     });
     refetchInterviewSession();
     setAwaitingOptionResponse(false);
@@ -67,23 +69,19 @@ export const InterviewPerformContent: React.FC<
 
     await createRangeResponse.mutateAsync({
       rangeSelection: rangeSelectionValue,
-      interviewSessionId: interviewSession.id,
+      interviewSessionId: interviewSession?.id ?? "",
       studyId: study.id,
-      currentQuestionOrder: calculatedCurrentQuestion.questionOrder,
-      questionId: calculatedCurrentQuestion.id,
+      currentQuestionOrder: (currentQuestion as Question).questionOrder,
+      questionId: (currentQuestion as Question).id,
     });
     refetchInterviewSession();
     setAwaitingOptionResponse(false);
     setRangeSelectionValue(null);
   };
 
-  console.log({ calculatedCurrentQuestion });
-
   return (
     <>
       <DisplayQuestion
-        question={calculatedCurrentQuestion}
-        interviewSession={interviewSession}
         organization={organization}
         multipleChoiceOptionSelectionId={multipleChoiceOptionSelectionId}
         setMultipleChoiceOptionSelectionId={setMultipleChoiceOptionSelectionId}
@@ -92,8 +90,6 @@ export const InterviewPerformContent: React.FC<
       />
       <InterviewBottomBar
         organization={organization}
-        question={calculatedCurrentQuestion}
-        interviewSession={interviewSession}
         study={study}
         refetchInterviewSession={refetchInterviewSession}
         multipleChoiceOptionSelectionId={multipleChoiceOptionSelectionId}

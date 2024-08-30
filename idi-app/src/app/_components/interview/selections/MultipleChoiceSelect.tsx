@@ -6,7 +6,6 @@ import type {
   Organization,
 } from "@shared/generated/client";
 import { getColorWithOpacity, isColorLight } from "@/app/utils/color";
-import { cx } from "@/tailwind/styling";
 
 interface MultipleChoiceSelectProps {
   question: Question & {
@@ -19,8 +18,8 @@ interface MultipleChoiceSelectProps {
   interviewSession: InterviewSession;
   organization: Organization;
   isBackgroundLight: boolean;
-  multipleChoiceOptionSelectionId: string | null;
-  setMultipleChoiceOptionSelectionId: (id: string | null) => void;
+  multipleChoiceOptionSelectionId: string;
+  setMultipleChoiceOptionSelectionId: (id: string) => void;
 }
 
 export const MultipleChoiceSelect: React.FC<MultipleChoiceSelectProps> = ({
@@ -28,21 +27,16 @@ export const MultipleChoiceSelect: React.FC<MultipleChoiceSelectProps> = ({
   interviewSession,
   organization,
   isBackgroundLight,
-  multipleChoiceOptionSelectionId,
-  setMultipleChoiceOptionSelectionId,
 }) => {
   const newColor = getColorWithOpacity(organization.secondaryColor ?? "", 0.15);
-  const hoverColor = getColorWithOpacity(
-    organization.secondaryColor ?? "",
-    0.25,
-  );
   const selectedColor = getColorWithOpacity(
     organization.secondaryColor ?? "",
     0.4,
   );
 
   const handleSelection = (optionId: string) => {
-    setMultipleChoiceOptionSelectionId(optionId);
+    // TODO: Implement selection logic
+    console.log("Selected option:", optionId);
   };
 
   if (
@@ -62,21 +56,12 @@ export const MultipleChoiceSelect: React.FC<MultipleChoiceSelectProps> = ({
           <Button
             key={option.id}
             variant="unstyled"
-            className={cx(
-              "flex min-h-12 w-full max-w-md gap-3 rounded-[1px] border border-black border-opacity-50 text-black transition-colors",
-              {
-                "bg-[var(--button-bg)] hover:bg-[var(--button-hover-bg)]":
-                  multipleChoiceOptionSelectionId !== option.id,
-                "bg-[var(--button-selected-bg)]":
-                  multipleChoiceOptionSelectionId === option.id,
-              },
-            )}
+            className={`flex min-h-12 w-full max-w-md gap-3 rounded-[1px] border border-black border-opacity-50 bg-[var(--button-bg)] text-black transition-colors hover:bg-[var(--button-hover-bg)]`}
             onClick={() => handleSelection(option.id)}
             style={
               {
                 "--button-bg": newColor,
-                "--button-selected-bg": selectedColor,
-                "--button-hover-bg": hoverColor,
+                "--button-hover-bg": selectedColor,
               } as React.CSSProperties
             }
           >

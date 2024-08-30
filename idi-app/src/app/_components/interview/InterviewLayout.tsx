@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import {
   FollowUpQuestion,
   InterviewSession,
@@ -19,6 +19,13 @@ import { InterviewStartContent } from "./setup/InterviewStartContent";
 import InterviewFinishedContent from "./setup/InterviewFinishedContent";
 import { InterviewScreenLayout } from "./InterviewScreenLayout";
 import { InterviewPerformContent } from "./InterviewPerformContent";
+import {
+  currentQuestionAtom,
+  initializeInterviewAtom,
+  interviewSessionAtom,
+  responsesAtom,
+} from "@/app/state/atoms";
+import { useAtom } from "jotai";
 
 interface InterviewLayoutProps {
   study: Study & { questions: Question[] };
@@ -36,43 +43,50 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
   const params = useParams();
   const interviewSessionId = params.interviewSessionId as string;
 
-  // This is the state for the entire interview
-  const {
-    data: interviewSessionData,
-    isLoading: interviewSessionLoading,
-    isRefetching: interviewSessionRefetching,
-    refetch: refetchInterviewSession,
-  } = api.interviews.getInterviewSession.useQuery({
+  const [currentQuestion, setCurrentQuestion] = useAtom(currentQuestionAtom);
+  const [responses, setResponses] = useAtom(responsesAtom);
+  const [interviewSession, setInterviewSession] = useAtom(interviewSessionAtom);
+  const [, initializeInterview] = useAtom(initializeInterviewAtom);
+
+  const { data, isLoading } = api.interviews.getInterviewSession.useQuery({
     interviewSessionId,
   });
 
-  const { interviewSession, calculatedCurrentQuestion } =
-    interviewSessionData ?? {};
+  useEffect(() => {
+    if (data) {
+      const { interviewSession, calculatedCurrentQuestion } = data;
+      setCurrentQuestion(calculatedCurrentQuestion ?? null);
+      setResponses(interviewSession?.responses ?? []);
+      setInterviewSession(interviewSession ?? null);
+    }
+  }, [data, setCurrentQuestion, setResponses, setInterviewSession]);
 
+  useEffect(() => {
+    initializeInterview(interviewSessionId);
+  }, [interviewSessionId, initializeInterview]);
+
+  console.log({ interviewSession });
   // Interview Phases
-  const hasCurrentQuestion = calculatedCurrentQuestion !== null;
+  const hasCurrentQuestion = currentQuestion !== null;
 
   const renderInterviewContent = () => {
     switch (interviewSession?.status) {
       case InterviewSessionStatus.IN_PROGRESS:
         return hasCurrentQuestion ? (
           <InterviewPerformContent
-            calculatedCurrentQuestion={calculatedCurrentQuestion as Question}
-            interviewSession={interviewSession}
             organization={organization}
             study={study}
-            refetchInterviewSession={refetchInterviewSession}
-            interviewSessionRefetching={interviewSessionRefetching}
+            refetchInterviewSession={() => {}}
+            interviewSessionRefetching={false}
           />
         ) : null;
       case InterviewSessionStatus.NOT_STARTED:
         return (
           <>
             <InterviewStartContent
-              interviewSession={interviewSession as InterviewSession}
               organization={organization}
               study={study}
-              refetchInterviewSession={refetchInterviewSession}
+              refetchInterviewSession={() => {}}
             />
             <div className="h-20"></div>
           </>
@@ -95,10 +109,9 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
         return (
           <>
             <InterviewStartContent
-              interviewSession={interviewSession as InterviewSession}
               organization={organization}
               study={study}
-              refetchInterviewSession={refetchInterviewSession}
+              refetchInterviewSession={() => {}}
             />
             <div className="h-20"></div>
           </>
@@ -110,7 +123,7 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
     <InterviewScreenLayout
       organization={organization}
       backgroundLight={backgroundLight}
-      isLoading={interviewSessionLoading}
+      isLoading={isLoading}
     >
       <>
         <div className="flex w-full md:p-8">
@@ -127,7 +140,7 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
             onBack={() => {
               console.log("chill");
             }}
-            calculatedCurrentQuestion={calculatedCurrentQuestion!}
+            calculatedCurrentQuestion={currentQuestion!}
           />
         </div>
         {renderInterviewContent()}

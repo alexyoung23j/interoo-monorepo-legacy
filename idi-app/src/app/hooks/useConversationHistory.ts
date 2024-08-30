@@ -27,6 +27,7 @@ export function useConversationHistory(
 
     const result: TranscribeAndGenerateNextQuestionRequest = {
       initialQuestion: currentQuestion.title,
+      initialQuestionId: currentQuestionId,
       initialResponse: undefined,
       responseIdToStore: currentResponseId,
       followUpQuestions: [],
@@ -35,6 +36,8 @@ export function useConversationHistory(
       studyBackground: study.studyBackground || "",
       interviewSessionId: interviewSession?.id ?? "",
       nextQuestionId: "",
+      followUpLevel: currentQuestion.followUpLevel,
+      shouldFollowUp: currentQuestion.shouldFollowUp,
     };
 
     // Find initial response

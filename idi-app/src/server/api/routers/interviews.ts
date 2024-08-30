@@ -32,7 +32,7 @@ export const interviewsRouter = createTRPCRouter({
         });
       }
 
-      console.log(study.maxResponses, study._count.interviews);
+      console.log();
 
       if (study.maxResponses && study._count.interviews >= study.maxResponses) {
         throw new TRPCError({
@@ -169,15 +169,25 @@ export const interviewsRouter = createTRPCRouter({
       }
 
       // Update the interview session with the first question
-      const updatedInterviewSession = await ctx.db.interviewSession.update({
+      await ctx.db.interviewSession.update({
         where: { id: interviewSessionId },
         data: {
           currentQuestionId: firstQuestion.id,
           status: "IN_PROGRESS",
           lastUpdatedTime: new Date(),
         },
+        include: {
+          CurrentQuestion: {
+            include: {
+              imageStimuli: true,
+              videoStimuli: true,
+              websiteStimuli: true,
+              multipleChoiceOptions: true,
+            },
+          },
+        },
       });
 
-      return updatedInterviewSession;
+      return firstQuestion;
     }),
 });

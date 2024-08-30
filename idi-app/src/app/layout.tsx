@@ -1,4 +1,5 @@
 import "@/styles/globals.css";
+import "react-toastify/dist/ReactToastify.css"; // Add this line
 
 import { GeistSans } from "geist/font/sans";
 import { type Metadata } from "next";
@@ -6,6 +7,7 @@ import { type Metadata } from "next";
 import { TRPCReactProvider } from "@/trpc/react";
 
 import { Nunito_Sans } from "next/font/google";
+import { ToastContainer } from "react-toastify";
 
 const nunitoSans = Nunito_Sans({
   subsets: ["latin"],
@@ -25,7 +27,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${GeistSans.variable}`}>
       <body className={nunitoSans.className}>
-        <TRPCReactProvider>{children}</TRPCReactProvider>
+        <TRPCReactProvider>
+          {children}
+          <ToastContainer />
+        </TRPCReactProvider>
       </body>
     </html>
   );

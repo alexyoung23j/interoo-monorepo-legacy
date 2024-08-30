@@ -12,27 +12,11 @@ import { WebsiteStimuli } from "./stimuli/WebsiteStimuli";
 import { isColorLight } from "@/app/utils/color";
 import { MultipleChoiceSelect } from "./selections/MultipleChoiceSelect";
 import { RangeChoiceSelect } from "./selections/RangeChoiceSelect";
+import { currentQuestionAtom, interviewSessionAtom } from "@/app/state/atoms";
+import { useAtom } from "jotai";
+import { BaseQuestionExtended } from "@shared/types";
 
 interface DisplayQuestionProps {
-  question: Question & {
-    imageStimuli?: {
-      bucketUrl: string;
-      altText?: string | null;
-      title?: string | null;
-    }[];
-    videoStimuli?: {
-      url: string;
-      title?: string | null;
-      type: VideoStimulusType;
-    }[];
-    websiteStimuli?: { websiteUrl: string; title?: string | null }[];
-    multipleChoiceOptions?: {
-      id: string;
-      optionText: string;
-      optionOrder: number;
-    }[];
-  };
-  interviewSession: InterviewSession;
   organization: Organization;
   multipleChoiceOptionSelectionId: string | null;
   setMultipleChoiceOptionSelectionId: (id: string | null) => void;
@@ -41,8 +25,6 @@ interface DisplayQuestionProps {
 }
 
 export const DisplayQuestion: React.FC<DisplayQuestionProps> = ({
-  question,
-  interviewSession,
   organization,
   multipleChoiceOptionSelectionId,
   setMultipleChoiceOptionSelectionId,
@@ -50,34 +32,44 @@ export const DisplayQuestion: React.FC<DisplayQuestionProps> = ({
   setRangeSelectionValue,
 }) => {
   const isBackgroundLight = isColorLight(organization.secondaryColor ?? "");
-
-  console.log({ question });
+  const [currentQuestion, setCurrentQuestion] = useAtom(currentQuestionAtom);
+  const [interviewSession, setInterviewSession] = useAtom(interviewSessionAtom);
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-4 p-4 md:w-[80%] md:py-0">
-      <div className="text-center text-lg md:text-2xl">{question.title}</div>
-      <ImageStimuli imageStimuli={question.imageStimuli} />
-      <VideoStimuli videoStimuli={question.videoStimuli} />
+      <div className="text-center text-lg md:text-2xl">
+        {currentQuestion?.title}
+      </div>
+      <ImageStimuli
+        imageStimuli={(currentQuestion as BaseQuestionExtended)?.imageStimuli}
+      />
+      <VideoStimuli
+        videoStimuli={(currentQuestion as BaseQuestionExtended)?.videoStimuli}
+      />
       <WebsiteStimuli
-        websiteStimuli={question.websiteStimuli}
+        websiteStimuli={
+          (currentQuestion as BaseQuestionExtended).websiteStimuli
+        }
         isBackgroundLight={isBackgroundLight}
       />
-      {question.questionType === "MULTIPLE_CHOICE" && (
+      {currentQuestion?.questionType === "MULTIPLE_CHOICE" && (
         <MultipleChoiceSelect
-          question={question}
-          interviewSession={interviewSession}
+          question={currentQuestion as BaseQuestionExtended}
+          interviewSession={interviewSession!}
           organization={organization}
           isBackgroundLight={isBackgroundLight}
-          multipleChoiceOptionSelectionId={multipleChoiceOptionSelectionId}
+          multipleChoiceOptionSelectionId={
+            multipleChoiceOptionSelectionId ?? ""
+          }
           setMultipleChoiceOptionSelectionId={
             setMultipleChoiceOptionSelectionId
           }
         />
       )}
-      {question.questionType === "RANGE" && (
+      {currentQuestion?.questionType === "RANGE" && (
         <RangeChoiceSelect
-          question={question}
-          interviewSession={interviewSession}
+          question={currentQuestion as BaseQuestionExtended}
+          interviewSession={interviewSession!}
           organization={organization}
           isBackgroundLight={isBackgroundLight}
           lowLabel={"least"}
