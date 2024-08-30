@@ -5,7 +5,7 @@ import { MessageContent, MessageContentText } from "@langchain/core/messages";
 import { FollowUpLevel } from "../../../shared/generated/client";
 import { RunnableSequence } from "@langchain/core/runnables";
 import { StructuredOutputParser } from "@langchain/core/output_parsers";
-
+import { ConversationState, TranscribeAndGenerateNextQuestionRequest } from "../../../shared/types";
 
 export const transcribeAudio = async (audioBuffer: Buffer): Promise<string> => {
   try {
@@ -18,14 +18,10 @@ export const transcribeAudio = async (audioBuffer: Buffer): Promise<string> => {
 };
 
 export const decideFollowUpPromptIfNecessary = async (
-    initialQuestionBody: string,
-    initialQuestionResponse: string,
-    followUpQuestions: string[],
-    followUpResponses: string[],
-    questionContext: string,
-    studyBackground: string
+    requestData: TranscribeAndGenerateNextQuestionRequest,
+    transcribedText: string
   ): Promise<{ shouldFollowUp: boolean; followUpQuestion?: string }> => {
-    const conversationHistory = buildConversationHistory(initialQuestionBody, initialQuestionResponse, followUpQuestions, followUpResponses);
+    const conversationHistory = buildConversationHistory(requestData.thread, transcribedText);
     const promptTemplate = buildPromptTemplate();
     const parser = StructuredOutputParser.fromNamesAndDescriptions({
       shouldFollowUp: "boolean indicating whether a follow-up question is needed, true or false",
@@ -45,8 +41,8 @@ export const decideFollowUpPromptIfNecessary = async (
     ]);
   
     const response = await chain.invoke({
-      bg: studyBackground,
-      ctx: questionContext,
+      bg: requestData.studyBackground,
+      ctx: requestData.currentBaseQuestionContext,
       conversation_history: conversationHistory,
       format_instructions: parser.getFormatInstructions(),
     });
@@ -58,13 +54,20 @@ export const decideFollowUpPromptIfNecessary = async (
         followUpQuestion: response.followUpQuestion !== 'null' ? response.followUpQuestion : undefined
       };
       
-      return result;}
+      return result;
+}
 
-const buildConversationHistory = (initialQuestion: string, initialResponse: string, followUpQuestions: string[], followUpResponses: string[]): string => {
-  let history = `Initial Question: ${initialQuestion}\nInitial Response: ${initialResponse}\n`;
-  for (let i = 0; i < followUpQuestions.length; i++) {
-    history += `Follow-up Question ${i + 1}: ${followUpQuestions[i]}\n`;
-    history += `Follow-up Response ${i + 1}: ${followUpResponses[i]}\n`;
+const buildConversationHistory = (thread: ConversationState, transcribedText: string): string => {
+  let history = '';
+  for (const item of thread) {
+    history += `Question: ${item.questionText}\n`;
+    if (item.responseText) {
+      history += `Response: ${item.responseText}\n`;
+    }
+  }
+  // Add the latest transcribed response
+  if (thread.length > 0) {
+    history += `Response: ${transcribedText}\n`;
   }
   return history;
 };
