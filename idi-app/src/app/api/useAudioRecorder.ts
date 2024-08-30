@@ -1,6 +1,12 @@
 import { api } from "@/trpc/react";
-import { TranscribeAndGenerateNextQuestionRequest } from "@shared/types";
+import {
+  TranscribeAndGenerateNextQuestionRequest,
+  TranscribeAndGenerateNextQuestionResponse,
+} from "@shared/types";
 import { useState, useRef, useCallback, useEffect } from "react";
+import { currentQuestionAtom } from "../state/atoms";
+import { useAtom } from "jotai";
+import { Question } from "@shared/generated/client";
 
 interface AudioRecorderHook {
   isRecording: boolean;
@@ -16,22 +22,18 @@ interface AudioRecorderHook {
 const MAX_RECORDING_TIME = 15 * 60 * 1000; // 15 minutes
 
 export function useAudioRecorder({
-  interviewSessionId,
+  baseQuestions,
 }: {
-  interviewSessionId: string;
+  baseQuestions: Question[];
 }): AudioRecorderHook {
   const [isRecording, setIsRecording] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [awaitingResponse, setAwaitingResponse] = useState(false); // New state
+  const [, setCurrentQuestion] = useAtom(currentQuestionAtom);
 
   const mediaRecorder = useRef<MediaRecorder | null>(null);
   const audioChunks = useRef<Blob[]>([]);
   const recordingTimeout = useRef<NodeJS.Timeout | null>(null);
-
-  const { refetch: refetchInterviewSession } =
-    api.interviews.getInterviewSession.useQuery({
-      interviewSessionId,
-    });
 
   const startRecording = useCallback(async () => {
     try {
@@ -123,16 +125,22 @@ export function useAudioRecorder({
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        const data = await response.json();
+        const data: TranscribeAndGenerateNextQuestionResponse =
+          await response.json();
 
-        console.log({ data });
+        if (data.isFollowUp && data.followUpQuestion) {
+          setCurrentQuestion(data.followUpQuestion);
+        } else {
+          const nextQuestionId = data.nextQuestionId;
+          const nextQuestion = baseQuestions.find(
+            (question) => question.id === nextQuestionId,
+          );
+          setCurrentQuestion(nextQuestion as Question);
+        }
 
         // Clear audio chunks after successful submission
         audioChunks.current = [];
-
-        refetchInterviewSession().then(() => {
-          setAwaitingResponse(false); // Set to false after successful response
-        });
+        setAwaitingResponse(false);
 
         return data;
       } catch (error) {

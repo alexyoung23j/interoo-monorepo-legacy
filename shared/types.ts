@@ -2,6 +2,7 @@ import { FollowUpQuestion, Question, VideoStimulusType } from "./generated/clien
 
 export interface TranscribeAndGenerateNextQuestionRequest {
     initialQuestion: string;
+    initialQuestionId: string;
     initialResponse?: string;
     responseIdToStore: string
     followUpQuestions: string[];
@@ -11,6 +12,7 @@ export interface TranscribeAndGenerateNextQuestionRequest {
     followUpLevel: string;
     questionContext: string;
     studyBackground: string;
+    shouldFollowUp: boolean;
 }
 
 export interface UploadUrlRequest {
@@ -29,10 +31,9 @@ export interface UploadUrlRequest {
 }
 
 export interface TranscribeAndGenerateNextQuestionResponse {
-  nextQuestionId: string;
-  nextQuestionText: string;
-  isFollowUp: string;
-
+  nextQuestionId?: string;
+  isFollowUp: boolean;
+  followUpQuestion?: FollowUpQuestion
 }
 
 // NEed to keep up to date with Prisma schema

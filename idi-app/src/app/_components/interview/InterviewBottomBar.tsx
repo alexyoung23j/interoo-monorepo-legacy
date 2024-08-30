@@ -61,7 +61,7 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
     stopRecording,
     submitAudio,
     awaitingResponse: awaitingLLMResponse,
-  } = useAudioRecorder({ interviewSessionId: interviewSession?.id ?? "" });
+  } = useAudioRecorder({ baseQuestions: study.questions });
 
   const conversationHistory = useConversationHistory(
     study,

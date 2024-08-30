@@ -3,8 +3,8 @@ import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { ChatOpenAI } from "@langchain/openai";
 import { MessageContent, MessageContentText } from "@langchain/core/messages";
 import { FollowUpLevel } from "../../../shared/generated/client";
-import { StructuredOutputParser } from "@langchain/core/dist/output_parsers";
 import { RunnableSequence } from "@langchain/core/runnables";
+import { StructuredOutputParser } from "@langchain/core/output_parsers";
 
 
 export const transcribeAudio = async (audioBuffer: Buffer): Promise<string> => {
@@ -28,11 +28,15 @@ export const decideFollowUpPromptIfNecessary = async (
     const conversationHistory = buildConversationHistory(initialQuestionBody, initialQuestionResponse, followUpQuestions, followUpResponses);
     const promptTemplate = buildPromptTemplate();
     const parser = StructuredOutputParser.fromNamesAndDescriptions({
-      shouldFollowUp: "boolean indicating whether a follow-up question is needed",
+      shouldFollowUp: "boolean indicating whether a follow-up question is needed, true or false",
       followUpQuestion: "the text of the follow-up question if needed, otherwise null",
     });
     const prompt = ChatPromptTemplate.fromTemplate(promptTemplate);
-    const llm = new ChatOpenAI({ model: "gpt-4" });
+    const llm = new ChatOpenAI({ model: "gpt-4o" }).bind({
+      response_format: {
+        type: "json_object",
+      },
+    });
   
     const chain = RunnableSequence.from([
       prompt,
@@ -50,7 +54,7 @@ export const decideFollowUpPromptIfNecessary = async (
     console.log("Follow-up decision:", response);
   
     const result = {
-        shouldFollowUp: response.shouldFollowUp === 'true',
+        shouldFollowUp: response.shouldFollowUp === 'true' || response.shouldFollowUp === 'yes', // Redundant for dumb model
         followUpQuestion: response.followUpQuestion !== 'null' ? response.followUpQuestion : undefined
       };
       
