@@ -9,7 +9,7 @@ import { isColorLight } from "@/app/utils/color";
 import { useAudioRecorder } from "@/app/api/useAudioRecorder";
 import { useConversationHistory } from "@/app/hooks/useConversationHistory";
 import {
-  FollowUpQuestion,
+  type FollowUpQuestion,
   InterviewSession,
   Organization,
   Question,
@@ -20,6 +20,7 @@ import {
 import { showErrorToast } from "@/app/utils/toastUtils";
 import { currentQuestionAtom, interviewSessionAtom } from "@/app/state/atoms";
 import { useAtom } from "jotai";
+import { CurrentQuestionType } from "@shared/types";
 
 interface InterviewBottomBarProps {
   organization: Organization;
@@ -65,10 +66,12 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
 
   const conversationHistory = useConversationHistory(
     study,
-    currentQuestion?.id ?? "",
+    currentQuestion as CurrentQuestionType,
     currentResponseId ?? "",
     interviewSession!,
   );
+
+  console.log({ conversationHistory });
 
   const startResponse = async () => {
     if (!navigator.mediaDevices?.getUserMedia) {
@@ -77,21 +80,36 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
     }
 
     try {
-      await navigator.mediaDevices.getUserMedia({ audio: true });
       await startRecording();
-      const response = await createOpenEndedResponse.mutateAsync({
-        questionId: currentQuestion?.id ?? "",
-        interviewSessionId: interviewSession?.id ?? "",
-      });
-      setCurrentResponseId(response.id);
+
+      if (currentQuestion) {
+        const isFollowUpQuestion = "followUpQuestionOrder" in currentQuestion;
+
+        if (isFollowUpQuestion) {
+          const response = await createOpenEndedResponse.mutateAsync({
+            questionId:
+              (currentQuestion as FollowUpQuestion).parentQuestionId ?? "",
+            interviewSessionId: interviewSession?.id ?? "",
+            followUpQuestionId: currentQuestion.id,
+          });
+          setCurrentResponseId(response.id);
+        } else {
+          const response = await createOpenEndedResponse.mutateAsync({
+            questionId: currentQuestion?.id ?? "",
+            interviewSessionId: interviewSession?.id ?? "",
+          });
+          setCurrentResponseId(response.id);
+        }
+      }
     } catch (err) {
       console.error("Error accessing microphone:", err);
-      alert("Please grant microphone access to record your response.");
+      showErrorToast("Error starting response. Please try again.");
     }
   };
 
   const stopResponse = async () => {
     stopRecording();
+    console.log({ conversationHistory });
     if (conversationHistory) {
       try {
         console.log({ conversationHistory });

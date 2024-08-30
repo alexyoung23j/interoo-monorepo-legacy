@@ -15,6 +15,26 @@ export interface TranscribeAndGenerateNextQuestionRequest {
     shouldFollowUp: boolean;
 }
 
+export type ConversationState = Array<{ 
+  questionText: string;
+  responseText?: string;
+  questionId: string;
+  responseId?: string;
+}>
+
+export interface TranscribeAndGenerateNextQuestionRequest {
+  nextBaseQuestionId: string;
+  currentBaseQuestionId: string;
+  currentBaseQuestionContext: string;
+  interviewSessionId: string;
+  followUpLevel: string;
+  studyBackground: string;
+  shouldFollowUp: boolean;
+  currentResponseId: string;
+  thread: ConversationState
+}
+
+
 export interface UploadUrlRequest {
     organizationId: string;
     studyId: string;
