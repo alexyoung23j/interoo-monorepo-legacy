@@ -1,7 +1,6 @@
 import React from "react";
 import type {
   Question,
-  InterviewSession,
   VideoStimulusType,
   Organization,
 } from "@shared/generated/client";
@@ -12,7 +11,7 @@ import { WebsiteStimuli } from "./stimuli/WebsiteStimuli";
 import { isColorLight } from "@/app/utils/color";
 import { MultipleChoiceSelect } from "./selections/MultipleChoiceSelect";
 import { RangeChoiceSelect } from "./selections/RangeChoiceSelect";
-import { currentQuestionAtom, interviewSessionAtom } from "@/app/state/atoms";
+import { currentQuestionAtom } from "@/app/state/atoms";
 import { useAtom } from "jotai";
 import { BaseQuestionExtended } from "@shared/types";
 
@@ -33,7 +32,6 @@ export const DisplayQuestion: React.FC<DisplayQuestionProps> = ({
 }) => {
   const isBackgroundLight = isColorLight(organization.secondaryColor ?? "");
   const [currentQuestion, setCurrentQuestion] = useAtom(currentQuestionAtom);
-  const [interviewSession, setInterviewSession] = useAtom(interviewSessionAtom);
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-4 p-4 md:w-[80%] md:py-0">
@@ -55,7 +53,6 @@ export const DisplayQuestion: React.FC<DisplayQuestionProps> = ({
       {currentQuestion?.questionType === "MULTIPLE_CHOICE" && (
         <MultipleChoiceSelect
           question={currentQuestion as BaseQuestionExtended}
-          interviewSession={interviewSession!}
           organization={organization}
           isBackgroundLight={isBackgroundLight}
           multipleChoiceOptionSelectionId={
@@ -69,7 +66,6 @@ export const DisplayQuestion: React.FC<DisplayQuestionProps> = ({
       {currentQuestion?.questionType === "RANGE" && (
         <RangeChoiceSelect
           question={currentQuestion as BaseQuestionExtended}
-          interviewSession={interviewSession!}
           organization={organization}
           isBackgroundLight={isBackgroundLight}
           lowLabel={"least"}

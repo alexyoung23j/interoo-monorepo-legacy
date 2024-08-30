@@ -3,6 +3,7 @@ import "react-toastify/dist/ReactToastify.css"; // Add this line
 
 import { GeistSans } from "geist/font/sans";
 import { type Metadata } from "next";
+import { Provider } from "jotai";
 
 import { TRPCReactProvider } from "@/trpc/react";
 
@@ -28,8 +29,10 @@ export default function RootLayout({
     <html lang="en" className={`${GeistSans.variable}`}>
       <body className={nunitoSans.className}>
         <TRPCReactProvider>
-          {children}
-          <ToastContainer />
+          <Provider>
+            {children}
+            <ToastContainer />
+          </Provider>
         </TRPCReactProvider>
       </body>
     </html>

@@ -45,14 +45,14 @@ const handleAudioResponse = async (req: Request, res: Response) => {
         requestDataBuilder.setShouldFollowUp(val === 'true');
         break;
       case 'thread':
-        try {
-          const thread: ConversationState = JSON.parse(val);
-          requestDataBuilder.setThread(thread);
-        } catch (error) {
-          console.warn('Failed to parse thread, setting as empty array');
-          requestDataBuilder.setThread([]);
-        }
-        break;
+          try {
+            const thread = JSON.parse(val);
+            requestDataBuilder.setThread(thread);
+          } catch (error) {
+            console.warn('Failed to parse thread, setting as empty array', error);
+            requestDataBuilder.setThread([]);
+          }
+          break;
       default:
         console.warn(`Unexpected field: ${fieldname}`);
     }
@@ -84,10 +84,14 @@ const handleAudioResponse = async (req: Request, res: Response) => {
       const followUpLevelValue = getFollowUpLevelValue(requestData.followUpLevel);
 
       let response: TranscribeAndGenerateNextQuestionResponse = {
-        isFollowUp: false
+        isFollowUp: false,
+        transcribedText: transcribedText
       };
 
-      if (!requestData.shouldFollowUp || requestData.thread.length > followUpLevelValue) {
+      const numberOfPriorFollowUps = requestData.thread.filter(t => t.responseId === undefined).length;
+      console.log("number of prior follow ups", numberOfPriorFollowUps);
+
+      if (!requestData.shouldFollowUp || numberOfPriorFollowUps > followUpLevelValue) {
         response.isFollowUp = requestData.thread.length > 0;
         response.nextQuestionId = requestData.nextBaseQuestionId;
         // We don't have follow ups, so just move to the next question

@@ -98,7 +98,7 @@ export const responsesRouter = createTRPCRouter({
         });
       }
 
-      return;
+      return { nextQuestion, wasFinalQuestion: !nextQuestion };
     }),
   createRangeResponse: publicProcedure
     .input(
@@ -158,6 +158,6 @@ export const responsesRouter = createTRPCRouter({
         });
       }
 
-      return;
+      return { nextQuestion, wasFinalQuestion: !nextQuestion };
     }),
 });

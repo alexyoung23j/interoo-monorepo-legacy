@@ -6,20 +6,21 @@ import {
   InterviewSession,
   FollowUpQuestion,
 } from "@shared/generated/client";
-import { CurrentQuestionType } from "@shared/types";
+import { ConversationState, CurrentQuestionType } from "@shared/types";
 
-export const currentQuestionAtom = atomWithStorage<CurrentQuestionType | null>(
-  "currentQuestion",
-  null,
-);
-export const responsesAtom = atomWithStorage<Response[]>("responses", []);
-export const interviewSessionAtom = atomWithStorage<
+export const currentQuestionAtom = atom<CurrentQuestionType | null>(null);
+export const currentResponseAtom = atom<Response | null>(null);
+export const responsesAtom = atom<Response[]>([]);
+export const followUpQuestionsAtom = atom<FollowUpQuestion[]>([]);
+
+// Only read from this atom for data about the interviewSession that isn't going to change during the performance
+export const interviewSessionAtom = atom<
   | (InterviewSession & {
       responses: Response[];
       FollowUpQuestions: FollowUpQuestion[];
     })
   | null
->("interviewSession", null);
+>(null);
 
 export const initializeInterviewAtom = atom(
   null,

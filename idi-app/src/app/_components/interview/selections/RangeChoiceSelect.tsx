@@ -10,7 +10,6 @@ import { cx } from "@/tailwind/styling";
 
 interface RangeChoiceSelectProps {
   question: Question;
-  interviewSession: InterviewSession;
   organization: Organization;
   isBackgroundLight: boolean;
   lowLabel: string;
@@ -21,7 +20,6 @@ interface RangeChoiceSelectProps {
 
 export const RangeChoiceSelect: React.FC<RangeChoiceSelectProps> = ({
   question,
-  interviewSession,
   organization,
   isBackgroundLight,
   lowLabel,
