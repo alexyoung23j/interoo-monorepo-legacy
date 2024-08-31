@@ -7,6 +7,7 @@ import { api } from "@/trpc/react";
 import { cx } from "@/tailwind/styling";
 import { isColorLight } from "@/app/utils/color";
 import { useAudioRecorder } from "@/app/api/useAudioRecorder";
+import { useAudioVideoRecorder } from "@/app/api/useAudioVideoRecorder";
 import {
   type FollowUpQuestion,
   InterviewSession,
@@ -31,6 +32,7 @@ import {
   TranscribeAndGenerateNextQuestionRequest,
 } from "@shared/types";
 import { calculateTranscribeAndGenerateNextQuestionRequest } from "@/app/utils/functions";
+import WebcamPreview from "./WebcamPreview";
 
 interface InterviewBottomBarProps {
   organization: Organization;
@@ -42,6 +44,7 @@ interface InterviewBottomBarProps {
   awaitingOptionResponse: boolean;
   interviewSessionRefetching: boolean;
   handleSubmitRangeResponse: () => void;
+  isVideoEnabled: boolean;
 }
 
 const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
@@ -68,13 +71,16 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
   const createOpenEndedResponse =
     api.responses.createOpenEndedResponse.useMutation();
 
+  const audioRecorder = useAudioRecorder({ baseQuestions: study.questions });
+  const videoRecorder = useAudioVideoRecorder();
+
   const {
     isRecording,
     startRecording,
     stopRecording,
     submitAudio,
     awaitingResponse: awaitingLLMResponse,
-  } = useAudioRecorder({ baseQuestions: study.questions });
+  } = study.videoEnabled ? videoRecorder : (audioRecorder as any); // Add type assertion
 
   const startResponse = async () => {
     if (!navigator.mediaDevices?.getUserMedia) {
@@ -83,7 +89,14 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
     }
 
     try {
-      await startRecording();
+      await startRecording({
+        organizationId: organization.id,
+        studyId: study.id,
+        questionId: currentQuestion?.id ?? "",
+        responseId: currentResponse?.id ?? "",
+        fileExtension: "webm",
+        contentType: study.videoEnabled ? "video/webm" : "audio/webm",
+      });
 
       if (currentQuestion) {
         const isFollowUpQuestion = "followUpQuestionOrder" in currentQuestion;
@@ -107,13 +120,13 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
         }
       }
     } catch (err) {
-      console.error("Error accessing microphone:", err);
+      console.error("Error starting response:", err);
       showErrorToast("Error starting response. Please try again.");
     }
   };
 
   const stopResponse = async () => {
-    stopRecording();
+    await stopRecording();
     try {
       const requestBody = calculateTranscribeAndGenerateNextQuestionRequest({
         currentQuestion,
@@ -250,17 +263,19 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
   };
 
   return (
-    <div className="mb-2 flex w-full items-center justify-between bg-off-white p-8">
+    <div className="mb-2 flex w-full flex-col items-center justify-between bg-off-white p-8 md:flex-row">
       <div className="flex gap-2 md:w-1/3">
         <Switch className="hidden data-[state=checked]:bg-org-secondary md:block" />
         <div className="hidden text-sm text-neutral-400 md:block">Sound on</div>
       </div>
       <div className="relative flex flex-col items-center md:w-1/3">
+        <div className="mb-8 md:hidden">
+          <WebcamPreview />
+        </div>
         {renderQuestionTypeButton()}
       </div>
-      <div className="flex justify-end md:w-1/3">
-        {/* Right side content */}
-        <div></div>
+      <div className="hidden items-center justify-end md:flex md:w-1/3">
+        <WebcamPreview />
       </div>
     </div>
   );

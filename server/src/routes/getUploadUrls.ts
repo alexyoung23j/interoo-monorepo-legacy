@@ -5,36 +5,24 @@ import { UploadUrlRequest } from "../../../shared/types";
 
 const router = Router();
 
-const getUploadUrls = async (req: Request, res: Response) => {
+const getSignedUrl = async (req: Request, res: Response) => {
   try {
     const { 
       organizationId, 
       studyId, 
       questionId, 
       responseId, 
-      audio, 
-      video 
+      fileExtension,
     }: UploadUrlRequest = req.body;
 
     const bucketName = process.env.SUPABASE_STORAGE_BUCKET || 'assets';
 
-    // Generate base path
     const basePath = path.join(organizationId, studyId, questionId, responseId);
+    const fileName = `recording.${fileExtension}`;
+    const filePath = path.join(basePath, fileName);
 
-    // Generate signed URL for audio
-    const audioFileName = `audio.${audio.fileExtension}`;
-    const audioFilePath = path.join(basePath, audioFileName);
-    const audioSignedUrl = await generateSignedUrl(bucketName, audioFilePath);
+    const signedUrl = await generateSignedUrl(bucketName, filePath);
 
-    let videoSignedUrl = null;
-    if (video) {
-      // Generate signed URL for video if requested
-      const videoFileName = `video.${video.fileExtension}`;
-      const videoFilePath = path.join(basePath, videoFileName);
-      videoSignedUrl = await generateSignedUrl(bucketName, videoFilePath);
-    }
-
-    // Fetch the existing Response
     const existingResponse = await prisma.response.findUnique({
       where: { id: responseId },
       select: { fastTranscribedText: true }
@@ -44,27 +32,20 @@ const getUploadUrls = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Response not found' });
     }
 
-    // Create ResponseMedia
-    const responseMedia = await prisma.responseMedia.create({
+    await prisma.responseMedia.create({
       data: {
         responseId: responseId,
-        audioBucketUrl: audioSignedUrl.path,
-        videoBucketUrl: videoSignedUrl ? videoSignedUrl.path : null,
+        mediaUrl: signedUrl.path,
         transcribedText: existingResponse.fastTranscribedText
       }
     });
 
-    // Return signed URLs
-    res.json({
-      audio: audioSignedUrl,
-      video: videoSignedUrl
-    });
+    res.json(signedUrl);
 
   } catch (error) {
-    console.error('Error generating signed URLs:', error);
-    res.status(500).json({ error: 'Failed to generate upload URLs' });
+    console.error('Error generating signed URL:', error);
+    res.status(500).json({ error: 'Failed to generate upload URL' });
   }
-
 };
 
 async function generateSignedUrl(bucketName: string, filePath: string) {
@@ -83,6 +64,6 @@ async function generateSignedUrl(bucketName: string, filePath: string) {
   };
 }
 
-router.post('/', getUploadUrls); // TODO: this shouldnt be authed right?
+router.post('/', getSignedUrl);
 
-export const getUploadUrlsRoute = router;
+export const getSignedUrlRoute = router;

@@ -159,8 +159,7 @@ model Response {
 model ResponseMedia {
   id              String   @id @default(uuid())
   responseId      String   @unique
-  audioBucketUrl  String
-  videoBucketUrl  String?
+  mediaUrl        String
   transcribedText String?  @db.Text
   response        Response @relation(fields: [responseId], references: [id])
 }
