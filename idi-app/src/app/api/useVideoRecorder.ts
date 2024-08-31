@@ -20,7 +20,7 @@ export function useVideoRecorder() {
       try {
         console.log("Sending request to get upload URLs");
         const response = await fetch(
-          `http://localhost:8800/api/get-upload-urls`,
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/get-upload-urls`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
