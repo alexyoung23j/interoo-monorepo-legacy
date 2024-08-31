@@ -1,9 +1,17 @@
 import { Router, Request, Response } from "express";
 import path from "path";
-import { prisma, supabase } from "../index";
+import { prisma } from "../index";
 import { UploadUrlRequest } from "../../../shared/types";
+import { Storage } from "@google-cloud/storage";
 
 const router = Router();
+
+// Initialize Google Cloud Storage
+const storage = new Storage({
+  keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
+});
+const bucketName = process.env.GCS_BUCKET_NAME || 'your-bucket-name';
+const bucket = storage.bucket(bucketName);
 
 const getSignedUrl = async (req: Request, res: Response) => {
   try {
@@ -15,13 +23,16 @@ const getSignedUrl = async (req: Request, res: Response) => {
       fileExtension,
     }: UploadUrlRequest = req.body;
 
-    const bucketName = process.env.SUPABASE_STORAGE_BUCKET || 'assets';
-
     const basePath = path.join(organizationId, studyId, questionId, responseId);
     const fileName = `recording.${fileExtension}`;
     const filePath = path.join(basePath, fileName);
 
-    const signedUrl = await generateSignedUrl(bucketName, filePath);
+    const [signedUrl] = await bucket.file(filePath).getSignedUrl({
+      version: 'v4',
+      action: 'resumable',
+      expires: Date.now() + 15 * 60 * 1000, // URL expires in 15 minutes
+      contentType: 'video/webm',
+    });
 
     const existingResponse = await prisma.response.findUnique({
       where: { id: responseId },
@@ -35,34 +46,18 @@ const getSignedUrl = async (req: Request, res: Response) => {
     await prisma.responseMedia.create({
       data: {
         responseId: responseId,
-        mediaUrl: signedUrl.path,
+        mediaUrl: `https://storage.googleapis.com/${bucketName}/${filePath}`,
         transcribedText: existingResponse.fastTranscribedText
       }
     });
 
-    res.json(signedUrl);
+    res.json({ signedUrl, path: filePath });
 
   } catch (error) {
     console.error('Error generating signed URL:', error);
     res.status(500).json({ error: 'Failed to generate upload URL' });
   }
 };
-
-async function generateSignedUrl(bucketName: string, filePath: string) {
-  const { data, error } = await supabase.storage
-    .from(bucketName)
-    .createSignedUploadUrl(filePath);
-
-  if (error) {
-    throw error;
-  }
-
-  return {
-    signedUrl: data.signedUrl,
-    path: data.path,
-    token: data.token
-  };
-}
 
 router.post('/', getSignedUrl);
 

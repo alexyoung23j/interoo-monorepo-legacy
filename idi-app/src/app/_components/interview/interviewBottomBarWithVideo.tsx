@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { ArrowRight, Microphone } from "@phosphor-icons/react";
@@ -6,15 +6,13 @@ import { SyncLoader, ClipLoader } from "react-spinners";
 import { api } from "@/trpc/react";
 import { cx } from "@/tailwind/styling";
 import { isColorLight } from "@/app/utils/color";
-import { useAudioRecorder } from "@/app/api/useAudioRecorder";
-import { useConversationHistory } from "@/app/hooks/useConversationHistory";
+import { useTranscriptionRecorder } from "@/app/api/useTranscriptionRecorder";
+import { useChunkedMediaUploader } from "@/app/api/useChunkedMediaUploader";
 import {
   type FollowUpQuestion,
-  InterviewSession,
   Organization,
   Question,
   Study,
-  Response,
   QuestionType,
 } from "@shared/generated/client";
 import { showErrorToast } from "@/app/utils/toastUtils";
@@ -27,11 +25,11 @@ import {
 } from "@/app/state/atoms";
 import { useAtom } from "jotai";
 import {
-  ConversationState,
-  CurrentQuestionType,
   TranscribeAndGenerateNextQuestionRequest,
+  UploadUrlRequest,
 } from "@shared/types";
 import { calculateTranscribeAndGenerateNextQuestionRequest } from "@/app/utils/functions";
+import WebcamPreview from "./WebcamPreview";
 
 interface InterviewBottomBarProps {
   organization: Organization;
@@ -56,26 +54,29 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
   interviewSessionRefetching,
   handleSubmitRangeResponse,
 }) => {
-  const [currentQuestion, setCurrentQuestion] = useAtom(currentQuestionAtom);
-  const [interviewSession, setInterviewSession] = useAtom(interviewSessionAtom);
+  const transcriptionRecorder = useTranscriptionRecorder({
+    baseQuestions: study.questions,
+  });
+  const chunkedMediaUploader = useChunkedMediaUploader();
+
+  const [currentQuestion] = useAtom(currentQuestionAtom);
+  const [interviewSession] = useAtom(interviewSessionAtom);
   const [responses, setResponses] = useAtom(responsesAtom);
   const [currentResponse, setCurrentResponse] = useAtom(currentResponseAtom);
-  const [followUpQuestions, setFollowUpQuestions] = useAtom(
-    followUpQuestionsAtom,
-  );
+  const [followUpQuestions] = useAtom(followUpQuestionsAtom);
 
   const isBackgroundLight = isColorLight(organization.secondaryColor ?? "");
 
   const createOpenEndedResponse =
     api.responses.createOpenEndedResponse.useMutation();
 
-  const {
-    isRecording,
-    startRecording,
-    stopRecording,
-    submitAudio,
-    awaitingResponse: awaitingLLMResponse,
-  } = useAudioRecorder({ baseQuestions: study.questions });
+  const isRecording = study.videoEnabled
+    ? chunkedMediaUploader.isRecording
+    : transcriptionRecorder.isRecording;
+
+  const awaitingLLMResponse = study.videoEnabled
+    ? chunkedMediaUploader.awaitingResponse
+    : transcriptionRecorder.awaitingResponse;
 
   const startResponse = async () => {
     if (!navigator.mediaDevices?.getUserMedia) {
@@ -84,49 +85,58 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
     }
 
     try {
-      await startRecording();
-
+      let newResponse;
       if (currentQuestion) {
         const isFollowUpQuestion = "followUpQuestionOrder" in currentQuestion;
-
-        if (isFollowUpQuestion) {
-          const response = await createOpenEndedResponse.mutateAsync({
-            questionId:
-              (currentQuestion as FollowUpQuestion).parentQuestionId ?? "",
-            interviewSessionId: interviewSession?.id ?? "",
-            followUpQuestionId: currentQuestion.id,
-          });
-          setCurrentResponse(response);
-          setResponses([...responses, response]);
-        } else {
-          const response = await createOpenEndedResponse.mutateAsync({
-            questionId: currentQuestion?.id ?? "",
-            interviewSessionId: interviewSession?.id ?? "",
-          });
-          setCurrentResponse(response);
-          setResponses([...responses, response]);
-        }
+        newResponse = await createOpenEndedResponse.mutateAsync({
+          questionId: isFollowUpQuestion
+            ? ((currentQuestion as FollowUpQuestion).parentQuestionId ?? "")
+            : currentQuestion.id,
+          interviewSessionId: interviewSession?.id ?? "",
+          followUpQuestionId: isFollowUpQuestion
+            ? currentQuestion.id
+            : undefined,
+        });
+        setCurrentResponse(newResponse);
+        setResponses([...responses, newResponse]);
       }
+
+      if (study.videoEnabled && newResponse) {
+        const uploadUrlRequest: UploadUrlRequest = {
+          organizationId: organization.id,
+          studyId: study.id,
+          questionId: currentQuestion?.id ?? "",
+          responseId: newResponse.id,
+          fileExtension: "webm",
+        };
+        await chunkedMediaUploader.startRecording(uploadUrlRequest, true);
+      }
+
+      await transcriptionRecorder.startRecording();
     } catch (err) {
-      console.error("Error accessing microphone:", err);
+      console.error("Error starting response:", err);
       showErrorToast("Error starting response. Please try again.");
     }
   };
 
   const stopResponse = async () => {
-    stopRecording();
+    if (study.videoEnabled) {
+      await chunkedMediaUploader.stopRecording();
+    }
+    transcriptionRecorder.stopRecording();
+
     try {
-      const requestBody = calculateTranscribeAndGenerateNextQuestionRequest({
-        currentQuestion,
-        interviewSession,
-        study,
-        responses,
-        followUpQuestions,
-        currentResponseId: currentResponse?.id ?? "",
-      });
+      const requestBody: TranscribeAndGenerateNextQuestionRequest =
+        calculateTranscribeAndGenerateNextQuestionRequest({
+          currentQuestion,
+          interviewSession,
+          study,
+          responses,
+          followUpQuestions,
+          currentResponseId: currentResponse?.id ?? "",
+        });
 
-      const data = await submitAudio(requestBody);
-
+      const data = await transcriptionRecorder.submitAudio(requestBody);
       console.log({ requestBody, response: data });
     } catch (err) {
       console.error("Error submitting audio:", err);
@@ -251,17 +261,19 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
   };
 
   return (
-    <div className="mb-2 flex w-full items-center justify-between bg-off-white p-8">
+    <div className="mb-2 flex w-full flex-col items-center justify-between bg-off-white p-8 md:flex-row">
       <div className="flex gap-2 md:w-1/3">
         <Switch className="hidden data-[state=checked]:bg-org-secondary md:block" />
         <div className="hidden text-sm text-neutral-400 md:block">Sound on</div>
       </div>
       <div className="relative flex flex-col items-center md:w-1/3">
+        <div className="mb-8 md:hidden">
+          <WebcamPreview />
+        </div>
         {renderQuestionTypeButton()}
       </div>
-      <div className="flex justify-end md:w-1/3">
-        {/* Right side content */}
-        <div></div>
+      <div className="hidden items-center justify-end md:flex md:w-1/3">
+        <WebcamPreview />
       </div>
     </div>
   );

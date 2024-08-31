@@ -12,14 +12,11 @@ import {
 } from "../state/atoms";
 import { useAtom } from "jotai";
 import { Question } from "@shared/generated/client";
-import { UploadUrlRequest } from "@shared/types";
 
 interface AudioRecorderHook {
   isRecording: boolean;
-  startAudioOnlyRecording: (
-    uploadUrlRequest: UploadUrlRequest,
-  ) => Promise<void>;
-  stopAudioOnlyRecording: () => void;
+  startRecording: () => Promise<void>;
+  stopRecording: () => void;
   submitAudio: (
     additionalData: TranscribeAndGenerateNextQuestionRequest,
   ) => Promise<any>;
@@ -47,109 +44,60 @@ export function useAudioRecorder({
   const mediaRecorder = useRef<MediaRecorder | null>(null);
   const audioChunks = useRef<Blob[]>([]);
   const recordingTimeout = useRef<NodeJS.Timeout | null>(null);
-  const uploadInterval = useRef<NodeJS.Timeout | null>(null);
-  const signedUrl = useRef<{
-    signedUrl: string;
-    path: string;
-    token: string;
-  } | null>(null);
 
-  const getSignedUrl = async (uploadUrlRequest: UploadUrlRequest) => {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/get-signed-url`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(uploadUrlRequest),
-        credentials: "include",
-      },
-    );
-    if (!response.ok) {
-      throw new Error(`Failed to get upload URL: ${await response.text()}`);
-    }
-    signedUrl.current = await response.json();
-  };
+  const startRecording = useCallback(async () => {
+    try {
+      setIsRecording(true);
 
-  const uploadChunk = async (blob: Blob) => {
-    if (!signedUrl.current) return;
-    const url = signedUrl.current.signedUrl;
-    await fetch(url, {
-      method: "PUT",
-      body: blob,
-      headers: { "Content-Type": "audio/webm" },
-    });
-  };
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-  const startAudioOnlyRecording = useCallback(
-    async (uploadUrlRequest: UploadUrlRequest) => {
-      try {
-        await getSignedUrl(uploadUrlRequest);
-        setIsRecording(true);
-
-        const stream = await navigator.mediaDevices.getUserMedia({
-          audio: true,
-        });
-
-        let mimeType;
-        if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
-          mimeType = "audio/webm;codecs=opus";
-        } else if (MediaRecorder.isTypeSupported("audio/mp4")) {
-          mimeType = "audio/mp4";
-        } else if (MediaRecorder.isTypeSupported("audio/ogg")) {
-          mimeType = "audio/ogg";
-        } else {
-          console.warn(
-            "No preferred mime types supported, falling back to default",
-          );
-        }
-
-        if (mimeType) {
-          mediaRecorder.current = new MediaRecorder(stream, { mimeType });
-        } else {
-          mediaRecorder.current = new MediaRecorder(stream);
-        }
-
-        audioChunks.current = [];
-
-        mediaRecorder.current.ondataavailable = (event) => {
-          if (event.data.size > 0) {
-            audioChunks.current.push(event.data);
-          }
-        };
-
-        mediaRecorder.current.start(100); // Collect data every second
-
-        recordingTimeout.current = setTimeout(
-          () => stopAudioOnlyRecording(),
-          MAX_RECORDING_TIME,
-        );
-
-        uploadInterval.current = setInterval(async () => {
-          if (audioChunks.current.length > 0) {
-            const blob = new Blob(audioChunks.current, { type: "audio/webm" });
-            await uploadChunk(blob);
-            audioChunks.current = [];
-          }
-        }, 10000);
-      } catch (err) {
-        console.error("Error starting recording:", err);
-        setIsRecording(false);
-        setError(
-          "Failed to start recording. Please check your microphone permissions.",
+      let mimeType;
+      if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
+        mimeType = "audio/webm;codecs=opus";
+      } else if (MediaRecorder.isTypeSupported("audio/mp4")) {
+        mimeType = "audio/mp4";
+      } else if (MediaRecorder.isTypeSupported("audio/ogg")) {
+        mimeType = "audio/ogg";
+      } else {
+        console.warn(
+          "No preferred mime types supported, falling back to default",
         );
       }
-    },
-    [],
-  );
 
-  const stopAudioOnlyRecording = useCallback(() => {
+      if (mimeType) {
+        mediaRecorder.current = new MediaRecorder(stream, { mimeType });
+      } else {
+        mediaRecorder.current = new MediaRecorder(stream);
+      }
+
+      audioChunks.current = [];
+
+      mediaRecorder.current.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunks.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.current.start(100); // Collect data every second
+
+      recordingTimeout.current = setTimeout(
+        () => stopRecording(),
+        MAX_RECORDING_TIME,
+      );
+    } catch (err) {
+      console.error("Error starting recording:", err);
+      setIsRecording(false);
+      setError(
+        "Failed to start recording. Please check your microphone permissions.",
+      );
+    }
+  }, []);
+
+  const stopRecording = useCallback(() => {
     if (mediaRecorder.current && mediaRecorder.current.state !== "inactive") {
       setIsRecording(false);
       if (recordingTimeout.current) {
         clearTimeout(recordingTimeout.current);
-      }
-      if (uploadInterval.current) {
-        clearInterval(uploadInterval.current);
       }
       // Add a short delay before stopping the recorder
       setTimeout(() => {
@@ -246,8 +194,8 @@ export function useAudioRecorder({
   return {
     awaitingResponse,
     isRecording,
-    startAudioOnlyRecording: startAudioOnlyRecording,
-    stopAudioOnlyRecording: stopAudioOnlyRecording,
+    startRecording,
+    stopRecording,
     submitAudio,
     error,
   };
