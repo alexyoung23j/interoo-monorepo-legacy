@@ -6,6 +6,7 @@ import path from "path";
 import cors from "cors";
 import { createClient as createDeepgramClient } from "@deepgram/sdk";
 
+
 // Import routes
 import { protectedRoute } from "./routes/test/protected";
 import { audioResponseRoute } from "./routes/audioResponse";
@@ -36,7 +37,18 @@ app.use("/test-follow-up", testFollowUpRoute);
 app.use("/test-transcribe", testTranscribeRoute);
 
 // Server Startup
-app.listen(port as number, "0.0.0.0", () => console.log(`Server is running on http://localhost:${port}`));
+const startServer = () => {
+  app.listen(port as number, "0.0.0.0", () => console.log(`Server is running on http://localhost:${port}`));
+};
+
+if (process.env.NODE_ENV === 'development') {
+  if (require.main === module) {
+    startServer();
+  }
+  module.exports = app;
+} else {
+  startServer();
+}
 
 // Graceful Shutdown
 process.on('SIGINT', async () => {

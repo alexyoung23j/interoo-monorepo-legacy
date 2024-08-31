@@ -1,50 +1,46 @@
 import { Router } from "express";
 import { Request, Response } from "express";
 import Busboy from 'busboy';
-import { transcribeAudio, decideFollowUpPromptIfNecessary, getFollowUpLevelValue } from "../utils/audioProcessing";
-import { FollowUpLevel } from "../../../shared/generated/client";
+import { transcribeAudio, decideFollowUpPromptIfNecessary, getFollowUpLevelRange } from "../utils/audioProcessing";
 import { prisma } from "..";
 import { TranscribeAndGenerateNextQuestionRequestBuilder, ConversationState, TranscribeAndGenerateNextQuestionResponse, TranscribeAndGenerateNextQuestionRequest } from "../../../shared/types";
+import { createRequestLogger } from '../utils/logger';
 
 const router = Router();
 
-const handleAudioResponse = async (req: Request, res: Response) => {
-  const startTime = Date.now();
-  let transcriptionTime = 0;
-  let dbUpdateTime = 0;
-  let followUpDecisionTime = 0;
+const extractRequestData = (req: Request): Promise<{ audioBuffer: Buffer, requestData: TranscribeAndGenerateNextQuestionRequest }> => {
+  return new Promise((resolve, reject) => {
+    const busboy = Busboy({ 
+      headers: req.headers,
+      limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+    });
 
-  const busboy = Busboy({ 
-    headers: req.headers,
-    limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
-  });
+    let audioBuffer: Buffer | null = null;
+    const requestDataBuilder = new TranscribeAndGenerateNextQuestionRequestBuilder();
 
-  let audioBuffer: Buffer | null = null;
-  const requestDataBuilder = new TranscribeAndGenerateNextQuestionRequestBuilder();
+    busboy.on('file', (fieldname, file, filename) => {
+      if (fieldname === 'audio') {
+        const chunks: Buffer[] = [];
+        file.on('data', (chunk) => chunks.push(chunk));
+        file.on('end', () => audioBuffer = Buffer.concat(chunks));
+      }
+    });
 
-  busboy.on('file', (fieldname, file, filename) => {
-    if (fieldname === 'audio') {
-      const chunks: Buffer[] = [];
-      file.on('data', (chunk) => chunks.push(chunk));
-      file.on('end', () => audioBuffer = Buffer.concat(chunks));
-    }
-  });
-
-  busboy.on('field', (fieldname, val) => {
-    switch(fieldname) {
-      case 'nextBaseQuestionId':
-      case 'currentBaseQuestionId':
-      case 'currentBaseQuestionContext':
-      case 'interviewSessionId':
-      case 'followUpLevel':
-      case 'studyBackground':
-      case 'currentResponseId':
-        requestDataBuilder.set(fieldname as keyof TranscribeAndGenerateNextQuestionRequest, val);
-        break;
-      case 'shouldFollowUp':
-        requestDataBuilder.setShouldFollowUp(val === 'true');
-        break;
-      case 'thread':
+    busboy.on('field', (fieldname, val) => {
+      switch(fieldname) {
+        case 'nextBaseQuestionId':
+        case 'currentBaseQuestionId':
+        case 'currentBaseQuestionContext':
+        case 'interviewSessionId':
+        case 'followUpLevel':
+        case 'studyBackground':
+        case 'currentResponseId':
+          requestDataBuilder.set(fieldname as keyof TranscribeAndGenerateNextQuestionRequest, val);
+          break;
+        case 'shouldFollowUp':
+          requestDataBuilder.setShouldFollowUp(val === 'true');
+          break;
+        case 'thread':
           try {
             const thread = JSON.parse(val);
             requestDataBuilder.setThread(thread);
@@ -53,120 +49,162 @@ const handleAudioResponse = async (req: Request, res: Response) => {
             requestDataBuilder.setThread([]);
           }
           break;
-      default:
-        console.warn(`Unexpected field: ${fieldname}`);
-    }
+        default:
+          console.warn(`Unexpected field: ${fieldname}`);
+      }
+    });
+
+    busboy.on('finish', () => {
+      const requestData = requestDataBuilder.build();
+      if (!audioBuffer) {
+        reject(new Error('Missing audio file'));
+      } else {
+        resolve({ audioBuffer, requestData });
+      }
+    });
+
+    busboy.on('error', reject);
+
+    req.pipe(busboy);
+  });
+};
+
+const validateRequestData = (requestData: TranscribeAndGenerateNextQuestionRequest): boolean => {
+  return !!(requestData.currentBaseQuestionId && 
+            requestData.studyBackground && 
+            requestData.interviewSessionId && 
+            requestData.currentResponseId);
+};
+
+const handleNoTranscription = async (
+  requestData: TranscribeAndGenerateNextQuestionRequest, 
+  transcribedText: string
+): Promise<TranscribeAndGenerateNextQuestionResponse> => {
+  return {
+    isFollowUp: requestData.thread.length > 0,
+    transcribedText: transcribedText,
+    noAnswerDetected: true,
+    nextQuestionId: requestData.currentBaseQuestionId
+  };
+};
+
+const handleNoFollowUp = async (
+  requestData: TranscribeAndGenerateNextQuestionRequest, 
+  transcribedText: string
+): Promise<TranscribeAndGenerateNextQuestionResponse> => {
+  if (requestData.nextBaseQuestionId) {
+    await prisma.interviewSession.update({
+      where: { id: requestData.interviewSessionId },
+      data: { currentQuestionId: requestData.nextBaseQuestionId }
+    });
+  }
+
+  return {
+    isFollowUp: requestData.thread.length > 0,
+    transcribedText: transcribedText,
+    noAnswerDetected: false,
+    nextQuestionId: requestData.nextBaseQuestionId
+  };
+};
+
+const handlePotentialFollowUp = async (
+  requestData: TranscribeAndGenerateNextQuestionRequest, 
+  transcribedText: string,
+  newResponse: any,
+  requestLogger: ReturnType<typeof createRequestLogger>,
+  minFollowUps: number,
+  maxFollowUps: number,
+  currentNumberOfFollowUps: number
+): Promise<TranscribeAndGenerateNextQuestionResponse> => {
+  const { shouldFollowUp, followUpQuestion } = await decideFollowUpPromptIfNecessary(requestData, transcribedText, requestLogger, minFollowUps, maxFollowUps, currentNumberOfFollowUps);
+
+  if (shouldFollowUp && followUpQuestion) {
+    const updatedSession = await prisma.interviewSession.update({
+      where: { id: requestData.interviewSessionId },
+      data: {
+        FollowUpQuestions: {
+          create: {
+            title: followUpQuestion,
+            body: "",
+            followUpQuestionOrder: requestData.thread.length + 1,
+            parentQuestionId: requestData.currentBaseQuestionId,
+            Response: {
+              connect: { id: newResponse.id }
+            }
+          }
+        }
+      },
+      include: {
+        FollowUpQuestions: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        }
+      }
+    });
+
+    return {
+      isFollowUp: true,
+      transcribedText: transcribedText,
+      followUpQuestion: updatedSession.FollowUpQuestions[0],
+      noAnswerDetected: false
+    };
+  } else {
+    return handleNoFollowUp(requestData, transcribedText);
+  }
+};
+
+const processAudioResponse = async (
+  audioBuffer: Buffer, 
+  requestData: TranscribeAndGenerateNextQuestionRequest, 
+  requestLogger: ReturnType<typeof createRequestLogger>
+): Promise<TranscribeAndGenerateNextQuestionResponse> => {
+  const transcribedText = await transcribeAudio(audioBuffer, requestLogger);
+
+  if (transcribedText.length < 2) {
+    // Handle no transcription, likely bad audio
+    return handleNoTranscription(requestData, transcribedText);
+  }
+
+  const newResponse = await prisma.response.update({
+    where: { id: requestData.currentResponseId },
+    data: { fastTranscribedText: transcribedText }
   });
 
-  busboy.on('finish', async () => {
-    const requestData = requestDataBuilder.build();
+  const [minFollowUps, maxFollowUps] = getFollowUpLevelRange(requestData.followUpLevel);
+  const numberOfPriorFollowUps = requestData.thread.filter(t => t.responseId === undefined).length;
 
-    if (!audioBuffer || !requestData.currentBaseQuestionId || !requestData.studyBackground || !requestData.nextBaseQuestionId || !requestData.nextBaseQuestionId || !requestData.interviewSessionId || !requestData.currentResponseId) {
-      console.log({ requestData });
+  if (!requestData.shouldFollowUp || numberOfPriorFollowUps > maxFollowUps) {
+    return handleNoFollowUp(requestData, transcribedText);
+  } else {
+    return handlePotentialFollowUp(requestData, transcribedText, newResponse, requestLogger, minFollowUps, maxFollowUps, numberOfPriorFollowUps);
+  }
+};
+
+// Route Start
+const handleAudioResponse = async (req: Request, res: Response) => {
+  const requestLogger = createRequestLogger();
+  const startTime = Date.now();
+
+  requestLogger.info('Starting audio response processing');
+
+  try {
+    const { audioBuffer, requestData } = await extractRequestData(req);
+
+    if (!validateRequestData(requestData)) {
+      requestLogger.warn('Missing required fields', { requestData });
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    try {
-      const transcriptionStartTime = Date.now();
-      const transcribedText = await transcribeAudio(audioBuffer);
-      transcriptionTime = Date.now() - transcriptionStartTime;
+    const response = await processAudioResponse(audioBuffer, requestData, requestLogger);
 
-      // Update the Response row with the transcribed text and the InterviewSession with the next question
-      const dbUpdateStartTime = Date.now();
-     
-      const newResponse = await prisma.response.update({
-          where: { id: requestData.currentResponseId },
-          data: { fastTranscribedText: transcribedText }
-        });
-      
-      dbUpdateTime = Date.now() - dbUpdateStartTime;
+    const totalTime = Date.now() - startTime;
+    requestLogger.info('Audio endpoint completed', { totalTime });
 
-      const followUpLevelValue = getFollowUpLevelValue(requestData.followUpLevel);
-
-      let response: TranscribeAndGenerateNextQuestionResponse = {
-        isFollowUp: false,
-        transcribedText: transcribedText
-      };
-
-      const numberOfPriorFollowUps = requestData.thread.filter(t => t.responseId === undefined).length;
-      console.log("number of prior follow ups", numberOfPriorFollowUps);
-
-      if (!requestData.shouldFollowUp || numberOfPriorFollowUps > followUpLevelValue) {
-        response.isFollowUp = requestData.thread.length > 0;
-        response.nextQuestionId = requestData.nextBaseQuestionId;
-        // We don't have follow ups, so just move to the next question
-        prisma.$transaction(async (prisma) => {
-          await prisma.interviewSession.update({
-            where: { id: requestData.interviewSessionId },
-            data: { currentQuestionId: requestData.nextBaseQuestionId }
-          });
-        });
-      } else {
-        const followUpStartTime = Date.now();
-        const { shouldFollowUp, followUpQuestion } = await decideFollowUpPromptIfNecessary(requestData, transcribedText);
-        followUpDecisionTime = Date.now() - followUpStartTime;
-
-        if (shouldFollowUp && followUpQuestion) {
-          response.isFollowUp = true;
-
-          const updatedSession = await prisma.interviewSession.update({
-            where: { id: requestData.interviewSessionId },
-            data: {
-              FollowUpQuestions: {
-                create: {
-                  title: followUpQuestion,
-                  body: "",
-                  followUpQuestionOrder: requestData.thread.length + 1,
-                  parentQuestionId: requestData.currentBaseQuestionId,
-                  Response: {
-                    connect: { id: newResponse.id }
-                  }
-                }
-              }
-            },
-            include: {
-              FollowUpQuestions: {
-                orderBy: { createdAt: 'desc' },
-                take: 1,
-              }
-            }
-          });
-
-          const newFollowUp = updatedSession.FollowUpQuestions[0];
-          response.followUpQuestion = newFollowUp;
-        } else {
-          response.isFollowUp = requestData.thread.length > 0;
-          response.nextQuestionId = requestData.nextBaseQuestionId;
-          // We don't have follow ups, so just move to the next question
-          prisma.$transaction(async (prisma) => {
-            await prisma.interviewSession.update({
-              where: { id: requestData.interviewSessionId },
-              data: { currentQuestionId: requestData.nextBaseQuestionId }
-            });
-          });
-        }
-      }
-
-      const totalTime = Date.now() - startTime;
-      console.log(`Audio processing times:
-        Total time: ${totalTime}ms
-        Transcription time: ${transcriptionTime}ms
-        DB update time: ${dbUpdateTime}ms
-        Follow-up decision time: ${followUpDecisionTime}ms`);
-
-      res.json(response);
-    } catch (error) {
-      console.error('Error processing audio response:', error);
-      res.status(500).json({ error: 'Internal server error', message: String(error) });
-    }
-  });
-
-  busboy.on('error', (error) => {
-    console.error('Error processing form data:', error);
-    res.status(500).json({ error: 'Error processing form data' });
-  });
-
-  req.pipe(busboy);
+    res.json(response);
+  } catch (error) {
+    requestLogger.error('Error processing audio response', { error: String(error) });
+    res.status(500).json({ error: 'Internal server error', message: String(error) });
+  }
 };
 
 router.post('/', handleAudioResponse);

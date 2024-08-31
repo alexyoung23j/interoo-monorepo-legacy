@@ -104,6 +104,7 @@ export interface TranscribeAndGenerateNextQuestionResponse {
   isFollowUp: boolean;
   followUpQuestion?: FollowUpQuestion,
   transcribedText: string
+  noAnswerDetected: boolean
 }
 
 // NEed to keep up to date with Prisma schema

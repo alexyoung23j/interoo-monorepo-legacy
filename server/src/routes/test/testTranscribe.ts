@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import Busboy from 'busboy';
 import { transcribeAudio } from "../../utils/audioProcessing";
+import { createRequestLogger } from "../../utils/logger";
 
 const router = Router();
 
@@ -19,7 +20,7 @@ const testTranscribe = (req: Request, res: Response) => {
   busboy.on('finish', async () => {
     if (!audioBuffer) return res.status(400).json({ error: 'No audio file provided' });
     try {
-      const transcribedText = await transcribeAudio(audioBuffer);
+      const transcribedText = await transcribeAudio(audioBuffer, createRequestLogger());
       res.json({ transcribedText });
     } catch (error) {
       console.error('Error transcribing audio:', error);
