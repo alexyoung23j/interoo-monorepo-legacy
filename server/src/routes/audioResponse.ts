@@ -77,31 +77,7 @@ const validateRequestData = (requestData: TranscribeAndGenerateNextQuestionReque
             requestData.currentResponseId);
 };
 
-const processAudioResponse = async (
-  audioBuffer: Buffer, 
-  requestData: TranscribeAndGenerateNextQuestionRequest, 
-  requestLogger: ReturnType<typeof createRequestLogger>
-): Promise<TranscribeAndGenerateNextQuestionResponse> => {
-  const transcribedText = await transcribeAudio(audioBuffer, requestLogger);
 
-  if (transcribedText.length < 5) {
-    return handleNoTranscription(requestData, transcribedText);
-  }
-
-  const newResponse = await prisma.response.update({
-    where: { id: requestData.currentResponseId },
-    data: { fastTranscribedText: transcribedText }
-  });
-
-  const [minFollowUps, maxFollowUps] = getFollowUpLevelRange(requestData.followUpLevel);
-  const numberOfPriorFollowUps = requestData.thread.filter(t => t.responseId === undefined).length;
-
-  if (!requestData.shouldFollowUp || numberOfPriorFollowUps > maxFollowUps) {
-    return handleNoFollowUp(requestData, transcribedText);
-  } else {
-    return handlePotentialFollowUp(requestData, transcribedText, newResponse, requestLogger);
-  }
-};
 
 const handleNoTranscription = async (
   requestData: TranscribeAndGenerateNextQuestionRequest, 
@@ -177,6 +153,32 @@ const handlePotentialFollowUp = async (
   }
 };
 
+const processAudioResponse = async (
+  audioBuffer: Buffer, 
+  requestData: TranscribeAndGenerateNextQuestionRequest, 
+  requestLogger: ReturnType<typeof createRequestLogger>
+): Promise<TranscribeAndGenerateNextQuestionResponse> => {
+  const transcribedText = await transcribeAudio(audioBuffer, requestLogger);
+
+  if (transcribedText.length < 2) {
+    // Handle no transcription, likely bad audio
+    return handleNoTranscription(requestData, transcribedText);
+  }
+
+  const newResponse = await prisma.response.update({
+    where: { id: requestData.currentResponseId },
+    data: { fastTranscribedText: transcribedText }
+  });
+
+  const [minFollowUps, maxFollowUps] = getFollowUpLevelRange(requestData.followUpLevel);
+  const numberOfPriorFollowUps = requestData.thread.filter(t => t.responseId === undefined).length;
+
+  if (!requestData.shouldFollowUp || numberOfPriorFollowUps > maxFollowUps) {
+    return handleNoFollowUp(requestData, transcribedText);
+  } else {
+    return handlePotentialFollowUp(requestData, transcribedText, newResponse, requestLogger);
+  }
+};
 
 // Route Start
 const handleAudioResponse = async (req: Request, res: Response) => {
