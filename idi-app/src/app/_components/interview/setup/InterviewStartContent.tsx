@@ -41,6 +41,7 @@ export const InterviewStartContent: React.FC<InterviewStartContentProps> = ({
   const [, setInterviewSession] = useAtom(interviewSessionAtom);
   const interviewSession = useAtomValue(interviewSessionAtom);
   const [, setCurrentQuestion] = useAtom(currentQuestionAtom);
+  const [accessError, setAccessError] = useState<string | null>(null);
 
   const startInterviewSession =
     api.interviews.startInterviewSessionQuestions.useMutation();
@@ -82,8 +83,21 @@ export const InterviewStartContent: React.FC<InterviewStartContentProps> = ({
             study={study}
             organization={organization}
             isInitializing={isInitializing}
-            onGrantAccess={async () => {
+            accessError={accessError}
+            handleGrantAccess={async () => {
               setIsInitializing(true);
+
+              try {
+                await navigator.mediaDevices.getUserMedia({
+                  audio: true,
+                  video: study.videoEnabled ?? false,
+                });
+              } catch (error) {
+                console.error("Error accessing camera and microphone:", error);
+                setAccessError(
+                  "Please allow access to continue. You can change this in your browser settings.",
+                );
+              }
               // Kick off the interview session by assigning the first question to CurrentQuestion
               const firstQuestion = await startInterviewSession.mutateAsync({
                 interviewSessionId: interviewSession?.id ?? "",
@@ -172,14 +186,20 @@ const AccessContent: React.FC<{
   study: Study;
   organization: Organization;
   isInitializing: boolean;
-  onGrantAccess: () => void;
-}> = ({ study, organization, isInitializing, onGrantAccess }) => {
+  handleGrantAccess: () => void;
+  accessError: string | null;
+}> = ({
+  study,
+  organization,
+  isInitializing,
+  handleGrantAccess,
+  accessError,
+}) => {
   const newColor = getColorWithOpacity(organization.secondaryColor ?? "", 0.15);
   const selectedColor = getColorWithOpacity(
     organization.secondaryColor ?? "",
     0.4,
   );
-  const [accessError, setAccessError] = useState<string | null>(null);
 
   const [showInstructions, setShowInstructions] = useState(false);
 
@@ -226,21 +246,6 @@ const AccessContent: React.FC<{
     }
   };
 
-  const handleGrantAccess = async () => {
-    try {
-      await navigator.mediaDevices.getUserMedia({
-        audio: true,
-        video: study.videoEnabled ?? false,
-      });
-      onGrantAccess();
-    } catch (error) {
-      console.error("Error accessing camera and microphone:", error);
-      setAccessError(
-        "Please allow access to continue. You can change this in your browser settings.",
-      );
-    }
-  };
-
   return (
     <div className="mb-10 flex w-full max-w-[70%] flex-col gap-4 md:max-w-[28rem]">
       <div className="text-lg">
@@ -278,12 +283,15 @@ const AccessContent: React.FC<{
         }
       >
         {isInitializing ? (
-          <ClipLoader
-            color="#000000"
-            size={20}
-            aria-label="Loading Spinner"
-            data-testid="loader"
-          />
+          <>
+            Getting ready...{" "}
+            <ClipLoader
+              color="#000000"
+              size={20}
+              aria-label="Loading Spinner"
+              data-testid="loader"
+            />
+          </>
         ) : (
           <>
             "Allow Access" <Microphone />

@@ -25,6 +25,12 @@ export const studiesRouter = createTRPCRouter({
             orderBy: {
               questionOrder: "asc",
             },
+            include: {
+              imageStimuli: true,
+              websiteStimuli: true,
+              videoStimuli: true,
+              multipleChoiceOptions: true,
+            },
           },
         },
       });
