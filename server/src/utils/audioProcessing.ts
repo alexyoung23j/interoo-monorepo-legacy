@@ -6,22 +6,28 @@ import { FollowUpLevel } from "../../../shared/generated/client";
 import { RunnableSequence } from "@langchain/core/runnables";
 import { StructuredOutputParser } from "@langchain/core/output_parsers";
 import { ConversationState, TranscribeAndGenerateNextQuestionRequest } from "../../../shared/types";
+import { createRequestLogger } from "./logger";
 
-export const transcribeAudio = async (audioBuffer: Buffer): Promise<string> => {
+export const transcribeAudio = async (audioBuffer: Buffer, requestLogger: ReturnType<typeof createRequestLogger>): Promise<string> => {
   try {
+    requestLogger.info('Starting audio transcription');
     const { result } = await deepgram.listen.prerecorded.transcribeFile(audioBuffer, { model: "nova-2" });
+    requestLogger.info('Audio transcription completed');
     return result?.results.channels[0].alternatives[0].transcript ?? '';
   } catch (error) {
-    console.error('Error transcribing audio:', error);
+    requestLogger.error('Error transcribing audio', { error: String(error) });
     throw new Error('Failed to transcribe audio');
   }
 };
 
 export const decideFollowUpPromptIfNecessary = async (
-    requestData: TranscribeAndGenerateNextQuestionRequest,
-    transcribedText: string
+  requestData: TranscribeAndGenerateNextQuestionRequest,
+  transcribedText: string,
+  requestLogger: ReturnType<typeof createRequestLogger>
   ): Promise<{ shouldFollowUp: boolean; followUpQuestion?: string }> => {
     const startTime = Date.now();
+    requestLogger.info('Starting follow-up decision process');
+
 
     const conversationHistory = buildConversationHistory(requestData.thread, transcribedText);
     const promptTemplate = buildPromptTemplate();
@@ -50,7 +56,7 @@ export const decideFollowUpPromptIfNecessary = async (
       format_instructions: parser.getFormatInstructions(),
     });
     const chainEndTime = Date.now();
-    console.log(`Chain execution time: ${chainEndTime - chainStartTime}ms`);
+    requestLogger.debug('Chain execution completed', { executionTime: chainEndTime - chainStartTime });
     
     let parsedResponse;
     const parseStartTime = Date.now();
@@ -69,7 +75,7 @@ export const decideFollowUpPromptIfNecessary = async (
     };
 
     const endTime = Date.now();
-    console.log(`Total execution time: ${endTime - startTime}ms`);
+    requestLogger.info('Follow-up decision process completed', { totalExecutionTime: endTime - startTime });
 
     return result;
 }

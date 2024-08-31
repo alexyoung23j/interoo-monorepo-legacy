@@ -6,7 +6,7 @@ import { SyncLoader, ClipLoader } from "react-spinners";
 import { api } from "@/trpc/react";
 import { cx } from "@/tailwind/styling";
 import { isColorLight } from "@/app/utils/color";
-import { useAudioRecorder } from "@/app/api/useAudioRecorder";
+import { useAudioRecorder } from "@/hooks/useAudioRecorder";
 import {
   type FollowUpQuestion,
   InterviewSession,

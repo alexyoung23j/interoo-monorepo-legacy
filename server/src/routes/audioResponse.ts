@@ -2,17 +2,22 @@ import { Router } from "express";
 import { Request, Response } from "express";
 import Busboy from 'busboy';
 import { transcribeAudio, decideFollowUpPromptIfNecessary, getFollowUpLevelValue } from "../utils/audioProcessing";
-import { FollowUpLevel } from "../../../shared/generated/client";
 import { prisma } from "..";
 import { TranscribeAndGenerateNextQuestionRequestBuilder, ConversationState, TranscribeAndGenerateNextQuestionResponse, TranscribeAndGenerateNextQuestionRequest } from "../../../shared/types";
+import { createRequestLogger } from '../utils/logger';
+
 
 const router = Router();
 
 const handleAudioResponse = async (req: Request, res: Response) => {
+  const requestLogger = createRequestLogger();
   const startTime = Date.now();
   let transcriptionTime = 0;
   let dbUpdateTime = 0;
   let followUpDecisionTime = 0;
+
+  requestLogger.info('Starting audio response processing');
+
 
   const busboy = Busboy({ 
     headers: req.headers,
@@ -62,13 +67,13 @@ const handleAudioResponse = async (req: Request, res: Response) => {
     const requestData = requestDataBuilder.build();
 
     if (!audioBuffer || !requestData.currentBaseQuestionId || !requestData.studyBackground || !requestData.nextBaseQuestionId || !requestData.nextBaseQuestionId || !requestData.interviewSessionId || !requestData.currentResponseId) {
-      console.log({ requestData });
+      requestLogger.warn('Missing required fields', { requestData });
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
     try {
       const transcriptionStartTime = Date.now();
-      const transcribedText = await transcribeAudio(audioBuffer);
+      const transcribedText = await transcribeAudio(audioBuffer, requestLogger);
       transcriptionTime = Date.now() - transcriptionStartTime;
 
       // Update the Response row with the transcribed text and the InterviewSession with the next question
@@ -89,7 +94,6 @@ const handleAudioResponse = async (req: Request, res: Response) => {
       };
 
       const numberOfPriorFollowUps = requestData.thread.filter(t => t.responseId === undefined).length;
-      console.log("number of prior follow ups", numberOfPriorFollowUps);
 
       if (!requestData.shouldFollowUp || numberOfPriorFollowUps > followUpLevelValue) {
         response.isFollowUp = requestData.thread.length > 0;
@@ -103,7 +107,7 @@ const handleAudioResponse = async (req: Request, res: Response) => {
         });
       } else {
         const followUpStartTime = Date.now();
-        const { shouldFollowUp, followUpQuestion } = await decideFollowUpPromptIfNecessary(requestData, transcribedText);
+        const { shouldFollowUp, followUpQuestion } = await decideFollowUpPromptIfNecessary(requestData, transcribedText, requestLogger);
         followUpDecisionTime = Date.now() - followUpStartTime;
 
         if (shouldFollowUp && followUpQuestion) {
@@ -148,21 +152,22 @@ const handleAudioResponse = async (req: Request, res: Response) => {
       }
 
       const totalTime = Date.now() - startTime;
-      console.log(`Audio processing times:
-        Total time: ${totalTime}ms
-        Transcription time: ${transcriptionTime}ms
-        DB update time: ${dbUpdateTime}ms
-        Follow-up decision time: ${followUpDecisionTime}ms`);
+      requestLogger.info('Audio endpoint completed', {
+        totalTime,
+        transcriptionTime,
+        dbUpdateTime,
+        followUpDecisionTime
+      });
 
       res.json(response);
     } catch (error) {
-      console.error('Error processing audio response:', error);
+      requestLogger.error('Error processing audio response', { error: String(error) });
       res.status(500).json({ error: 'Internal server error', message: String(error) });
     }
   });
 
   busboy.on('error', (error) => {
-    console.error('Error processing form data:', error);
+    requestLogger.error('Error processing form data', { error: String(error) });
     res.status(500).json({ error: 'Error processing form data' });
   });
 

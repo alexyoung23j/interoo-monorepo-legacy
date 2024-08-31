@@ -1,0 +1,4 @@
+{"correlationId":"49317cb7-5e1e-465f-a28a-70ec4fd0b53c","level":"info","message":"Starting audio response processing","service":"audio-response-service","timestamp":"2024-08-31T16:53:26.448Z"}
+{"correlationId":"49317cb7-5e1e-465f-a28a-70ec4fd0b53c","level":"info","message":"Starting audio transcription","service":"audio-response-service","timestamp":"2024-08-31T16:53:26.466Z"}
+{"correlationId":"49317cb7-5e1e-465f-a28a-70ec4fd0b53c","level":"info","message":"Audio transcription completed","service":"audio-response-service","timestamp":"2024-08-31T16:53:27.578Z"}
+{"correlationId":"49317cb7-5e1e-465f-a28a-70ec4fd0b53c","dbUpdateTime":626,"followUpDecisionTime":0,"level":"info","message":"Audio endpoint completed","service":"audio-response-service","timestamp":"2024-08-31T16:53:28.206Z","totalTime":1757,"transcriptionTime":1113}

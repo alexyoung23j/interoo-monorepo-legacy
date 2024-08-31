@@ -9,7 +9,7 @@ import {
   currentResponseAtom,
   followUpQuestionsAtom,
   responsesAtom,
-} from "../state/atoms";
+} from "../app/state/atoms";
 import { useAtom } from "jotai";
 import { Question } from "@shared/generated/client";
 
