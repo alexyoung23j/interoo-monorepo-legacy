@@ -10,7 +10,7 @@ import { createClient as createDeepgramClient } from "@deepgram/sdk";
 import { protectedRoute } from "./routes/test/protected";
 import { audioResponseRoute } from "./routes/audioResponse";
 import { testFollowUpRoute } from "./routes/test/testFollowUp";
-import { getUploadUrlsRoute } from "./routes/getUploadUrls";
+import { getSignedUrlRoute } from "./routes/getUploadUrls";
 import { testTranscribeRoute } from "./routes/test/testTranscribe";
 
 // Configuration and Setup
@@ -31,7 +31,7 @@ app.options("*", cors());
 // Routes
 app.use("/protected", protectedRoute);
 app.use("/api/audio-response", audioResponseRoute);
-app.use("/api/get-upload-urls", getUploadUrlsRoute);
+app.use("/api/get-signed-url", getSignedUrlRoute);
 app.use("/test-follow-up", testFollowUpRoute);
 app.use("/test-transcribe", testTranscribeRoute);
 
