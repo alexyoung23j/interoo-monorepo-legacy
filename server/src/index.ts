@@ -20,7 +20,7 @@ dotenv.config({ path: path.join(rootDir, ".env") });
 const app = express();
 const port = process.env.PORT || 8800;
 export const prisma = new PrismaClient();
-export const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!);
+export const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 export const deepgram = createDeepgramClient(process.env.DEEPGRAM_API_KEY!);
 
 // Middleware
@@ -47,4 +47,8 @@ process.on('SIGINT', async () => {
 process.on('SIGTERM', async () => {
   await prisma.$disconnect();
   process.exit(0);
+});
+
+process.on('beforeExit', async () => {
+  await prisma.$disconnect();
 });

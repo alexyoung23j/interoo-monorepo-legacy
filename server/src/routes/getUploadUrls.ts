@@ -1,7 +1,6 @@
 import { Router, Request, Response } from "express";
 import path from "path";
 import { prisma, supabase } from "../index";
-import { authMiddleware } from "../middleware/auth";
 import { UploadUrlRequest } from "../../../shared/types";
 
 const router = Router();
@@ -65,6 +64,7 @@ const getUploadUrls = async (req: Request, res: Response) => {
     console.error('Error generating signed URLs:', error);
     res.status(500).json({ error: 'Failed to generate upload URLs' });
   }
+
 };
 
 async function generateSignedUrl(bucketName: string, filePath: string) {
@@ -83,6 +83,6 @@ async function generateSignedUrl(bucketName: string, filePath: string) {
   };
 }
 
-router.post('/', authMiddleware, getUploadUrls); // TODO: this shouldnt be authed right?
+router.post('/', getUploadUrls); // TODO: this shouldnt be authed right?
 
 export const getUploadUrlsRoute = router;
