@@ -74,6 +74,7 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
     stopRecording,
     submitAudio,
     awaitingResponse: awaitingLLMResponse,
+    noAnswerDetected,
   } = useAudioRecorder({ baseQuestions: study.questions });
 
   const startResponse = async () => {
@@ -84,6 +85,11 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
 
     try {
       await startRecording();
+
+      if (noAnswerDetected) {
+        // the last time we spoke, we didnt get any audio back, so we shouldn't try to create a new response
+        return;
+      }
 
       if (currentQuestion) {
         const isFollowUpQuestion = "followUpQuestionOrder" in currentQuestion;

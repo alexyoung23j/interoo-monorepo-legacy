@@ -72,23 +72,18 @@ const extractRequestData = (req: Request): Promise<{ audioBuffer: Buffer, reques
 const validateRequestData = (requestData: TranscribeAndGenerateNextQuestionRequest): boolean => {
   return !!(requestData.currentBaseQuestionId && 
             requestData.studyBackground && 
-            requestData.nextBaseQuestionId && 
             requestData.interviewSessionId && 
             requestData.currentResponseId);
 };
-
-
 
 const handleNoTranscription = async (
   requestData: TranscribeAndGenerateNextQuestionRequest, 
   transcribedText: string
 ): Promise<TranscribeAndGenerateNextQuestionResponse> => {
-
-
   return {
     isFollowUp: requestData.thread.length > 0,
     transcribedText: transcribedText,
-    noAnswerDetected: false,
+    noAnswerDetected: true,
     nextQuestionId: requestData.currentBaseQuestionId
   };
 };
@@ -97,10 +92,12 @@ const handleNoFollowUp = async (
   requestData: TranscribeAndGenerateNextQuestionRequest, 
   transcribedText: string
 ): Promise<TranscribeAndGenerateNextQuestionResponse> => {
-  await prisma.interviewSession.update({
-    where: { id: requestData.interviewSessionId },
-    data: { currentQuestionId: requestData.nextBaseQuestionId }
-  });
+  if (requestData.nextBaseQuestionId) {
+    await prisma.interviewSession.update({
+      where: { id: requestData.interviewSessionId },
+      data: { currentQuestionId: requestData.nextBaseQuestionId }
+    });
+  }
 
   return {
     isFollowUp: requestData.thread.length > 0,
@@ -114,9 +111,12 @@ const handlePotentialFollowUp = async (
   requestData: TranscribeAndGenerateNextQuestionRequest, 
   transcribedText: string,
   newResponse: any,
-  requestLogger: ReturnType<typeof createRequestLogger>
+  requestLogger: ReturnType<typeof createRequestLogger>,
+  minFollowUps: number,
+  maxFollowUps: number,
+  currentNumberOfFollowUps: number
 ): Promise<TranscribeAndGenerateNextQuestionResponse> => {
-  const { shouldFollowUp, followUpQuestion } = await decideFollowUpPromptIfNecessary(requestData, transcribedText, requestLogger);
+  const { shouldFollowUp, followUpQuestion } = await decideFollowUpPromptIfNecessary(requestData, transcribedText, requestLogger, minFollowUps, maxFollowUps, currentNumberOfFollowUps);
 
   if (shouldFollowUp && followUpQuestion) {
     const updatedSession = await prisma.interviewSession.update({
@@ -176,7 +176,7 @@ const processAudioResponse = async (
   if (!requestData.shouldFollowUp || numberOfPriorFollowUps > maxFollowUps) {
     return handleNoFollowUp(requestData, transcribedText);
   } else {
-    return handlePotentialFollowUp(requestData, transcribedText, newResponse, requestLogger);
+    return handlePotentialFollowUp(requestData, transcribedText, newResponse, requestLogger, minFollowUps, maxFollowUps, numberOfPriorFollowUps);
   }
 };
 

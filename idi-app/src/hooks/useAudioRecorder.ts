@@ -12,6 +12,7 @@ import {
 } from "../app/state/atoms";
 import { useAtom } from "jotai";
 import { Question } from "@shared/generated/client";
+import { showWarningToast } from "@/app/utils/toastUtils";
 
 interface AudioRecorderHook {
   isRecording: boolean;
@@ -22,6 +23,7 @@ interface AudioRecorderHook {
   ) => Promise<any>;
   error: string | null;
   awaitingResponse: boolean; // New property
+  noAnswerDetected: boolean;
 }
 
 const MAX_RECORDING_TIME = 15 * 60 * 1000; // 15 minutes
@@ -40,6 +42,7 @@ export function useAudioRecorder({
   const [followUpQuestions, setFollowUpQuestions] = useAtom(
     followUpQuestionsAtom,
   );
+  const [noAnswerDetected, setNoAnswerDetected] = useState(false);
 
   const mediaRecorder = useRef<MediaRecorder | null>(null);
   const audioChunks = useRef<Blob[]>([]);
@@ -150,10 +153,14 @@ export function useAudioRecorder({
         audioChunks.current = [];
 
         if (data.noAnswerDetected) {
-          // TODO: Should basicall just show some kind of error that we couldnt hear them
-
+          // No transcription was detected, so we should not update anything
+          setAwaitingResponse(false);
+          showWarningToast("Sorry, I couldn't hear you. Please try again!");
+          setNoAnswerDetected(true);
           return;
         }
+
+        setNoAnswerDetected(false);
 
         if (data.isFollowUp && data.followUpQuestion) {
           setCurrentQuestion(data.followUpQuestion);
@@ -200,6 +207,7 @@ export function useAudioRecorder({
 
   return {
     awaitingResponse,
+    noAnswerDetected,
     isRecording,
     startRecording,
     stopRecording,
