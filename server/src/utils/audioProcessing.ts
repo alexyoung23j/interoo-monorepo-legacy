@@ -128,17 +128,17 @@ const extractTextFromResponse = (content: MessageContent): string | null => {
   return null;
 };
 
-export const getFollowUpLevelValue = (level: string): number => {
+export const getFollowUpLevelRange = (level: string): [number, number] => {
   switch (level.toUpperCase()) {
     case FollowUpLevel.AUTOMATIC:
-      return 3;
+      return [2, 5];
     case FollowUpLevel.SURFACE:
-      return 1;
+      return [1, 3];
     case FollowUpLevel.LIGHT:
-      return 2;
+      return [2, 4];
     case FollowUpLevel.DEEP:
-      return 5;
+      return [4, 6];
     default:
-      return 1
+      return [2, 5];
   }
 };

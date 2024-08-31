@@ -147,6 +147,14 @@ export function useAudioRecorder({
         const data: TranscribeAndGenerateNextQuestionResponse =
           await response.json();
 
+        audioChunks.current = [];
+
+        if (data.noAnswerDetected) {
+          // TODO: Should basicall just show some kind of error that we couldnt hear them
+
+          return;
+        }
+
         if (data.isFollowUp && data.followUpQuestion) {
           setCurrentQuestion(data.followUpQuestion);
           setFollowUpQuestions([...followUpQuestions, data.followUpQuestion]);
@@ -159,7 +167,6 @@ export function useAudioRecorder({
         }
 
         // Clear audio chunks after successful submission
-        audioChunks.current = [];
         setAwaitingResponse(false);
         setResponses(
           responses.map((response) =>
