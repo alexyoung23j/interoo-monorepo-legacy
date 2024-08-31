@@ -4,3 +4,7 @@
 shared/generated/
 
 server/dist
+
+server/combined.log
+server/error.log
+
