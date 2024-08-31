@@ -21,8 +21,9 @@ export const decideFollowUpPromptIfNecessary = async (
     requestData: TranscribeAndGenerateNextQuestionRequest,
     transcribedText: string
   ): Promise<{ shouldFollowUp: boolean; followUpQuestion?: string }> => {
+    const startTime = Date.now();
+
     const conversationHistory = buildConversationHistory(requestData.thread, transcribedText);
-    console.log({conversationHistory})
     const promptTemplate = buildPromptTemplate();
     const parser = StructuredOutputParser.fromNamesAndDescriptions({
       shouldFollowUp: "boolean indicating whether a follow-up question is needed, true or false",
@@ -41,36 +42,45 @@ export const decideFollowUpPromptIfNecessary = async (
       parser,
     ]);
   
+    const chainStartTime = Date.now();
     const response = await chain.invoke({
       bg: requestData.studyBackground,
       ctx: requestData.currentBaseQuestionContext,
       conversation_history: conversationHistory,
       format_instructions: parser.getFormatInstructions(),
     });
+    const chainEndTime = Date.now();
+    console.log(`Chain execution time: ${chainEndTime - chainStartTime}ms`);
     
     let parsedResponse;
+    const parseStartTime = Date.now();
     try {
       parsedResponse = typeof response === 'string' ? JSON.parse(response) : response;
     } catch (error) {
       console.error('Error parsing LLM response:', error);
       return { shouldFollowUp: false };
     }
+    const parseEndTime = Date.now();
+    console.log(`Parsing time: ${parseEndTime - parseStartTime}ms`);
 
     const result = {
       shouldFollowUp: parsedResponse.shouldFollowUp === true || parsedResponse.shouldFollowUp === 'true',
       followUpQuestion: parsedResponse.followUpQuestion !== null ? parsedResponse.followUpQuestion : undefined
     };
 
-      return result;
+    const endTime = Date.now();
+    console.log(`Total execution time: ${endTime - startTime}ms`);
+
+    return result;
 }
 
 const buildConversationHistory = (thread: ConversationState, transcribedText: string): string => {
-  console.log("the thread", thread)
   let history = '';
   for (const item of thread) {
-    history += `Question: ${item.questionText}\n`;
     if (item.responseText) {
       history += `Response: ${item.responseText}\n`;
+    } else {
+      history += `Question: ${item.questionText}\n`;
     }
   }
   // Add the latest transcribed response
@@ -95,7 +105,9 @@ const buildPromptTemplate = (): string => {
       {format_instructions}
       
       If a follow-up question is needed, provide the question text. If not, set followUpQuestion to null.
-      Do not engage with the participant about anything other than this research interview.`;
+      Do not engage with the participant about anything other than this research interview.
+      
+      You must ALWAYS format in valid JSON as described above. Output this and NOTHING ELSE. `;
   };
   
 const extractTextFromResponse = (content: MessageContent): string | null => {
