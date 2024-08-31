@@ -294,7 +294,7 @@ const AccessContent: React.FC<{
           </>
         ) : (
           <>
-            "Allow Access" <Microphone />
+            Allow Access <Microphone />
           </>
         )}
       </Button>

@@ -8,6 +8,7 @@ import {
   currentQuestionAtom,
   currentResponseAtom,
   followUpQuestionsAtom,
+  interviewSessionAtom,
   responsesAtom,
 } from "../app/state/atoms";
 import { useAtom } from "jotai";
@@ -43,6 +44,7 @@ export function useAudioRecorder({
     followUpQuestionsAtom,
   );
   const [noAnswerDetected, setNoAnswerDetected] = useState(false);
+  const [interviewSession, setInterviewSession] = useAtom(interviewSessionAtom);
 
   const mediaRecorder = useRef<MediaRecorder | null>(null);
   const audioChunks = useRef<Blob[]>([]);
@@ -165,12 +167,18 @@ export function useAudioRecorder({
         if (data.isFollowUp && data.followUpQuestion) {
           setCurrentQuestion(data.followUpQuestion);
           setFollowUpQuestions([...followUpQuestions, data.followUpQuestion]);
-        } else {
+        } else if (data.nextQuestionId) {
           const nextQuestionId = data.nextQuestionId;
           const nextQuestion = baseQuestions.find(
             (question) => question.id === nextQuestionId,
           );
           setCurrentQuestion(nextQuestion as Question);
+        } else {
+          // No next question, this was the final question
+          setInterviewSession({
+            ...interviewSession!,
+            status: "COMPLETED",
+          });
         }
 
         // Clear audio chunks after successful submission
