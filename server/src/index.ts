@@ -11,7 +11,7 @@ import { createClient as createDeepgramClient } from "@deepgram/sdk";
 import { protectedRoute } from "./routes/test/protected";
 import { audioResponseRoute } from "./routes/audioResponse";
 import { testFollowUpRoute } from "./routes/test/testFollowUp";
-import { getUploadUrlsRoute } from "./routes/getUploadUrls";
+import { getSignedUrlRoute } from "./routes/getUploadUrls";
 import { testTranscribeRoute } from "./routes/test/testTranscribe";
 
 // Configuration and Setup
@@ -21,7 +21,7 @@ dotenv.config({ path: path.join(rootDir, ".env") });
 const app = express();
 const port = process.env.PORT || 8800;
 export const prisma = new PrismaClient();
-export const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!);
+export const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 export const deepgram = createDeepgramClient(process.env.DEEPGRAM_API_KEY!);
 
 // Middleware
@@ -32,7 +32,7 @@ app.options("*", cors());
 // Routes
 app.use("/protected", protectedRoute);
 app.use("/api/audio-response", audioResponseRoute);
-app.use("/api/get-upload-urls", getUploadUrlsRoute);
+app.use("/api/get-signed-url", getSignedUrlRoute);
 app.use("/test-follow-up", testFollowUpRoute);
 app.use("/test-transcribe", testTranscribeRoute);
 
@@ -59,4 +59,8 @@ process.on('SIGINT', async () => {
 process.on('SIGTERM', async () => {
   await prisma.$disconnect();
   process.exit(0);
+});
+
+process.on('beforeExit', async () => {
+  await prisma.$disconnect();
 });

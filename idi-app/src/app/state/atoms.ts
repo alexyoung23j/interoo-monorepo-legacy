@@ -1,12 +1,11 @@
 import { atom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 import {
-  Question,
   Response,
   InterviewSession,
   FollowUpQuestion,
 } from "@shared/generated/client";
-import { ConversationState, CurrentQuestionType } from "@shared/types";
+import { CurrentQuestionType } from "@shared/types";
 
 export const currentQuestionAtom = atom<CurrentQuestionType | null>(null);
 export const currentResponseAtom = atom<Response | null>(null);

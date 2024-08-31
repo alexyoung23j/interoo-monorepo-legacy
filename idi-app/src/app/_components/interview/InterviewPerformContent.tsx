@@ -36,11 +36,6 @@ export const InterviewPerformContent: React.FC<
 }) => {
   const [currentQuestion, setCurrentQuestion] = useAtom(currentQuestionAtom);
   const [interviewSession, setInterviewSession] = useAtom(interviewSessionAtom);
-  const [responses, setResponses] = useAtom(responsesAtom);
-  const [currentResponse, setCurrentResponse] = useAtom(currentResponseAtom);
-  const [followUpQuestions, setFollowUpQuestions] = useAtom(
-    followUpQuestionsAtom,
-  );
 
   const [multipleChoiceOptionSelectionId, setMultipleChoiceOptionSelectionId] =
     useState<string | null>(null);
