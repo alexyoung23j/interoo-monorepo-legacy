@@ -12,9 +12,6 @@ import {
   Study,
 } from "@shared/generated/client";
 import { InterviewProgressBar } from "./InterviewProgressBar";
-import { DisplayQuestion } from "./DisplayQuestion";
-import InterviewBottomBar from "./InterviewBottomBar";
-import { api } from "@/trpc/react";
 import { useParams } from "next/navigation";
 import { InterviewStartContent } from "./setup/InterviewStartContent";
 import InterviewFinishedContent from "./setup/InterviewFinishedContent";
@@ -25,6 +22,7 @@ import {
   followUpQuestionsAtom,
   initializeInterviewAtom,
   interviewSessionAtom,
+  mediaAccessAtom,
   responsesAtom,
 } from "@/app/state/atoms";
 import { useAtom } from "jotai";
@@ -58,21 +56,52 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
   const [followUpQuestions, setFollowUpQuestions] = useAtom(
     followUpQuestionsAtom,
   );
+  const [mediaAccess, setMediaAccess] = useAtom(mediaAccessAtom);
 
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (fetchedInterviewSession) {
-      const { interviewSession: fetchedSession, calculatedCurrentQuestion } =
-        fetchedInterviewSession;
-      setInterviewSession(fetchedSession);
-      setCurrentQuestion(calculatedCurrentQuestion ?? null);
-      setResponses(fetchedSession.responses ?? []);
-      setFollowUpQuestions(fetchedSession.FollowUpQuestions ?? []);
-    }
+    const initializeInterview = async () => {
+      if (fetchedInterviewSession) {
+        const { interviewSession: fetchedSession, calculatedCurrentQuestion } =
+          fetchedInterviewSession;
+        setInterviewSession(fetchedSession);
+        setCurrentQuestion(calculatedCurrentQuestion ?? null);
+        setResponses(fetchedSession.responses ?? []);
+        setFollowUpQuestions(fetchedSession.FollowUpQuestions ?? []);
+      }
 
-    setIsLoading(false);
-  }, [fetchedInterviewSession, interviewSessionId]);
+      // Check media access permissions
+      try {
+        const micPermission = await navigator.permissions.query({
+          name: "microphone" as PermissionName,
+        });
+        const camPermission = await navigator.permissions.query({
+          name: "camera" as PermissionName,
+        });
+
+        setMediaAccess({
+          microphone: micPermission.state === "granted",
+          camera: camPermission.state === "granted",
+        });
+      } catch (error) {
+        console.error("Error checking media permissions:", error);
+        setMediaAccess({ microphone: false, camera: false });
+      }
+
+      setIsLoading(false);
+    };
+
+    initializeInterview();
+  }, [
+    fetchedInterviewSession,
+    interviewSessionId,
+    setCurrentQuestion,
+    setResponses,
+    setInterviewSession,
+    setFollowUpQuestions,
+    setMediaAccess,
+  ]);
 
   // Interview Phases
   const hasCurrentQuestion = currentQuestion !== null;

@@ -1,5 +1,5 @@
 # Use an official Node.js runtime as a parent image
-FROM node
+FROM node:20.11.1
 
 # Set the working directory
 WORKDIR /app
@@ -9,12 +9,16 @@ ARG DIRECT_URL
 ARG SUPABASE_URL
 ARG SUPABASE_ANON_KEY
 ARG FRONTEND_URL
+ARG GOOGLE_CLOUD_PROJECT_ID
+ARG GOOGLE_CLOUD_API_KEY
 
 RUN echo $DATABASE_URL
 RUN echo $DIRECT_URL
 RUN echo $SUPABASE_URL
 RUN echo $SUPABASE_ANON_KEY
 RUN echo $FRONTEND_URL
+RUN echo $GOOGLE_CLOUD_PROJECT_ID
+RUN echo $GOOGLE_CLOUD_API_KEY
 
 # Copy package.json and package-lock.json
 COPY package*.json ./
