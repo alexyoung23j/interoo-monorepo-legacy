@@ -42,7 +42,7 @@ export function InterviewProgressBar({
       }
       const baseProgress =
         (parentQuestion.questionOrder + 1) * mainQuestionInterval;
-      const followUpProgress = mainQuestionInterval * 0.25; // 20% of the interval for follow-ups TODO: this should technically use the follow-up levels to decide the sub-interval here
+      const followUpProgress = mainQuestionInterval * 0.2; // 20% of the interval for follow-ups TODO: this should technically use the follow-up levels to decide the sub-interval here
       return Math.min(baseProgress + followUpProgress, 100);
     } else {
       // It's a main question

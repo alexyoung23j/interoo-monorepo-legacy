@@ -24,10 +24,16 @@ export const interviewSessionAtom = atom<
 export const initializeInterviewAtom = atom(
   null,
   async (get, set, interviewSessionId: string) => {
-    // Remove the useQuery call from here
-    // We'll handle the data fetching in the component
     set(currentQuestionAtom, null);
     set(responsesAtom, []);
     set(interviewSessionAtom, null);
   },
 );
+
+export const mediaAccessAtom = atom<{
+  microphone: boolean;
+  camera: boolean;
+}>({
+  microphone: false,
+  camera: false,
+});

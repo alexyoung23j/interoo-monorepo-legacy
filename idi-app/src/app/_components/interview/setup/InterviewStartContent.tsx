@@ -9,10 +9,14 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { getColorWithOpacity } from "@/app/utils/color";
-import { Microphone } from "@phosphor-icons/react";
+import { ArrowRight, Microphone } from "@phosphor-icons/react";
 import { api } from "@/trpc/react";
 import ClipLoader from "react-spinners/ClipLoader";
-import { currentQuestionAtom, interviewSessionAtom } from "@/app/state/atoms";
+import {
+  currentQuestionAtom,
+  interviewSessionAtom,
+  mediaAccessAtom,
+} from "@/app/state/atoms";
 import { useAtom, useAtomValue } from "jotai";
 
 export enum Stage {
@@ -41,6 +45,8 @@ export const InterviewStartContent: React.FC<InterviewStartContentProps> = ({
   const [, setInterviewSession] = useAtom(interviewSessionAtom);
   const interviewSession = useAtomValue(interviewSessionAtom);
   const [, setCurrentQuestion] = useAtom(currentQuestionAtom);
+  const [mediaAccess, setMediaAccess] = useAtom(mediaAccessAtom);
+
   const [accessError, setAccessError] = useState<string | null>(null);
 
   const startInterviewSession =
@@ -65,6 +71,21 @@ export const InterviewStartContent: React.FC<InterviewStartContentProps> = ({
     router.push(`?${params.toString()}`);
   };
 
+  const startInterview = async () => {
+    // Kick off the interview session by assigning the first question to CurrentQuestion
+    const firstQuestion = await startInterviewSession.mutateAsync({
+      interviewSessionId: interviewSession?.id ?? "",
+    });
+    setCurrentQuestion(firstQuestion);
+
+    // Update the interview session status to IN_PROGRESS
+    setInterviewSession({
+      ...interviewSession!,
+      status: "IN_PROGRESS",
+    });
+    removeStage();
+  };
+
   const renderContent = () => {
     switch (stage) {
       case Stage.Intro:
@@ -78,7 +99,19 @@ export const InterviewStartContent: React.FC<InterviewStartContentProps> = ({
       case Stage.Form:
         return <FormContent />;
       case Stage.Access:
-        return (
+        return mediaAccess.microphone &&
+          (mediaAccess.camera || !study.videoEnabled) ? (
+          <BeginContent
+            study={study}
+            organization={organization}
+            isInitializing={isInitializing}
+            accessError={accessError}
+            handleStart={async () => {
+              setIsInitializing(true);
+              startInterview();
+            }}
+          />
+        ) : (
           <AccessContent
             study={study}
             organization={organization}
@@ -92,24 +125,17 @@ export const InterviewStartContent: React.FC<InterviewStartContentProps> = ({
                   audio: true,
                   video: study.videoEnabled ?? false,
                 });
+                setMediaAccess({
+                  microphone: true,
+                  camera: study.videoEnabled ?? false,
+                });
               } catch (error) {
                 console.error("Error accessing camera and microphone:", error);
                 setAccessError(
                   "Please allow access to continue. You can change this in your browser settings.",
                 );
               }
-              // Kick off the interview session by assigning the first question to CurrentQuestion
-              const firstQuestion = await startInterviewSession.mutateAsync({
-                interviewSessionId: interviewSession?.id ?? "",
-              });
-              setCurrentQuestion(firstQuestion);
-
-              // Update the interview session status to IN_PROGRESS
-              setInterviewSession({
-                ...interviewSession!,
-                status: "IN_PROGRESS",
-              });
-              removeStage();
+              startInterview();
             }}
           />
         );
@@ -295,6 +321,60 @@ const AccessContent: React.FC<{
         ) : (
           <>
             Allow Access <Microphone />
+          </>
+        )}
+      </Button>
+    </div>
+  );
+};
+
+const BeginContent: React.FC<{
+  study: Study;
+  organization: Organization;
+  isInitializing: boolean;
+  handleStart: () => void;
+  accessError: string | null;
+}> = ({ study, organization, isInitializing, handleStart, accessError }) => {
+  const newColor = getColorWithOpacity(organization.secondaryColor ?? "", 0.15);
+  const selectedColor = getColorWithOpacity(
+    organization.secondaryColor ?? "",
+    0.4,
+  );
+
+  const [showInstructions, setShowInstructions] = useState(false);
+
+  return (
+    <div className="mb-10 flex w-full max-w-[70%] flex-col gap-4 md:max-w-[28rem]">
+      <div className="text-lg">
+        Your responses are private and recorded only for our internal analysis.
+      </div>{" "}
+      <div className="text-sm text-neutral-500 md:text-base">
+        Have a great interview!
+      </div>
+      <Button
+        variant="unstyled"
+        className={`mt-8 flex min-h-10 w-fit max-w-md gap-3 rounded-[1px] border border-black border-opacity-50 bg-[var(--button-bg)] text-black transition-colors hover:bg-[var(--button-hover-bg)]`}
+        onClick={handleStart}
+        style={
+          {
+            "--button-bg": newColor,
+            "--button-hover-bg": selectedColor,
+          } as React.CSSProperties
+        }
+      >
+        {isInitializing ? (
+          <>
+            Getting ready...{" "}
+            <ClipLoader
+              color="#000000"
+              size={20}
+              aria-label="Loading Spinner"
+              data-testid="loader"
+            />
+          </>
+        ) : (
+          <>
+            Get Started <ArrowRight />
           </>
         )}
       </Button>

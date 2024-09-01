@@ -13,6 +13,8 @@ import { audioResponseRoute } from "./routes/audioResponse";
 import { testFollowUpRoute } from "./routes/test/testFollowUp";
 import { getSignedUrlRoute } from "./routes/getUploadUrls";
 import { testTranscribeRoute } from "./routes/test/testTranscribe";
+import { getTtsAudioRoute } from "./routes/getTtsAudio";
+
 
 // Configuration and Setup
 const rootDir = path.resolve(__dirname, "../..");
@@ -25,6 +27,11 @@ export const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPA
 export const deepgram = createDeepgramClient(process.env.DEEPGRAM_API_KEY!);
 
 // Middleware
+// Middleware to add API key to requests
+app.use((req, res, next) => {
+  req.headers['x-goog-api-key'] = process.env.GOOGLE_CLOUD_API_KEY;
+  next();
+});
 app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
 app.use(express.json());
 app.options("*", cors());
@@ -33,6 +40,7 @@ app.options("*", cors());
 app.use("/protected", protectedRoute);
 app.use("/api/audio-response", audioResponseRoute);
 app.use("/api/get-signed-url", getSignedUrlRoute);
+app.use("/api/get-tts-audio", getTtsAudioRoute);
 app.use("/test-follow-up", testFollowUpRoute);
 app.use("/test-transcribe", testTranscribeRoute);
 

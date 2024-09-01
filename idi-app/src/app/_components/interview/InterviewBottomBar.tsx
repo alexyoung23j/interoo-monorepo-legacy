@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { ArrowRight, Microphone } from "@phosphor-icons/react";
@@ -31,6 +31,7 @@ import {
   TranscribeAndGenerateNextQuestionRequest,
 } from "@shared/types";
 import { calculateTranscribeAndGenerateNextQuestionRequest } from "@/app/utils/functions";
+import { useTtsAudio } from "@/hooks/useTtsAudio";
 
 interface InterviewBottomBarProps {
   organization: Organization;
@@ -52,7 +53,6 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
   rangeSelectionValue,
   handleSubmitMultipleChoiceResponse,
   awaitingOptionResponse,
-  interviewSessionRefetching,
   handleSubmitRangeResponse,
 }) => {
   const [currentQuestion, setCurrentQuestion] = useAtom(currentQuestionAtom);
@@ -62,6 +62,22 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
   const [followUpQuestions, setFollowUpQuestions] = useAtom(
     followUpQuestionsAtom,
   );
+  const [audioOn, setAudioOn] = useState(true);
+
+  const {
+    isLoading: ttsAudioLoading,
+    isPlaying: ttsAudioPlaying,
+    error: ttsAudioError,
+    playAudio: playTtsAudio,
+    stopAudio: ttsAudioStop,
+    audioDuration: ttsAudioDuration,
+  } = useTtsAudio();
+
+  useEffect(() => {
+    if (ttsAudioDuration) {
+      console.log("ttsAudioDuration", ttsAudioDuration);
+    }
+  }, [ttsAudioDuration]);
 
   const isBackgroundLight = isColorLight(organization.secondaryColor ?? "");
 
@@ -84,6 +100,7 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
     }
 
     try {
+      ttsAudioStop();
       await startRecording();
 
       if (noAnswerDetected) {
@@ -130,9 +147,10 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
         currentResponseId: currentResponse?.id ?? "",
       });
 
-      const data = await submitAudio(requestBody);
-
-      console.log({ requestBody, response: data });
+      const { textToPlay } = await submitAudio(requestBody);
+      if (textToPlay && audioOn) {
+        playTtsAudio(textToPlay);
+      }
     } catch (err) {
       console.error("Error submitting audio:", err);
       showErrorToast("Error submitting audio. Please try again.");
@@ -158,7 +176,7 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
             speedMultiplier={0.5}
             margin={3}
           />
-        ) : awaitingLLMResponse || interviewSessionRefetching ? (
+        ) : awaitingLLMResponse || ttsAudioLoading ? (
           <ClipLoader size={16} color="#525252" />
         ) : (
           <Microphone className="size-8 text-neutral-600" />
@@ -167,7 +185,7 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
       <div className="mt-3 text-sm text-neutral-500 md:absolute md:-bottom-[1.75rem]">
         {isRecording
           ? "Click when finished speaking"
-          : awaitingLLMResponse
+          : awaitingLLMResponse || ttsAudioLoading
             ? "Thinking..."
             : "Click to speak"}
       </div>
@@ -186,7 +204,7 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
         )}
         onClick={handleSubmitMultipleChoiceResponse}
       >
-        {awaitingOptionResponse || interviewSessionRefetching ? (
+        {awaitingOptionResponse ? (
           <ClipLoader size={16} color="#525252" />
         ) : (
           <ArrowRight
@@ -219,7 +237,7 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
         )}
         onClick={handleSubmitRangeResponse}
       >
-        {awaitingOptionResponse || interviewSessionRefetching ? (
+        {awaitingOptionResponse ? (
           <ClipLoader size={16} color="#525252" />
         ) : (
           <ArrowRight
@@ -258,8 +276,19 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
   return (
     <div className="mb-2 flex w-full items-center justify-between bg-off-white p-8">
       <div className="flex gap-2 md:w-1/3">
-        <Switch className="hidden data-[state=checked]:bg-org-secondary md:block" />
-        <div className="hidden text-sm text-neutral-400 md:block">Sound on</div>
+        <Switch
+          className="hidden data-[state=checked]:bg-org-secondary md:block"
+          checked={audioOn}
+          onCheckedChange={(checked) => {
+            if (!checked) {
+              ttsAudioStop();
+            }
+            setAudioOn(checked);
+          }}
+        />
+        <div className="hidden text-sm text-neutral-400 md:block">
+          {audioOn ? "Sound on" : "Sound off"}
+        </div>
       </div>
       <div className="relative flex flex-col items-center md:w-1/3">
         {renderQuestionTypeButton()}

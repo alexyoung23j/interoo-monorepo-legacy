@@ -12,7 +12,11 @@ import {
   responsesAtom,
 } from "../app/state/atoms";
 import { useAtom } from "jotai";
-import { Question } from "@shared/generated/client";
+import {
+  FollowUpLevel,
+  FollowUpQuestion,
+  Question,
+} from "@shared/generated/client";
 import { showWarningToast } from "@/app/utils/toastUtils";
 
 interface AudioRecorderHook {
@@ -164,8 +168,11 @@ export function useAudioRecorder({
 
         setNoAnswerDetected(false);
 
+        let nextCurrentQuestion: Question | FollowUpQuestion | null = null;
+
         if (data.isFollowUp && data.followUpQuestion) {
           setCurrentQuestion(data.followUpQuestion);
+          nextCurrentQuestion = data.followUpQuestion;
           setFollowUpQuestions([...followUpQuestions, data.followUpQuestion]);
         } else if (data.nextQuestionId) {
           const nextQuestionId = data.nextQuestionId;
@@ -173,6 +180,7 @@ export function useAudioRecorder({
             (question) => question.id === nextQuestionId,
           );
           setCurrentQuestion(nextQuestion as Question);
+          nextCurrentQuestion = nextQuestion as Question;
         } else {
           // No next question, this was the final question
           setInterviewSession({
@@ -191,7 +199,7 @@ export function useAudioRecorder({
           ),
         );
 
-        return data;
+        return { textToPlay: nextCurrentQuestion?.title };
       } catch (error) {
         console.error("Error submitting audio:", error);
         setError("Failed to submit audio. Please try again.");
