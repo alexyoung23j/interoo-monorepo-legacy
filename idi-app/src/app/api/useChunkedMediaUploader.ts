@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import { UploadUrlRequest } from "@shared/types";
 
-const CHUNK_SIZE = 1 * 1024 * 1024; // 1 MiB for testing
+const CHUNK_SIZE = 8 * 1024 * 1024; // 8 Mib
 
 export function useChunkedMediaUploader() {
   const [isRecording, setIsRecording] = useState(false);
