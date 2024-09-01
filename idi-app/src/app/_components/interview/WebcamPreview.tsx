@@ -31,7 +31,7 @@ const WebcamPreview: React.FC = () => {
       autoPlay
       playsInline
       muted
-      className="h-18 w-24 scale-x-[-1] transform rounded-lg shadow-lg"
+      className="w-34 h-28 scale-x-[-1] transform rounded-lg shadow-lg"
     />
   );
 };
