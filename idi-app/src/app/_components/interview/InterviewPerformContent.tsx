@@ -1,6 +1,5 @@
 import React, { useCallback, useState } from "react";
 import { DisplayQuestion } from "./DisplayQuestion";
-import InterviewBottomBar from "./InterviewBottomBar";
 import {
   FollowUpQuestion,
   InterviewSession,
@@ -18,6 +17,7 @@ import {
   followUpQuestionsAtom,
 } from "@/app/state/atoms";
 import { useAtom } from "jotai";
+import InterviewBottomBarWithVideo from "./interviewBottomBarWithVideo";
 
 interface InterviewPerformContentProps {
   study: Study & { questions: Question[] };
@@ -140,7 +140,7 @@ export const InterviewPerformContent: React.FC<
         rangeSelectionValue={rangeSelectionValue}
         setRangeSelectionValue={setRangeSelectionValue}
       />
-      <InterviewBottomBar
+      <InterviewBottomBarWithVideo
         organization={organization}
         study={study}
         refetchInterviewSession={refetchInterviewSession}

@@ -97,6 +97,7 @@ export interface UploadUrlRequest {
     questionId: string;
     responseId: string;
     fileExtension: string;
+    contentType: string;
 }
 
 export interface TranscribeAndGenerateNextQuestionResponse {

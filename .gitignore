@@ -8,3 +8,10 @@ server/dist
 server/combined.log
 server/error.log
 
+.DS_Store
+server/src/cors.json
+server/src/gcs-credentials.json
+
+# Ignore all log files
+*.log
+
