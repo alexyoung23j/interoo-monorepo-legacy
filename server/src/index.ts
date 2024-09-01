@@ -11,7 +11,7 @@ import { createClient as createDeepgramClient } from "@deepgram/sdk";
 import { protectedRoute } from "./routes/test/protected";
 import { audioResponseRoute } from "./routes/audioResponse";
 import { testFollowUpRoute } from "./routes/test/testFollowUp";
-import { getSignedUrlRoute } from "./routes/getUploadUrls";
+import { getSignedUrlRoute } from "./routes/getSignedUrl";
 import { testTranscribeRoute } from "./routes/test/testTranscribe";
 import { getTtsAudioRoute } from "./routes/getTtsAudio";
 

@@ -54,29 +54,20 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
   interviewSessionRefetching,
   handleSubmitRangeResponse,
 }) => {
-  const transcriptionRecorder = useTranscriptionRecorder({
-    baseQuestions: study.questions,
-  });
-  const chunkedMediaUploader = useChunkedMediaUploader();
-
   const [currentQuestion] = useAtom(currentQuestionAtom);
+  const [currentResponse, setCurrentResponse] = useAtom(currentResponseAtom);
   const [interviewSession] = useAtom(interviewSessionAtom);
   const [responses, setResponses] = useAtom(responsesAtom);
-  const [currentResponse, setCurrentResponse] = useAtom(currentResponseAtom);
   const [followUpQuestions] = useAtom(followUpQuestionsAtom);
-
-  const isBackgroundLight = isColorLight(organization.secondaryColor ?? "");
 
   const createOpenEndedResponse =
     api.responses.createOpenEndedResponse.useMutation();
 
-  const isRecording = study.videoEnabled
-    ? chunkedMediaUploader.isRecording
-    : transcriptionRecorder.isRecording;
+  const transcriptionRecorder = useTranscriptionRecorder({
+    baseQuestions: study.questions,
+  });
 
-  const awaitingLLMResponse = study.videoEnabled
-    ? chunkedMediaUploader.awaitingResponse
-    : transcriptionRecorder.awaitingResponse;
+  const chunkedMediaUploader = useChunkedMediaUploader();
 
   const startResponse = async () => {
     if (!navigator.mediaDevices?.getUserMedia) {
@@ -101,17 +92,22 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
         setResponses([...responses, newResponse]);
       }
 
-      if (study.videoEnabled && newResponse) {
+      if (newResponse) {
         const uploadUrlRequest: UploadUrlRequest = {
           organizationId: organization.id,
           studyId: study.id,
           questionId: currentQuestion?.id ?? "",
           responseId: newResponse.id,
           fileExtension: "webm",
+          contentType: study.videoEnabled ? "video/webm" : "audio/webm",
         };
-        await chunkedMediaUploader.startRecording(uploadUrlRequest, true);
+        await chunkedMediaUploader.startRecording(
+          uploadUrlRequest,
+          study.videoEnabled || false,
+        );
       }
 
+      // Start transcription recording regardless of video being enabled or not
       await transcriptionRecorder.startRecording();
     } catch (err) {
       console.error("Error starting response:", err);
@@ -120,9 +116,7 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
   };
 
   const stopResponse = async () => {
-    if (study.videoEnabled) {
-      await chunkedMediaUploader.stopRecording();
-    }
+    await chunkedMediaUploader.stopRecording();
     transcriptionRecorder.stopRecording();
 
     try {
@@ -150,29 +144,36 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
         variant="unstyled"
         className={cx(
           "h-14 w-14 rounded-sm border border-black border-opacity-25",
-          isRecording
+          transcriptionRecorder.isRecording
             ? "bg-org-secondary hover:opacity-80"
             : "bg-neutral-100 hover:bg-neutral-300",
         )}
-        onClick={isRecording ? stopResponse : startResponse}
+        onClick={
+          transcriptionRecorder.isRecording ? stopResponse : startResponse
+        }
       >
-        {isRecording ? (
+        {transcriptionRecorder.isRecording ? (
           <SyncLoader
             size={4}
-            color={isBackgroundLight ? "black" : "white"}
+            color={
+              isColorLight(organization.secondaryColor ?? "")
+                ? "black"
+                : "white"
+            }
             speedMultiplier={0.5}
             margin={3}
           />
-        ) : awaitingLLMResponse || interviewSessionRefetching ? (
+        ) : transcriptionRecorder.awaitingResponse ||
+          interviewSessionRefetching ? (
           <ClipLoader size={16} color="#525252" />
         ) : (
           <Microphone className="size-8 text-neutral-600" />
         )}
       </Button>
       <div className="mt-3 text-sm text-neutral-500 md:absolute md:-bottom-[1.75rem]">
-        {isRecording
+        {transcriptionRecorder.isRecording
           ? "Click when finished speaking"
-          : awaitingLLMResponse
+          : transcriptionRecorder.awaitingResponse
             ? "Thinking..."
             : "Click to speak"}
       </div>
@@ -199,7 +200,7 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
             color={
               !multipleChoiceOptionSelectionId
                 ? "grey"
-                : isBackgroundLight
+                : isColorLight(organization.secondaryColor ?? "")
                   ? "black"
                   : "white"
             }
@@ -232,7 +233,7 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
             color={
               rangeSelectionValue === null
                 ? "grey"
-                : isBackgroundLight
+                : isColorLight(organization.secondaryColor ?? "")
                   ? "black"
                   : "white"
             }

@@ -3,6 +3,7 @@ import path from "path";
 import { prisma } from "../index";
 import { UploadUrlRequest } from "../../../shared/types";
 import { Storage } from "@google-cloud/storage";
+import axios from "axios";
 
 const router = Router();
 
@@ -10,7 +11,7 @@ const router = Router();
 const storage = new Storage({
   keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
 });
-const bucketName = process.env.GCS_BUCKET_NAME || 'your-bucket-name';
+const bucketName = process.env.GCS_BUCKET_NAME || 'idi-assets';
 const bucket = storage.bucket(bucketName);
 
 const getSignedUrl = async (req: Request, res: Response) => {
@@ -21,6 +22,7 @@ const getSignedUrl = async (req: Request, res: Response) => {
       questionId, 
       responseId, 
       fileExtension,
+      contentType
     }: UploadUrlRequest = req.body;
 
     const basePath = path.join(organizationId, studyId, questionId, responseId);
@@ -30,9 +32,24 @@ const getSignedUrl = async (req: Request, res: Response) => {
     const [signedUrl] = await bucket.file(filePath).getSignedUrl({
       version: 'v4',
       action: 'resumable',
-      expires: Date.now() + 15 * 60 * 1000, // URL expires in 15 minutes
-      contentType: 'video/webm',
+      expires: Date.now() + 30 * 60 * 1000, // URL expires in 30 minutes
+      contentType: contentType,
     });
+
+    // Initiate the resumable upload session
+    const response = await axios.post(signedUrl, null, {
+      headers: {
+        'Content-Type': contentType,
+        'X-Goog-Resumable': 'start',
+        'Origin': process.env.FRONTEND_URL
+      }
+    });
+
+    const sessionUrl = response.headers['location'];
+
+    if (!sessionUrl) {
+      throw new Error('Failed to get session URL');
+    }
 
     const existingResponse = await prisma.response.findUnique({
       where: { id: responseId },
@@ -51,10 +68,10 @@ const getSignedUrl = async (req: Request, res: Response) => {
       }
     });
 
-    res.json({ signedUrl, path: filePath });
+    res.json({ sessionUrl, path: filePath });
 
   } catch (error) {
-    console.error('Error generating signed URL:', error);
+    console.error('Error generating upload session URL:', error);
     res.status(500).json({ error: 'Failed to generate upload URL' });
   }
 };
