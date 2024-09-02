@@ -15,6 +15,7 @@ import { testFollowUpRoute } from "./routes/test/testFollowUp";
 import { getSignedUrlRoute } from "./routes/getSignedUrl";
 import { testTranscribeRoute } from "./routes/test/testTranscribe";
 import { getTtsAudioRoute } from "./routes/getTtsAudio";
+import { TextToSpeechClient } from "@google-cloud/text-to-speech";
 
 
 // Configuration and Setup
@@ -35,6 +36,9 @@ const storage = new Storage({
     private_key: (process.env.GOOGLE_STORAGE_PRIVATE_KEY as string).replace(/\\n/gm, "\n")
   }
 })
+
+// Creates a client
+export const ttsClient = new TextToSpeechClient();
 
 export const bucketName = process.env.GCS_BUCKET_NAME || 'idi-assets';
 export const bucket = storage.bucket(bucketName);
