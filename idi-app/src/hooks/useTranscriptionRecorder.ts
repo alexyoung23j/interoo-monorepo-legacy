@@ -8,23 +8,27 @@ import {
   currentQuestionAtom,
   currentResponseAtom,
   followUpQuestionsAtom,
+  interviewSessionAtom,
   responsesAtom,
-} from "../state/atoms";
+} from "../app/state/atoms";
 import { useAtom } from "jotai";
-import { Question } from "@shared/generated/client";
-import { UploadUrlRequest } from "@shared/types";
+import {
+  FollowUpLevel,
+  FollowUpQuestion,
+  Question,
+} from "@shared/generated/client";
+import { showWarningToast } from "@/app/utils/toastUtils";
 
 interface AudioRecorderHook {
   isRecording: boolean;
-  startAudioOnlyRecording: (
-    uploadUrlRequest: UploadUrlRequest,
-  ) => Promise<void>;
-  stopAudioOnlyRecording: () => void;
+  startRecording: () => Promise<void>;
+  stopRecording: () => void;
   submitAudio: (
     additionalData: TranscribeAndGenerateNextQuestionRequest,
   ) => Promise<any>;
   error: string | null;
   awaitingResponse: boolean; // New property
+  noAnswerDetected: boolean;
 }
 
 const MAX_RECORDING_TIME = 15 * 60 * 1000; // 15 minutes
@@ -33,7 +37,7 @@ export function useTranscriptionRecorder({
   baseQuestions,
 }: {
   baseQuestions: Question[];
-}) {
+}): AudioRecorderHook {
   const [isRecording, setIsRecording] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [awaitingResponse, setAwaitingResponse] = useState(false); // New state
@@ -43,14 +47,38 @@ export function useTranscriptionRecorder({
   const [followUpQuestions, setFollowUpQuestions] = useAtom(
     followUpQuestionsAtom,
   );
-  const recordingTimeout = useRef<NodeJS.Timeout | null>(null);
+  const [noAnswerDetected, setNoAnswerDetected] = useState(false);
+  const [interviewSession, setInterviewSession] = useAtom(interviewSessionAtom);
+
   const mediaRecorder = useRef<MediaRecorder | null>(null);
   const audioChunks = useRef<Blob[]>([]);
+  const recordingTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const startRecording = useCallback(async () => {
     try {
+      setIsRecording(true);
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorder.current = new MediaRecorder(stream);
+
+      let mimeType;
+      if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
+        mimeType = "audio/webm;codecs=opus";
+      } else if (MediaRecorder.isTypeSupported("audio/mp4")) {
+        mimeType = "audio/mp4";
+      } else if (MediaRecorder.isTypeSupported("audio/ogg")) {
+        mimeType = "audio/ogg";
+      } else {
+        console.warn(
+          "No preferred mime types supported, falling back to default",
+        );
+      }
+
+      if (mimeType) {
+        mediaRecorder.current = new MediaRecorder(stream, { mimeType });
+      } else {
+        mediaRecorder.current = new MediaRecorder(stream);
+      }
+
       audioChunks.current = [];
 
       mediaRecorder.current.ondataavailable = (event) => {
@@ -59,10 +87,15 @@ export function useTranscriptionRecorder({
         }
       };
 
-      setIsRecording(true);
-      mediaRecorder.current.start(100);
+      mediaRecorder.current.start(100); // Collect data every second
+
+      recordingTimeout.current = setTimeout(
+        () => stopRecording(),
+        MAX_RECORDING_TIME,
+      );
     } catch (err) {
       console.error("Error starting recording:", err);
+      setIsRecording(false);
       setError(
         "Failed to start recording. Please check your microphone permissions.",
       );
@@ -75,18 +108,27 @@ export function useTranscriptionRecorder({
       if (recordingTimeout.current) {
         clearTimeout(recordingTimeout.current);
       }
-      mediaRecorder.current.stop();
+      // Add a short delay before stopping the recorder
+      setTimeout(() => {
+        mediaRecorder.current?.stop();
+      }, 200); // 100ms delay
     }
   }, []);
 
   const submitAudio = useCallback(
     async (additionalData: TranscribeAndGenerateNextQuestionRequest) => {
       if (audioChunks.current.length === 0) return null;
-      setAwaitingResponse(true);
+      setAwaitingResponse(true); // Set to true when starting submission
 
-      const audioBlob = new Blob(audioChunks.current, { type: "audio/webm" });
+      const mimeType =
+        mediaRecorder.current?.mimeType || "audio/webm;codecs=opus";
+      const audioBlob = new Blob(audioChunks.current, { type: mimeType });
       const formData = new FormData();
-      formData.append("audio", audioBlob, "recording.webm");
+      formData.append(
+        "audio",
+        audioBlob,
+        `recording.${mimeType.split("/")[1]}`,
+      );
 
       // Handle the thread field separately
       const { thread, ...otherData } = additionalData;
@@ -114,19 +156,40 @@ export function useTranscriptionRecorder({
         const data: TranscribeAndGenerateNextQuestionResponse =
           await response.json();
 
+        audioChunks.current = [];
+
+        if (data.noAnswerDetected) {
+          // No transcription was detected, so we should not update anything
+          setAwaitingResponse(false);
+          showWarningToast("Sorry, I couldn't hear you. Please try again!");
+          setNoAnswerDetected(true);
+          return;
+        }
+
+        setNoAnswerDetected(false);
+
+        let nextCurrentQuestion: Question | FollowUpQuestion | null = null;
+
         if (data.isFollowUp && data.followUpQuestion) {
           setCurrentQuestion(data.followUpQuestion);
+          nextCurrentQuestion = data.followUpQuestion;
           setFollowUpQuestions([...followUpQuestions, data.followUpQuestion]);
-        } else {
+        } else if (data.nextQuestionId) {
           const nextQuestionId = data.nextQuestionId;
           const nextQuestion = baseQuestions.find(
             (question) => question.id === nextQuestionId,
           );
           setCurrentQuestion(nextQuestion as Question);
+          nextCurrentQuestion = nextQuestion as Question;
+        } else {
+          // No next question, this was the final question
+          setInterviewSession({
+            ...interviewSession!,
+            status: "COMPLETED",
+          });
         }
 
         // Clear audio chunks after successful submission
-        audioChunks.current = [];
         setAwaitingResponse(false);
         setResponses(
           responses.map((response) =>
@@ -136,7 +199,7 @@ export function useTranscriptionRecorder({
           ),
         );
 
-        return data;
+        return { textToPlay: nextCurrentQuestion?.title };
       } catch (error) {
         console.error("Error submitting audio:", error);
         setError("Failed to submit audio. Please try again.");
@@ -160,9 +223,10 @@ export function useTranscriptionRecorder({
 
   return {
     awaitingResponse,
+    noAnswerDetected,
     isRecording,
-    startRecording: startRecording,
-    stopRecording: stopRecording,
+    startRecording,
+    stopRecording,
     submitAudio,
     error,
   };
