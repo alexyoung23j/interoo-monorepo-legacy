@@ -1,5 +1,5 @@
 import express from "express";
-import { PrismaClient } from "../../shared/generated/client";
+import { PrismaClient } from "@shared/generated/client";
 import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
 import path from "path";

@@ -5,8 +5,11 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "baseUrl": ".",
+    "paths": {
+      "@shared/*": ["../shared/*"]
+    },
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules"]
-}
+  "include": ["src/**/*", "../shared/**/*"],
+  "exclude": ["node_modules", "**/*.spec.ts"]}

@@ -2,7 +2,7 @@ import { deepgram } from "../index";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { ChatOpenAI } from "@langchain/openai";
 import { MessageContent, MessageContentText } from "@langchain/core/messages";
-import { FollowUpLevel } from "../../../shared/generated/client";
+import { FollowUpLevel } from "@shared/generated/client";
 import { RunnableSequence } from "@langchain/core/runnables";
 import { StructuredOutputParser } from "@langchain/core/output_parsers";
 import { ConversationState, TranscribeAndGenerateNextQuestionRequest } from "../../../shared/types";
