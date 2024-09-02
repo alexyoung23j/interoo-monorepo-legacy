@@ -2,7 +2,7 @@ import { Router } from "express";
 import { Request, Response } from "express";
 import { TextToSpeechClient, protos } from '@google-cloud/text-to-speech';
 import { createRequestLogger } from '../utils/logger';
-import { ttsClient } from "src";
+// import { ttsClient } from "src";
 
 const router = Router();
 
@@ -25,7 +25,8 @@ const generateTtsAudio = async (
     requestLogger.info('Starting to generate TTS audio', { text });
 
     // Performs the text-to-speech request
-    const [response] = await ttsClient.synthesizeSpeech(request);
+    // const [response] = await ttsClient.synthesizeSpeech(request);
+    const response = {audioContent: 'test'};
 
     requestLogger.info('Finished generating TTS audio', { text });
 
