@@ -23,6 +23,8 @@ const generateTtsAudio = async (
       },
     };
 
+    requestLogger.info('Starting to generate TTS audio', { text });
+
     // Performs the text-to-speech request
     const [response] = await client.synthesizeSpeech(request);
 
