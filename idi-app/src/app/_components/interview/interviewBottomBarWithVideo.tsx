@@ -283,8 +283,11 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
     }
   };
 
+  const isOpenEndedQuestion =
+    currentQuestion?.questionType === QuestionType.OPEN_ENDED;
+
   return (
-    <div className="mb-2 flex w-full flex-col items-center justify-between bg-off-white p-2 md:flex-row md:p-8">
+    <div className="mb-2 flex w-full flex-col items-center justify-between bg-off-white p-8 md:flex-row">
       <div className="flex gap-2 md:w-1/3">
         <Switch
           className="hidden data-[state=checked]:bg-org-secondary md:block"
@@ -300,14 +303,18 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
           {audioOn ? "Sound on" : "Sound off"}
         </div>
       </div>
+
+      {/* Position webcam differently on different screen sizes */}
       <div className="relative flex flex-col items-center md:w-1/3">
-        <div className="mb-6 md:mb-8 md:hidden">
-          <WebcamPreview />
-        </div>
+        {isOpenEndedQuestion && (
+          <div className="mb-8 md:hidden">
+            <WebcamPreview />
+          </div>
+        )}
         {renderQuestionTypeButton()}
       </div>
       <div className="hidden items-center justify-end md:flex md:w-1/3">
-        <WebcamPreview />
+        {isOpenEndedQuestion && <WebcamPreview />}
       </div>
     </div>
   );
