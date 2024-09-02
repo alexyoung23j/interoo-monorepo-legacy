@@ -1,18 +1,10 @@
 import { Router, Request, Response } from "express";
 import path from "path";
-import { prisma } from "../index";
+import { bucket, bucketName, prisma } from "../index";
 import { UploadUrlRequest } from "../../../shared/types";
-import { Storage } from "@google-cloud/storage";
 import axios from "axios";
 
 const router = Router();
-
-// Initialize Google Cloud Storage
-const storage = new Storage({
-  keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
-});
-const bucketName = process.env.GCS_BUCKET_NAME || 'idi-assets';
-const bucket = storage.bucket(bucketName);
 
 const getSignedUrl = async (req: Request, res: Response) => {
   try {

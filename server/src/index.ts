@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
 import path from "path";
 import cors from "cors";
+import { Storage } from "@google-cloud/storage";
 import { createClient as createDeepgramClient } from "@deepgram/sdk";
 
 
@@ -20,11 +21,23 @@ import { getTtsAudioRoute } from "./routes/getTtsAudio";
 const rootDir = path.resolve(__dirname, "../..");
 dotenv.config({ path: path.join(rootDir, ".env") });
 
+
 const app = express();
 const port = process.env.PORT || 8800;
 export const prisma = new PrismaClient();
 export const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 export const deepgram = createDeepgramClient(process.env.DEEPGRAM_API_KEY!);
+const storage = new Storage({
+  projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
+  scopes: 'https://www.googleapis.com/auth/cloud-platform',
+  credentials: {
+    client_email: process.env.GOOGLE_STORAGE_EMAIL,
+    private_key: process.env.GOOGLE_STORAGE_PRIVATE_KEY
+  }
+})
+
+export const bucketName = process.env.GCS_BUCKET_NAME || 'idi-assets';
+export const bucket = storage.bucket(bucketName);
 
 // Middleware
 // Middleware to add API key to requests
