@@ -30,11 +30,11 @@ export default async function InterviewSessionServerPage({
   const protocol = host.startsWith("localhost") ? "http" : "https";
   const origin = `${protocol}://${host}`;
 
-  if (!organization || !interviewSession) {
+  if (!organization || !interviewSession || !study) {
     return redirect(`${origin}/404`);
   }
 
-  const isLight = isColorLight(organization?.primaryColor ?? "");
+  const isLight = isColorLight(organization.primaryColor ?? "");
 
   return (
     <InterviewLayout
