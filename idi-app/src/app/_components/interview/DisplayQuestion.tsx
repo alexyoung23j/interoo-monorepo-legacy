@@ -31,38 +31,13 @@ export const DisplayQuestion: React.FC<DisplayQuestionProps> = ({
   setRangeSelectionValue,
 }) => {
   const isBackgroundLight = isColorLight(organization.secondaryColor ?? "");
-  const [currentQuestion, setCurrentQuestion] = useAtom(currentQuestionAtom);
+  const [currentQuestion] = useAtom(currentQuestionAtom);
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center gap-4 p-4 md:w-[80%] md:py-0">
+    <div className="flex h-full w-full flex-col items-center justify-center gap-4 p-4 md:w-[70%] md:py-0">
       <div className="text-center text-lg md:text-2xl">
         {currentQuestion?.title}
       </div>
-      <ImageStimuli
-        imageStimuli={(currentQuestion as BaseQuestionExtended)?.imageStimuli}
-      />
-      <VideoStimuli
-        videoStimuli={(currentQuestion as BaseQuestionExtended)?.videoStimuli}
-      />
-      <WebsiteStimuli
-        websiteStimuli={
-          (currentQuestion as BaseQuestionExtended).websiteStimuli
-        }
-        isBackgroundLight={isBackgroundLight}
-      />
-      {currentQuestion?.questionType === "MULTIPLE_CHOICE" && (
-        <MultipleChoiceSelect
-          question={currentQuestion as BaseQuestionExtended}
-          organization={organization}
-          isBackgroundLight={isBackgroundLight}
-          multipleChoiceOptionSelectionId={
-            multipleChoiceOptionSelectionId ?? ""
-          }
-          setMultipleChoiceOptionSelectionId={
-            setMultipleChoiceOptionSelectionId
-          }
-        />
-      )}
       {currentQuestion?.questionType === "RANGE" && (
         <RangeChoiceSelect
           question={currentQuestion as BaseQuestionExtended}
@@ -74,6 +49,33 @@ export const DisplayQuestion: React.FC<DisplayQuestionProps> = ({
           setRangeSelectionValue={setRangeSelectionValue}
         />
       )}
+      <div className="flex flex-col items-center justify-center gap-8 md:flex-row md:items-center md:justify-center">
+        <ImageStimuli
+          imageStimuli={(currentQuestion as BaseQuestionExtended)?.imageStimuli}
+        />
+        <VideoStimuli
+          videoStimuli={(currentQuestion as BaseQuestionExtended)?.videoStimuli}
+        />
+        <WebsiteStimuli
+          websiteStimuli={
+            (currentQuestion as BaseQuestionExtended).websiteStimuli
+          }
+          isBackgroundLight={isBackgroundLight}
+        />
+        {currentQuestion?.questionType === "MULTIPLE_CHOICE" && (
+          <MultipleChoiceSelect
+            question={currentQuestion as BaseQuestionExtended}
+            organization={organization}
+            isBackgroundLight={isBackgroundLight}
+            multipleChoiceOptionSelectionId={
+              multipleChoiceOptionSelectionId ?? ""
+            }
+            setMultipleChoiceOptionSelectionId={
+              setMultipleChoiceOptionSelectionId
+            }
+          />
+        )}
+      </div>
     </div>
   );
 };

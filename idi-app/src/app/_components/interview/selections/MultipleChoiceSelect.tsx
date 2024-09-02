@@ -50,8 +50,8 @@ export const MultipleChoiceSelect: React.FC<MultipleChoiceSelectProps> = ({
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-start gap-3">
-      <div className="text-sm text-black opacity-50">select one</div>
-      <div className="flex max-h-80 w-fit min-w-[70%] flex-col items-center justify-start gap-3 overflow-y-auto px-2 py-4 scrollbar-hide">
+      <div className="text-sm text-black opacity-50">Select One</div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:grid-rows-2">
         {question.multipleChoiceOptions.map((option) => (
           <Button
             key={option.id}
