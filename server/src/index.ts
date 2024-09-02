@@ -37,7 +37,14 @@ const storage = new Storage({
   }
 })
 
-export const ttsClient = new TextToSpeechClient();
+export const ttsClient = new TextToSpeechClient({
+  projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
+  scopes: 'https://www.googleapis.com/auth/cloud-platform',
+  credentials: {
+    client_email: process.env.GOOGLE_STORAGE_EMAIL,
+    private_key: (process.env.GOOGLE_STORAGE_PRIVATE_KEY as string).replace(/\\n/gm, "\n")
+  }
+});
 export const bucketName = process.env.GCS_BUCKET_NAME || 'idi-assets';
 export const bucket = storage.bucket(bucketName);
 
