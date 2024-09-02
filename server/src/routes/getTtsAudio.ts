@@ -2,8 +2,7 @@ import { Router } from "express";
 import { Request, Response } from "express";
 import { TextToSpeechClient, protos } from '@google-cloud/text-to-speech';
 import { createRequestLogger } from '../utils/logger';
-// import { ttsClient } from "src";
-const ttsClient = new TextToSpeechClient();
+import { ttsClient } from "src";
 
 const router = Router();
 
