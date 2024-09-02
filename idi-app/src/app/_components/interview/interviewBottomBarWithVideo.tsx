@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { ArrowRight, Microphone } from "@phosphor-icons/react";
@@ -6,8 +6,7 @@ import { SyncLoader, ClipLoader } from "react-spinners";
 import { api } from "@/trpc/react";
 import { cx } from "@/tailwind/styling";
 import { isColorLight } from "@/app/utils/color";
-import { useTranscriptionRecorder } from "@/app/api/useTranscriptionRecorder";
-import { useChunkedMediaUploader } from "@/app/api/useChunkedMediaUploader";
+import { useChunkedMediaUploader } from "@/hooks/useChunkedMediaUploader";
 import {
   type FollowUpQuestion,
   Organization,
@@ -30,6 +29,8 @@ import {
 } from "@shared/types";
 import { calculateTranscribeAndGenerateNextQuestionRequest } from "@/app/utils/functions";
 import WebcamPreview from "./WebcamPreview";
+import { useTranscriptionRecorder } from "@/hooks/useTranscriptionRecorder";
+import { useTtsAudio } from "@/hooks/useTtsAudio";
 
 interface InterviewBottomBarProps {
   organization: Organization;
@@ -59,6 +60,7 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
   const [interviewSession] = useAtom(interviewSessionAtom);
   const [responses, setResponses] = useAtom(responsesAtom);
   const [followUpQuestions] = useAtom(followUpQuestionsAtom);
+  const [audioOn, setAudioOn] = useState(true);
 
   const createOpenEndedResponse =
     api.responses.createOpenEndedResponse.useMutation();
@@ -66,6 +68,15 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
   const transcriptionRecorder = useTranscriptionRecorder({
     baseQuestions: study.questions,
   });
+
+  const {
+    isLoading: ttsAudioLoading,
+    isPlaying: ttsAudioPlaying,
+    error: ttsAudioError,
+    playAudio: playTtsAudio,
+    stopAudio: ttsAudioStop,
+    audioDuration: ttsAudioDuration,
+  } = useTtsAudio();
 
   const chunkedMediaUploader = useChunkedMediaUploader();
 
@@ -76,6 +87,14 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
     }
 
     try {
+      ttsAudioStop();
+      await transcriptionRecorder.startRecording();
+
+      if (transcriptionRecorder.noAnswerDetected) {
+        // the last time we spoke, we didnt get any audio back, so we shouldn't try to create a new response
+        return;
+      }
+
       let newResponse;
       if (currentQuestion) {
         const isFollowUpQuestion = "followUpQuestionOrder" in currentQuestion;
@@ -106,9 +125,6 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
           study.videoEnabled || false,
         );
       }
-
-      // Start transcription recording regardless of video being enabled or not
-      await transcriptionRecorder.startRecording();
     } catch (err) {
       console.error("Error starting response:", err);
       showErrorToast("Error starting response. Please try again.");
@@ -120,18 +136,22 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
     transcriptionRecorder.stopRecording();
 
     try {
-      const requestBody: TranscribeAndGenerateNextQuestionRequest =
-        calculateTranscribeAndGenerateNextQuestionRequest({
-          currentQuestion,
-          interviewSession,
-          study,
-          responses,
-          followUpQuestions,
-          currentResponseId: currentResponse?.id ?? "",
-        });
+      const requestBody = calculateTranscribeAndGenerateNextQuestionRequest({
+        currentQuestion,
+        interviewSession,
+        study,
+        responses,
+        followUpQuestions,
+        currentResponseId: currentResponse?.id ?? "",
+      });
 
-      const data = await transcriptionRecorder.submitAudio(requestBody);
-      console.log({ requestBody, response: data });
+      const { textToPlay } =
+        await transcriptionRecorder.submitAudio(requestBody);
+
+      if (textToPlay && audioOn) {
+        // Play TTS audio
+        playTtsAudio(textToPlay);
+      }
     } catch (err) {
       console.error("Error submitting audio:", err);
       showErrorToast("Error submitting audio. Please try again.");
@@ -163,8 +183,7 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
             speedMultiplier={0.5}
             margin={3}
           />
-        ) : transcriptionRecorder.awaitingResponse ||
-          interviewSessionRefetching ? (
+        ) : transcriptionRecorder.awaitingResponse || ttsAudioLoading ? (
           <ClipLoader size={16} color="#525252" />
         ) : (
           <Microphone className="size-8 text-neutral-600" />
@@ -192,7 +211,7 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
         )}
         onClick={handleSubmitMultipleChoiceResponse}
       >
-        {awaitingOptionResponse || interviewSessionRefetching ? (
+        {awaitingOptionResponse ? (
           <ClipLoader size={16} color="#525252" />
         ) : (
           <ArrowRight
@@ -225,7 +244,7 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
         )}
         onClick={handleSubmitRangeResponse}
       >
-        {awaitingOptionResponse || interviewSessionRefetching ? (
+        {awaitingOptionResponse ? (
           <ClipLoader size={16} color="#525252" />
         ) : (
           <ArrowRight
@@ -262,13 +281,24 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
   };
 
   return (
-    <div className="mb-2 flex w-full flex-col items-center justify-between bg-off-white p-8 md:flex-row">
+    <div className="mb-2 flex w-full flex-col items-center justify-between bg-off-white p-2 md:flex-row md:p-8">
       <div className="flex gap-2 md:w-1/3">
-        <Switch className="hidden data-[state=checked]:bg-org-secondary md:block" />
-        <div className="hidden text-sm text-neutral-400 md:block">Sound on</div>
+        <Switch
+          className="hidden data-[state=checked]:bg-org-secondary md:block"
+          checked={audioOn}
+          onCheckedChange={(checked) => {
+            if (!checked) {
+              ttsAudioStop();
+            }
+            setAudioOn(checked);
+          }}
+        />
+        <div className="hidden text-sm text-neutral-400 md:block">
+          {audioOn ? "Sound on" : "Sound off"}
+        </div>
       </div>
       <div className="relative flex flex-col items-center md:w-1/3">
-        <div className="mb-8 md:hidden">
+        <div className="mb-6 md:mb-8 md:hidden">
           <WebcamPreview />
         </div>
         {renderQuestionTypeButton()}
