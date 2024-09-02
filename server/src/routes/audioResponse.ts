@@ -71,7 +71,6 @@ const extractRequestData = (req: Request): Promise<{ audioBuffer: Buffer, reques
 
 const validateRequestData = (requestData: TranscribeAndGenerateNextQuestionRequest): boolean => {
   return !!(requestData.currentBaseQuestionId && 
-            requestData.studyBackground && 
             requestData.interviewSessionId && 
             requestData.currentResponseId);
 };
