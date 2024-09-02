@@ -27,14 +27,16 @@ export const InterviewScreenLayout: React.FC<InterviewScreenLayoutProps> = ({
       }
     >
       <div className="absolute top-4 flex w-full items-center justify-between px-4">
-        <Image
-          src={organization.logoUrl!}
-          alt=""
-          width={150}
-          height={150}
-          className="max-h-[100px] max-w-[100px] object-contain"
-          unoptimized
-        />
+        {organization.logoUrl && (
+          <Image
+            src={organization.logoUrl!}
+            alt=""
+            width={150}
+            height={150}
+            className="max-h-[100px] max-w-[100px] object-contain"
+            unoptimized
+          />
+        )}
         <div
           className={`block cursor-pointer text-center text-sm font-medium opacity-30 md:hidden ${
             backgroundLight ? "text-black" : "text-white"
