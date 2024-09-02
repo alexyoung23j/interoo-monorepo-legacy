@@ -36,6 +36,8 @@ export default async function InterviewSessionServerPage({
 
   const isLight = isColorLight(organization.primaryColor ?? "");
 
+  console.log({ organization, interviewSession, study, isLight });
+
   return (
     <InterviewLayout
       study={study}
