@@ -29,7 +29,7 @@ export const InterviewScreenLayout: React.FC<InterviewScreenLayoutProps> = ({
       <div className="absolute top-4 flex w-full items-center justify-between px-4">
         {organization.logoUrl && (
           <Image
-            src={organization.logoUrl!}
+            src={organization.logoUrl}
             alt=""
             width={150}
             height={150}
