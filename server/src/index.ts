@@ -38,7 +38,6 @@ const storage = new Storage({
 })
 
 // Creates a client
-export const ttsClient = new TextToSpeechClient();
 
 export const bucketName = process.env.GCS_BUCKET_NAME || 'idi-assets';
 export const bucket = storage.bucket(bucketName);
