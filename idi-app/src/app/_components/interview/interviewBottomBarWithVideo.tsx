@@ -44,7 +44,7 @@ interface InterviewBottomBarProps {
   handleSubmitRangeResponse: () => void;
 }
 
-const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
+const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
   organization,
   study,
   refetchInterviewSession,
@@ -60,7 +60,7 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
   const [interviewSession] = useAtom(interviewSessionAtom);
   const [responses, setResponses] = useAtom(responsesAtom);
   const [followUpQuestions] = useAtom(followUpQuestionsAtom);
-  const [audioOn, setAudioOn] = useState(true);
+  const [responseStopped, setResponseStopped] = useState(false); // New state variable
 
   const createOpenEndedResponse =
     api.responses.createOpenEndedResponse.useMutation();
@@ -134,6 +134,7 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
   const stopResponse = async () => {
     await chunkedMediaUploader.stopRecording();
     transcriptionRecorder.stopRecording();
+    setResponseStopped(true); // Set the responseStopped state to true
 
     try {
       const requestBody = calculateTranscribeAndGenerateNextQuestionRequest({
@@ -171,6 +172,7 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
         onClick={
           transcriptionRecorder.isRecording ? stopResponse : startResponse
         }
+        disabled={responseStopped} // Disable the button if responseStopped is true
       >
         {transcriptionRecorder.isRecording ? (
           <SyncLoader
@@ -310,4 +312,4 @@ const InterviewBottomBar: React.FC<InterviewBottomBarProps> = ({
   );
 };
 
-export default InterviewBottomBar;
+export default InterviewBottomBarWithVideo;

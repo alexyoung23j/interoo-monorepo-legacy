@@ -1,12 +1,6 @@
-import React from "react";
-import { Button } from "@/components/ui/button";
-import type {
-  Question,
-  InterviewSession,
-  Organization,
-} from "@shared/generated/client";
+import React, { useState } from "react";
+import type { Question, Organization } from "@shared/generated/client";
 import { getColorWithOpacity } from "@/app/utils/color";
-import { cx } from "@/tailwind/styling";
 
 interface RangeChoiceSelectProps {
   question: Question;
@@ -28,60 +22,38 @@ export const RangeChoiceSelect: React.FC<RangeChoiceSelectProps> = ({
   setRangeSelectionValue,
 }) => {
   const newColor = getColorWithOpacity(organization.secondaryColor ?? "", 0.15);
-  const hoverColor = getColorWithOpacity(
-    organization.secondaryColor ?? "",
-    0.25,
-  );
   const selectedColor = getColorWithOpacity(
     organization.secondaryColor ?? "",
     0.6,
   );
 
-  const handleSelection = (value: number) => {
-    setRangeSelectionValue(value);
+  const handleSliderChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRangeSelectionValue(Number(event.target.value));
   };
 
   if (question.lowRange === null || question.highRange === null) {
     return null;
   }
 
-  const range = Array.from(
-    { length: question.highRange - question.lowRange + 1 },
-    (_, i) => i + question.lowRange!,
-  );
-
   return (
     <div className="flex h-full w-full flex-col items-center justify-center">
-      <div className="md:scrollbar flex max-w-full overflow-x-auto scrollbar-hide">
-        <div className="flex items-start gap-2 px-2 py-4">
-          {range.map((value) => (
-            <div key={value} className="flex flex-col items-center">
-              <Button
-                variant="unstyled"
-                className={cx(
-                  "flex h-12 w-12 items-center justify-center rounded-[1px] border border-black border-opacity-50 text-black transition-colors",
-                  {
-                    "bg-[var(--button-bg)] hover:bg-[var(--button-hover-bg)]":
-                      rangeSelectionValue !== value,
-                    "bg-[var(--button-selected-bg)]":
-                      rangeSelectionValue === value,
-                  },
-                )}
-                onClick={() => handleSelection(value)}
-                style={
-                  {
-                    "--button-bg": newColor,
-                    "--button-selected-bg": selectedColor,
-                    "--button-hover-bg": hoverColor,
-                  } as React.CSSProperties
-                }
-              >
-                {value}
-              </Button>
-              {/* ... existing code for labels ... */}
-            </div>
-          ))}
+      <div className="flex w-full max-w-full flex-col items-center gap-2 px-2 py-4">
+        <input
+          type="range"
+          min={question.lowRange}
+          max={question.highRange}
+          value={rangeSelectionValue ?? question.lowRange}
+          onChange={handleSliderChange}
+          className="w-full max-w-md"
+          style={{
+            background: `linear-gradient(to right, ${newColor} 0%, ${selectedColor} ${((rangeSelectionValue ?? question.lowRange) / (question.highRange - question.lowRange)) * 100}%, ${newColor} ${((rangeSelectionValue ?? question.lowRange) / (question.highRange - question.lowRange)) * 100}%, ${newColor} 100%)`,
+          }}
+        />
+        <div className="flex w-full max-w-md justify-between text-sm text-neutral-500">
+          <span>{lowLabel}</span>
+          <span>{highLabel}</span>
         </div>
+        <div className="mt-2 text-lg font-semibold">{rangeSelectionValue}</div>
       </div>
     </div>
   );

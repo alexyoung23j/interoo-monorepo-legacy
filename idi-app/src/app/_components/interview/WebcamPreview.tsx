@@ -26,13 +26,15 @@ const WebcamPreview: React.FC = () => {
   }, []);
 
   return (
-    <video
-      ref={videoRef}
-      autoPlay
-      playsInline
-      muted
-      className="h-24 w-32 scale-x-[-1] transform rounded-sm border border-black border-opacity-25"
-    />
+    <div className="md:h-26 h-20 w-24 overflow-hidden rounded-lg shadow-lg sm:h-24 sm:w-28 md:w-32 lg:h-32 lg:w-40 xl:h-36 xl:w-48">
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted
+        className="h-full w-full scale-x-[-1] transform object-cover"
+      />
+    </div>
   );
 };
 
