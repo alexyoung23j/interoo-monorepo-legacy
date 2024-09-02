@@ -17,7 +17,9 @@ const WebcamPreview: React.FC = () => {
       }
     };
 
-    startWebcam();
+    startWebcam().catch((err) => {
+      console.error("Error accessing webcam:", err);
+    });
 
     return () => {
       const stream = videoRef.current?.srcObject as MediaStream;

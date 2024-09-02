@@ -35,7 +35,6 @@ import { useTtsAudio } from "@/hooks/useTtsAudio";
 interface InterviewBottomBarProps {
   organization: Organization;
   study: Study & { questions: Question[] };
-  refetchInterviewSession: () => void;
   multipleChoiceOptionSelectionId: string | null;
   rangeSelectionValue: number | null;
   handleSubmitMultipleChoiceResponse: () => void;
@@ -47,7 +46,6 @@ interface InterviewBottomBarProps {
 const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
   organization,
   study,
-  refetchInterviewSession,
   multipleChoiceOptionSelectionId,
   rangeSelectionValue,
   handleSubmitMultipleChoiceResponse,
@@ -101,7 +99,7 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
         const isFollowUpQuestion = "followUpQuestionOrder" in currentQuestion;
         newResponse = await createOpenEndedResponse.mutateAsync({
           questionId: isFollowUpQuestion
-            ? ((currentQuestion as FollowUpQuestion).parentQuestionId ?? "")
+            ? currentQuestion.parentQuestionId
             : currentQuestion.id,
           interviewSessionId: interviewSession?.id ?? "",
           followUpQuestionId: isFollowUpQuestion
@@ -123,7 +121,7 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
         };
         await chunkedMediaUploader.startRecording(
           uploadUrlRequest,
-          study.videoEnabled || false,
+          study.videoEnabled ?? false,
         );
       }
     } catch (err) {
@@ -147,12 +145,11 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
         currentResponseId: currentResponse?.id ?? "",
       });
 
-      const { textToPlay } =
-        await transcriptionRecorder.submitAudio(requestBody);
+      const res = await transcriptionRecorder.submitAudio(requestBody);
 
-      if (textToPlay && audioOn) {
+      if (res?.textToPlay && audioOn) {
         // Play TTS audio
-        playTtsAudio(textToPlay);
+        await playTtsAudio(res.textToPlay);
       }
     } catch (err) {
       console.error("Error submitting audio:", err);
@@ -186,7 +183,7 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
             speedMultiplier={0.5}
             margin={3}
           />
-        ) : transcriptionRecorder.awaitingResponse || ttsAudioLoading ? (
+        ) : (transcriptionRecorder.awaitingResponse ?? ttsAudioLoading) ? (
           <ClipLoader size={16} color="#525252" />
         ) : (
           <Microphone className="size-8 text-neutral-600" />

@@ -11,6 +11,10 @@
   "devDependencies": {
     "dotenv-cli": "^7.4.2",
     "nodemon": "^3.1.4",
-    "prettier": "^3.3.3"
+    "prettier": "^3.3.3",
+    "prisma": "5.18.0"
+  },
+  "dependencies": {
+    "@prisma/client": "5.18.0"
   }
 }

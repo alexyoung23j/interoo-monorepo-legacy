@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from "react";
-import { UploadUrlRequest } from "@shared/types";
+import type { UploadUrlRequest } from "@shared/types";
 
-const CHUNK_SIZE = 8 * 1024 * 1024; // 8 Mib
+const CHUNK_SIZE = 8 * 1024 * 1024; // 8 MiB
 
 export function useChunkedMediaUploader() {
   const [isRecording, setIsRecording] = useState(false);
@@ -28,11 +28,12 @@ export function useChunkedMediaUploader() {
     if (!response.ok) {
       throw new Error(`Failed to get upload URL: ${await response.text()}`);
     }
-    const data = await response.json();
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const data: { sessionUrl: string } = await response.json();
     uploadUrl.current = data.sessionUrl;
   };
 
-  const uploadNextChunk = async (isLastChunk: boolean = false) => {
+  const uploadNextChunk = async (isLastChunk = false) => {
     if (
       !uploadUrl.current ||
       buffer.current.size === 0 ||
@@ -91,7 +92,7 @@ export function useChunkedMediaUploader() {
     return false;
   };
 
-  const addChunkToBuffer = (chunk: Blob) => {
+  const addChunkToBuffer = useCallback((chunk: Blob) => {
     buffer.current = new Blob([buffer.current, chunk], {
       type: buffer.current.type,
     });
@@ -107,7 +108,7 @@ export function useChunkedMediaUploader() {
     ) {
       uploadNextChunk().catch(console.error);
     }
-  };
+  }, []);
 
   const startRecording = useCallback(
     async (uploadUrlRequest: UploadUrlRequest, isVideoEnabled: boolean) => {
@@ -142,7 +143,7 @@ export function useChunkedMediaUploader() {
         setError("Failed to start recording. Please check your permissions.");
       }
     },
-    [],
+    [addChunkToBuffer],
   );
 
   const stopRecording = useCallback(async () => {

@@ -1,5 +1,4 @@
-import { api } from "@/trpc/react";
-import {
+import type {
   TranscribeAndGenerateNextQuestionRequest,
   TranscribeAndGenerateNextQuestionResponse,
 } from "@shared/types";
@@ -12,11 +11,7 @@ import {
   responsesAtom,
 } from "../app/state/atoms";
 import { useAtom } from "jotai";
-import {
-  FollowUpLevel,
-  FollowUpQuestion,
-  Question,
-} from "@shared/generated/client";
+import type { FollowUpQuestion, Question } from "@shared/generated/client";
 import { showWarningToast } from "@/app/utils/toastUtils";
 
 interface AudioRecorderHook {
@@ -25,9 +20,9 @@ interface AudioRecorderHook {
   stopRecording: () => void;
   submitAudio: (
     additionalData: TranscribeAndGenerateNextQuestionRequest,
-  ) => Promise<any>;
+  ) => Promise<{ textToPlay: string | undefined } | null>;
   error: string | null;
-  awaitingResponse: boolean; // New property
+  awaitingResponse: boolean;
   noAnswerDetected: boolean;
 }
 
@@ -40,10 +35,10 @@ export function useTranscriptionRecorder({
 }): AudioRecorderHook {
   const [isRecording, setIsRecording] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [awaitingResponse, setAwaitingResponse] = useState(false); // New state
+  const [awaitingResponse, setAwaitingResponse] = useState(false);
   const [, setCurrentQuestion] = useAtom(currentQuestionAtom);
   const [responses, setResponses] = useAtom(responsesAtom);
-  const [currentResponse, setCurrentResponse] = useAtom(currentResponseAtom);
+  const [currentResponse] = useAtom(currentResponseAtom);
   const [followUpQuestions, setFollowUpQuestions] = useAtom(
     followUpQuestionsAtom,
   );
@@ -54,13 +49,26 @@ export function useTranscriptionRecorder({
   const audioChunks = useRef<Blob[]>([]);
   const recordingTimeout = useRef<NodeJS.Timeout | null>(null);
 
+  const stopRecording = useCallback(() => {
+    if (mediaRecorder.current && mediaRecorder.current.state !== "inactive") {
+      setIsRecording(false);
+      if (recordingTimeout.current) {
+        clearTimeout(recordingTimeout.current);
+      }
+      // Add a short delay before stopping the recorder
+      setTimeout(() => {
+        mediaRecorder.current?.stop();
+      }, 200); // 200ms delay
+    }
+  }, []);
+
   const startRecording = useCallback(async () => {
     try {
       setIsRecording(true);
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-      let mimeType;
+      let mimeType: string | undefined;
       if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
         mimeType = "audio/webm;codecs=opus";
       } else if (MediaRecorder.isTypeSupported("audio/mp4")) {
@@ -73,11 +81,7 @@ export function useTranscriptionRecorder({
         );
       }
 
-      if (mimeType) {
-        mediaRecorder.current = new MediaRecorder(stream, { mimeType });
-      } else {
-        mediaRecorder.current = new MediaRecorder(stream);
-      }
+      mediaRecorder.current = new MediaRecorder(stream, { mimeType });
 
       audioChunks.current = [];
 
@@ -100,28 +104,15 @@ export function useTranscriptionRecorder({
         "Failed to start recording. Please check your microphone permissions.",
       );
     }
-  }, []);
-
-  const stopRecording = useCallback(() => {
-    if (mediaRecorder.current && mediaRecorder.current.state !== "inactive") {
-      setIsRecording(false);
-      if (recordingTimeout.current) {
-        clearTimeout(recordingTimeout.current);
-      }
-      // Add a short delay before stopping the recorder
-      setTimeout(() => {
-        mediaRecorder.current?.stop();
-      }, 200); // 100ms delay
-    }
-  }, []);
+  }, [stopRecording]);
 
   const submitAudio = useCallback(
     async (additionalData: TranscribeAndGenerateNextQuestionRequest) => {
       if (audioChunks.current.length === 0) return null;
-      setAwaitingResponse(true); // Set to true when starting submission
+      setAwaitingResponse(true);
 
       const mimeType =
-        mediaRecorder.current?.mimeType || "audio/webm;codecs=opus";
+        mediaRecorder.current?.mimeType ?? "audio/webm;codecs=opus";
       const audioBlob = new Blob(audioChunks.current, { type: mimeType });
       const formData = new FormData();
       formData.append(
@@ -130,13 +121,10 @@ export function useTranscriptionRecorder({
         `recording.${mimeType.split("/")[1]}`,
       );
 
-      // Handle the thread field separately
       const { thread, ...otherData } = additionalData;
 
-      // Stringify the thread data
       formData.append("thread", JSON.stringify(thread));
 
-      // Append other data
       Object.entries(otherData).forEach(([key, value]) => {
         formData.append(key, String(value));
       });
@@ -153,17 +141,17 @@ export function useTranscriptionRecorder({
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const data: TranscribeAndGenerateNextQuestionResponse =
           await response.json();
 
         audioChunks.current = [];
 
         if (data.noAnswerDetected) {
-          // No transcription was detected, so we should not update anything
           setAwaitingResponse(false);
           showWarningToast("Sorry, I couldn't hear you. Please try again!");
           setNoAnswerDetected(true);
-          return;
+          return null;
         }
 
         setNoAnswerDetected(false);
@@ -179,17 +167,15 @@ export function useTranscriptionRecorder({
           const nextQuestion = baseQuestions.find(
             (question) => question.id === nextQuestionId,
           );
-          setCurrentQuestion(nextQuestion as Question);
-          nextCurrentQuestion = nextQuestion as Question;
+          setCurrentQuestion(nextQuestion!);
+          nextCurrentQuestion = nextQuestion!;
         } else {
-          // No next question, this was the final question
           setInterviewSession({
             ...interviewSession!,
             status: "COMPLETED",
           });
         }
 
-        // Clear audio chunks after successful submission
         setAwaitingResponse(false);
         setResponses(
           responses.map((response) =>
@@ -207,7 +193,17 @@ export function useTranscriptionRecorder({
         throw error;
       }
     },
-    [responses, currentResponse, followUpQuestions],
+    [
+      baseQuestions,
+      currentResponse,
+      followUpQuestions,
+      interviewSession,
+      responses,
+      setCurrentQuestion,
+      setFollowUpQuestions,
+      setInterviewSession,
+      setResponses,
+    ],
   );
 
   useEffect(() => {

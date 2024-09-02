@@ -1,11 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import {
-  InterviewSession,
-  Organization,
-  Study,
-} from "@shared/generated/client";
+import type { Organization, Study } from "@shared/generated/client";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { getColorWithOpacity } from "@/app/utils/color";
@@ -28,15 +24,11 @@ export enum Stage {
 interface InterviewStartContentProps {
   organization: Organization;
   study: Study;
-  refetchInterviewSession: () => void;
-  isLoading: boolean;
 }
 
 export const InterviewStartContent: React.FC<InterviewStartContentProps> = ({
   organization,
   study,
-  refetchInterviewSession,
-  isLoading,
 }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -108,7 +100,7 @@ export const InterviewStartContent: React.FC<InterviewStartContentProps> = ({
             accessError={accessError}
             handleStart={async () => {
               setIsInitializing(true);
-              startInterview();
+              await startInterview();
             }}
           />
         ) : (
@@ -129,13 +121,14 @@ export const InterviewStartContent: React.FC<InterviewStartContentProps> = ({
                   microphone: true,
                   camera: study.videoEnabled ?? false,
                 });
+                await startInterview();
               } catch (error) {
                 console.error("Error accessing camera and microphone:", error);
                 setAccessError(
                   "Please allow access to continue. You can change this in your browser settings.",
                 );
+                setIsInitializing(false);
               }
-              startInterview();
             }}
           />
         );
@@ -202,7 +195,7 @@ const IntroContent: React.FC<{
   );
 };
 
-// TODO: Decide when this should actulaly be used, leaving blank for now
+// TODO: Decide when this should actually be used, leaving blank for now
 // Involves a setting that requires they collect their name and email
 const FormContent: React.FC = () => {
   return <div>{Stage.Form} Content</div>;
@@ -230,16 +223,18 @@ const AccessContent: React.FC<{
   const [showInstructions, setShowInstructions] = useState(false);
 
   const browserInstructions = () => {
-    const isChrome = navigator.userAgent.indexOf("Chrome") > -1;
-    const isFirefox = navigator.userAgent.indexOf("Firefox") > -1;
-    const isSafari = navigator.userAgent.indexOf("Safari") > -1 && !isChrome;
+    const isChrome = navigator.userAgent.includes("Chrome");
+    const isFirefox = navigator.userAgent.includes("Firefox");
+    const isSafari = navigator.userAgent.includes("Safari") && !isChrome;
 
     if (isChrome) {
       return (
         <ol className="list-decimal pl-5 text-sm">
           <li>Click the lock icon in the address bar</li>
-          <li>Select "Site settings"</li>
-          <li>Change the camera and microphone permissions to "Allow"</li>
+          <li>Select &quot;Site settings&quot;</li>
+          <li>
+            Change the camera and microphone permissions to &quot;Allow&quot;
+          </li>
           <li>Refresh the page</li>
         </ol>
       );
@@ -247,8 +242,10 @@ const AccessContent: React.FC<{
       return (
         <ol className="list-decimal pl-5 text-sm">
           <li>Click the shield icon in the address bar</li>
-          <li>Click "Site Information"</li>
-          <li>Change the camera and microphone permissions to "Allow"</li>
+          <li>Click &quot;Site Information&quot;</li>
+          <li>
+            Change the camera and microphone permissions to &quot;Allow&quot;
+          </li>
           <li>Refresh the page</li>
         </ol>
       );
@@ -256,9 +253,12 @@ const AccessContent: React.FC<{
       return (
         <ol className="list-decimal pl-5 text-sm">
           <li>Open Safari Preferences</li>
-          <li>Go to the "Websites" tab</li>
-          <li>Find "Camera" and "Microphone" in the left sidebar</li>
-          <li>Locate this website and set permissions to "Allow"</li>
+          <li>Go to the &quot;Websites&quot; tab</li>
+          <li>
+            Find &quot;Camera&quot; and &quot;Microphone&quot; in the left
+            sidebar
+          </li>
+          <li>Locate this website and set permissions to &quot;Allow&quot;</li>
           <li>Refresh the page</li>
         </ol>
       );
@@ -340,8 +340,6 @@ const BeginContent: React.FC<{
     organization.secondaryColor ?? "",
     0.4,
   );
-
-  const [showInstructions, setShowInstructions] = useState(false);
 
   return (
     <div className="mb-10 flex w-full max-w-[70%] flex-col gap-4 md:max-w-[28rem]">

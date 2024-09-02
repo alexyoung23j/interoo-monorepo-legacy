@@ -92,7 +92,9 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
       setIsLoading(false);
     };
 
-    initializeInterview();
+    initializeInterview().catch(() => {
+      console.log("Error initializing interview");
+    });
   }, [
     fetchedInterviewSession,
     interviewSessionId,
@@ -117,19 +119,13 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
           <InterviewPerformContent
             organization={organization}
             study={study}
-            refetchInterviewSession={() => {}}
             interviewSessionRefetching={isLoading}
           />
         ) : null;
       case InterviewSessionStatus.NOT_STARTED:
         return (
           <>
-            <InterviewStartContent
-              organization={organization}
-              study={study}
-              refetchInterviewSession={() => {}}
-              isLoading={isLoading}
-            />
+            <InterviewStartContent organization={organization} study={study} />
             <div className="h-20"></div>
           </>
         );
@@ -150,12 +146,7 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
         // TODO Some kind of error screen
         return (
           <>
-            <InterviewStartContent
-              organization={organization}
-              study={study}
-              refetchInterviewSession={() => {}}
-              isLoading={isLoading}
-            />
+            <InterviewStartContent organization={organization} study={study} />
             <div className="h-20"></div>
           </>
         );

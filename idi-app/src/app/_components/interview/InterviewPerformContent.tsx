@@ -22,18 +22,12 @@ import InterviewBottomBarWithVideo from "./interviewBottomBarWithVideo";
 interface InterviewPerformContentProps {
   study: Study & { questions: Question[] };
   organization: Organization;
-  refetchInterviewSession: () => void;
   interviewSessionRefetching: boolean;
 }
 
 export const InterviewPerformContent: React.FC<
   InterviewPerformContentProps
-> = ({
-  organization,
-  study,
-  refetchInterviewSession,
-  interviewSessionRefetching,
-}) => {
+> = ({ organization, study, interviewSessionRefetching }) => {
   const [currentQuestion, setCurrentQuestion] = useAtom(currentQuestionAtom);
   const [interviewSession, setInterviewSession] = useAtom(interviewSessionAtom);
 
@@ -52,7 +46,7 @@ export const InterviewPerformContent: React.FC<
   const getNextQuestion = useCallback(
     (currentQuestion: Question) => {
       const nextOrder = currentQuestion.questionOrder + 1;
-      return study.questions.find((q) => q.questionOrder === nextOrder) || null;
+      return study.questions.find((q) => q.questionOrder === nextOrder) ?? null;
     },
     [study.questions],
   );
@@ -143,7 +137,6 @@ export const InterviewPerformContent: React.FC<
       <InterviewBottomBarWithVideo
         organization={organization}
         study={study}
-        refetchInterviewSession={refetchInterviewSession}
         multipleChoiceOptionSelectionId={multipleChoiceOptionSelectionId}
         rangeSelectionValue={rangeSelectionValue}
         handleSubmitMultipleChoiceResponse={handleSubmitMultipleChoiceResponse}

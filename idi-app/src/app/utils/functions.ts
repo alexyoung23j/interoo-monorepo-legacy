@@ -35,9 +35,7 @@ export function calculateTranscribeAndGenerateNextQuestionRequest({
 
   const isFollowUp = "parentQuestionId" in currentQuestion;
   const currentBaseQuestion = isFollowUp
-    ? study.questions.find(
-        (q) => q.id === (currentQuestion as FollowUpQuestion).parentQuestionId,
-      )
+    ? study.questions.find((q) => q.id === currentQuestion.parentQuestionId)
     : (currentQuestion as Question);
 
   if (!currentBaseQuestion) {
