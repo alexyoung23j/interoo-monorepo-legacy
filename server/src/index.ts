@@ -83,7 +83,7 @@ if (process.env.NODE_ENV === 'development') {
 const gracefulShutdown = async () => {
   console.log('Shutting down gracefully...');
   await prisma.$disconnect();
-  // await ttsClient.close();
+  await ttsClient.close();
   console.log('All connections closed.');
   process.exit(0);
 };
