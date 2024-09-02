@@ -39,7 +39,6 @@ const storage = new Storage({
 export const bucketName = process.env.GCS_BUCKET_NAME || 'idi-assets';
 export const bucket = storage.bucket(bucketName);
 
-// Middleware
 // Middleware to add API key to requests
 app.use((req, res, next) => {
   req.headers['x-goog-api-key'] = process.env.GOOGLE_CLOUD_API_KEY;

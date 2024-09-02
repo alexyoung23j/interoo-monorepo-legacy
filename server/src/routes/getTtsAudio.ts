@@ -28,6 +28,8 @@ const generateTtsAudio = async (
     // Performs the text-to-speech request
     const [response] = await client.synthesizeSpeech(request);
 
+    requestLogger.info('Finished generating TTS audio', { text });
+
     if (!response.audioContent) {
       throw new Error('No audio content received from Text-to-Speech API');
     }
