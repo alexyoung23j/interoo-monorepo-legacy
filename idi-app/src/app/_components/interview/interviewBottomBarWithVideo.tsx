@@ -60,7 +60,8 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
   const [interviewSession] = useAtom(interviewSessionAtom);
   const [responses, setResponses] = useAtom(responsesAtom);
   const [followUpQuestions] = useAtom(followUpQuestionsAtom);
-  const [responseStopped, setResponseStopped] = useState(false); // New state variable
+  const [audioOn, setAudioOn] = useState(true);
+  const [responseStopped, setResponseStopped] = useState(false);
 
   const createOpenEndedResponse =
     api.responses.createOpenEndedResponse.useMutation();
