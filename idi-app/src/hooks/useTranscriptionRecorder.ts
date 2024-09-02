@@ -94,7 +94,7 @@ export function useTranscriptionRecorder({
         MAX_RECORDING_TIME,
       );
     } catch (err) {
-      console.error("Error starting recording:", err);
+      console.error("Error starting recording: ", err);
       setIsRecording(false);
       setError(
         "Failed to start recording. Please check your microphone permissions.",
