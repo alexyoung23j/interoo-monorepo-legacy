@@ -80,16 +80,16 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 // Graceful Shutdown
-process.on('SIGINT', async () => {
+const gracefulShutdown = async () => {
+  console.log('Shutting down gracefully...');
   await prisma.$disconnect();
+  // await ttsClient.close();
+  console.log('All connections closed.');
   process.exit(0);
-});
+};
 
-process.on('SIGTERM', async () => {
-  await prisma.$disconnect();
-  process.exit(0);
-});
-
+process.on('SIGINT', gracefulShutdown);
+process.on('SIGTERM', gracefulShutdown);
 process.on('beforeExit', async () => {
   await prisma.$disconnect();
 });
