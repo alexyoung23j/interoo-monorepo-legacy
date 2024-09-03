@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import type { UploadUrlRequest } from "@shared/types";
 
-const CHUNK_SIZE = 8 * 1024 * 1024; // 8 MiB
+const CHUNK_SIZE = 2 * 1024 * 1024; // 2 MiB
 
 export function useChunkedMediaUploader() {
   const [isRecording, setIsRecording] = useState(false);
@@ -10,7 +10,9 @@ export function useChunkedMediaUploader() {
   const mediaRecorder = useRef<MediaRecorder | null>(null);
   const uploadUrl = useRef<string | null>(null);
   const uploadedSize = useRef<number>(0);
-  const buffer = useRef<Blob>(new Blob([], { type: "video/webm" }));
+  const buffer = useRef<Blob>(
+    new Blob([], { type: "video/webm;codecs=vp8,opus" }),
+  );
   const totalSize = useRef<number>(0);
   const isUploading = useRef<boolean>(false);
   const uploadComplete = useRef<boolean>(false);
@@ -116,16 +118,25 @@ export function useChunkedMediaUploader() {
         await getResumableUploadUrl(uploadUrlRequest);
         uploadedSize.current = 0;
         totalSize.current = 0;
-        buffer.current = new Blob([], { type: "video/webm" });
+        buffer.current = new Blob([], {
+          type: isVideoEnabled
+            ? "video/webm;codecs=vp8,opus"
+            : "audio/webm;codecs=opus",
+        });
         isUploading.current = false;
         uploadComplete.current = false;
+
+        const mimeType = isVideoEnabled
+          ? "video/webm;codecs=vp8,opus"
+          : "audio/webm;codecs=opus";
+        buffer.current = new Blob([], { type: mimeType });
 
         const stream = await navigator.mediaDevices.getUserMedia({
           video: isVideoEnabled,
           audio: true,
         });
         mediaRecorder.current = new MediaRecorder(stream, {
-          mimeType: isVideoEnabled ? "video/webm" : "audio/webm",
+          mimeType,
           videoBitsPerSecond: isVideoEnabled ? 2500000 : undefined,
           audioBitsPerSecond: 128000,
         });

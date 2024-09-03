@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { ArrowRight, Microphone } from "@phosphor-icons/react";
@@ -60,6 +60,12 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
   const [followUpQuestions] = useAtom(followUpQuestionsAtom);
   const [audioOn, setAudioOn] = useState(true);
   const [responseStopped, setResponseStopped] = useState(false);
+  const [isFullyRecording, setIsFullyRecording] = useState(false);
+
+  // Add this effect to reset responseStopped when currentQuestion changes
+  useEffect(() => {
+    setResponseStopped(false);
+  }, [currentQuestion]);
 
   const createOpenEndedResponse =
     api.responses.createOpenEndedResponse.useMutation();
@@ -90,7 +96,6 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
       await transcriptionRecorder.startRecording();
 
       if (transcriptionRecorder.noAnswerDetected) {
-        // the last time we spoke, we didnt get any audio back, so we shouldn't try to create a new response
         return;
       }
 
@@ -123,6 +128,7 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
           uploadUrlRequest,
           study.videoEnabled ?? false,
         );
+        setIsFullyRecording(true);
       }
     } catch (err) {
       console.error("Error starting response:", err);
@@ -133,6 +139,7 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
   const stopResponse = async () => {
     await chunkedMediaUploader.stopRecording();
     transcriptionRecorder.stopRecording();
+    setIsFullyRecording(false);
     setResponseStopped(true); // Set the responseStopped state to true
 
     try {
@@ -163,16 +170,14 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
         variant="unstyled"
         className={cx(
           "h-14 w-14 rounded-sm border border-black border-opacity-25",
-          transcriptionRecorder.isRecording
+          isFullyRecording
             ? "bg-org-secondary hover:opacity-80"
             : "bg-neutral-100 hover:bg-neutral-300",
         )}
-        onClick={
-          transcriptionRecorder.isRecording ? stopResponse : startResponse
-        }
+        onClick={isFullyRecording ? stopResponse : startResponse}
         disabled={responseStopped} // Disable the button if responseStopped is true
       >
-        {transcriptionRecorder.isRecording ? (
+        {isFullyRecording ? (
           <SyncLoader
             size={4}
             color={
@@ -190,7 +195,7 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
         )}
       </Button>
       <div className="mt-3 text-sm text-neutral-500 md:absolute md:-bottom-[1.75rem]">
-        {transcriptionRecorder.isRecording
+        {isFullyRecording
           ? "Click when finished speaking"
           : transcriptionRecorder.awaitingResponse
             ? "Thinking..."
@@ -283,6 +288,8 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
   const isOpenEndedQuestion =
     currentQuestion?.questionType === QuestionType.OPEN_ENDED;
 
+  const showWebcamPreview = study.videoEnabled && isOpenEndedQuestion;
+
   return (
     <div className="mb-2 flex w-full flex-col items-center justify-between bg-off-white p-8 md:flex-row">
       <div className="flex gap-2 md:w-1/3">
@@ -303,7 +310,7 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
 
       {/* Position webcam differently on different screen sizes */}
       <div className="relative flex flex-col items-center md:w-1/3">
-        {isOpenEndedQuestion && (
+        {showWebcamPreview && (
           <div className="mb-8 md:hidden">
             <WebcamPreview />
           </div>
@@ -311,7 +318,7 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
         {renderQuestionTypeButton()}
       </div>
       <div className="hidden items-center justify-end md:flex md:w-1/3">
-        {isOpenEndedQuestion && <WebcamPreview />}
+        {showWebcamPreview && <WebcamPreview />}
       </div>
     </div>
   );
