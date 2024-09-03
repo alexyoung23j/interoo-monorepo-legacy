@@ -45,8 +45,11 @@ export const InterviewPerformContent: React.FC<
 
   const getNextQuestion = useCallback(
     (currentQuestion: Question) => {
-      const nextOrder = currentQuestion.questionOrder + 1;
-      return study.questions.find((q) => q.questionOrder === nextOrder) ?? null;
+      const nextQuestionNumber = currentQuestion.questionOrder + 1;
+      return (
+        study.questions.find((q) => q.questionOrder === nextQuestionNumber) ??
+        null
+      );
     },
     [study.questions],
   );
