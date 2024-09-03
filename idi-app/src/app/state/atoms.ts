@@ -37,3 +37,5 @@ export const mediaAccessAtom = atom<{
   microphone: false,
   camera: false,
 });
+
+export const uploadSessionUrlAtom = atom<string | null>(null);

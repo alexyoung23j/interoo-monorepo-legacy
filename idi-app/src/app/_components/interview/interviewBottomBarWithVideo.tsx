@@ -98,38 +98,8 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
       if (transcriptionRecorder.noAnswerDetected) {
         return;
       }
-
-      let newResponse;
-      if (currentQuestion) {
-        const isFollowUpQuestion = "followUpQuestionOrder" in currentQuestion;
-        newResponse = await createOpenEndedResponse.mutateAsync({
-          questionId: isFollowUpQuestion
-            ? currentQuestion.parentQuestionId
-            : currentQuestion.id,
-          interviewSessionId: interviewSession?.id ?? "",
-          followUpQuestionId: isFollowUpQuestion
-            ? currentQuestion.id
-            : undefined,
-        });
-        setCurrentResponse(newResponse);
-        setResponses([...responses, newResponse]);
-      }
-
-      if (newResponse) {
-        const uploadUrlRequest: UploadUrlRequest = {
-          organizationId: organization.id,
-          studyId: study.id,
-          questionId: currentQuestion?.id ?? "",
-          responseId: newResponse.id,
-          fileExtension: "webm",
-          contentType: study.videoEnabled ? "video/webm" : "audio/webm",
-        };
-        await chunkedMediaUploader.startRecording(
-          uploadUrlRequest,
-          study.videoEnabled ?? false,
-        );
-        setIsFullyRecording(true);
-      }
+      await chunkedMediaUploader.startRecording(study.videoEnabled ?? false);
+      setIsFullyRecording(true);
     } catch (err) {
       console.error("Error starting response:", err);
       showErrorToast("Error starting response. Please try again.");
@@ -140,7 +110,7 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
     await chunkedMediaUploader.stopRecording();
     transcriptionRecorder.stopRecording();
     setIsFullyRecording(false);
-    setResponseStopped(true); // Set the responseStopped state to true
+    setResponseStopped(true);
 
     try {
       const requestBody = calculateTranscribeAndGenerateNextQuestionRequest({
@@ -188,7 +158,8 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
             speedMultiplier={0.5}
             margin={3}
           />
-        ) : (transcriptionRecorder.awaitingResponse ?? ttsAudioLoading) ? (
+        ) : (transcriptionRecorder.awaitingNextQuestionGeneration ??
+          ttsAudioLoading) ? (
           <ClipLoader size={16} color="#525252" />
         ) : (
           <Microphone className="size-8 text-neutral-600" />
@@ -197,7 +168,7 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
       <div className="mt-3 text-sm text-neutral-500 md:absolute md:-bottom-[1.75rem]">
         {isFullyRecording
           ? "Click when finished speaking"
-          : transcriptionRecorder.awaitingResponse
+          : transcriptionRecorder.awaitingNextQuestionGeneration
             ? "Thinking..."
             : "Click to speak"}
       </div>

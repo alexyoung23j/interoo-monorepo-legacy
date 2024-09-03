@@ -1,14 +1,16 @@
 import { useState, useRef, useCallback } from "react";
+import { useAtom } from "jotai";
+import { uploadSessionUrlAtom } from "@/app/state/atoms";
 import type { UploadUrlRequest } from "@shared/types";
 
 const CHUNK_SIZE = 2 * 1024 * 1024; // 2 MiB
 
 export function useChunkedMediaUploader() {
+  const [uploadSessionUrl] = useAtom(uploadSessionUrlAtom);
   const [isRecording, setIsRecording] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const mediaRecorder = useRef<MediaRecorder | null>(null);
-  const uploadUrl = useRef<string | null>(null);
   const uploadedSize = useRef<number>(0);
   const buffer = useRef<Blob>(
     new Blob([], { type: "video/webm;codecs=vp8,opus" }),
@@ -17,27 +19,9 @@ export function useChunkedMediaUploader() {
   const isUploading = useRef<boolean>(false);
   const uploadComplete = useRef<boolean>(false);
 
-  const getResumableUploadUrl = async (uploadUrlRequest: UploadUrlRequest) => {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/get-signed-url`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(uploadUrlRequest),
-        credentials: "include",
-      },
-    );
-    if (!response.ok) {
-      throw new Error(`Failed to get upload URL: ${await response.text()}`);
-    }
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const data: { sessionUrl: string } = await response.json();
-    uploadUrl.current = data.sessionUrl;
-  };
-
   const uploadNextChunk = async (isLastChunk = false) => {
     if (
-      !uploadUrl.current ||
+      !uploadSessionUrl ||
       buffer.current.size === 0 ||
       isUploading.current ||
       uploadComplete.current
@@ -54,7 +38,7 @@ export function useChunkedMediaUploader() {
 
     try {
       console.log(`Uploading chunk: bytes ${start}-${end}/${total}`);
-      const response = await fetch(uploadUrl.current, {
+      const response = await fetch(uploadSessionUrl, {
         method: "PUT",
         headers: {
           "Content-Range": `bytes ${start}-${end}/${total}`,
@@ -113,9 +97,12 @@ export function useChunkedMediaUploader() {
   }, []);
 
   const startRecording = useCallback(
-    async (uploadUrlRequest: UploadUrlRequest, isVideoEnabled: boolean) => {
+    async (isVideoEnabled: boolean) => {
+      if (!uploadSessionUrl) {
+        throw new Error("No upload session URL available");
+      }
+
       try {
-        await getResumableUploadUrl(uploadUrlRequest);
         uploadedSize.current = 0;
         totalSize.current = 0;
         buffer.current = new Blob([], {
@@ -154,7 +141,7 @@ export function useChunkedMediaUploader() {
         setError("Failed to start recording. Please check your permissions.");
       }
     },
-    [addChunkToBuffer],
+    [uploadSessionUrl, addChunkToBuffer],
   );
 
   const stopRecording = useCallback(async () => {

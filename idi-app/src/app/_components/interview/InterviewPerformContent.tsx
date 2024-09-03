@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { DisplayQuestion } from "./DisplayQuestion";
 import {
   FollowUpQuestion,
@@ -15,6 +15,7 @@ import {
   interviewSessionAtom,
   currentResponseAtom,
   followUpQuestionsAtom,
+  uploadSessionUrlAtom,
 } from "@/app/state/atoms";
 import { useAtom } from "jotai";
 import InterviewBottomBarWithVideo from "./interviewBottomBarWithVideo";
@@ -30,6 +31,8 @@ export const InterviewPerformContent: React.FC<
 > = ({ organization, study, interviewSessionRefetching }) => {
   const [currentQuestion, setCurrentQuestion] = useAtom(currentQuestionAtom);
   const [interviewSession, setInterviewSession] = useAtom(interviewSessionAtom);
+  const [, setCurrentResponse] = useAtom(currentResponseAtom);
+  const [, setUploadSessionUrl] = useAtom(uploadSessionUrlAtom);
 
   const [multipleChoiceOptionSelectionId, setMultipleChoiceOptionSelectionId] =
     useState<string | null>(null);
@@ -127,6 +130,53 @@ export const InterviewPerformContent: React.FC<
     setAwaitingOptionResponse(false);
     setRangeSelectionValue(null);
   };
+
+  useEffect(() => {
+    if (currentQuestion && interviewSession) {
+      const fetchUploadUrlAndCreateResponse = async () => {
+        try {
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/get-signed-url`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                organizationId: organization.id,
+                studyId: study.id,
+                questionId: currentQuestion.id,
+                interviewSessionId: interviewSession.id,
+                fileExtension: "webm",
+                contentType: study.videoEnabled ? "video/webm" : "audio/webm",
+              }),
+              credentials: "include",
+            },
+          );
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+          setUploadSessionUrl(data.sessionUrl);
+          setCurrentResponse(data.newResponse);
+        } catch (error) {
+          console.error("Error fetching upload URL:", error);
+        }
+      };
+
+      fetchUploadUrlAndCreateResponse();
+    }
+  }, [
+    currentQuestion,
+    interviewSession,
+    organization.id,
+    study.id,
+    study.videoEnabled,
+    setUploadSessionUrl,
+    setCurrentResponse,
+  ]);
 
   return (
     <>

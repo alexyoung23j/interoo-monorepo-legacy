@@ -9,6 +9,7 @@ import {
   followUpQuestionsAtom,
   interviewSessionAtom,
   responsesAtom,
+  uploadSessionUrlAtom,
 } from "../app/state/atoms";
 import { useAtom } from "jotai";
 import type { FollowUpQuestion, Question } from "@shared/generated/client";
@@ -22,7 +23,7 @@ interface AudioRecorderHook {
     additionalData: TranscribeAndGenerateNextQuestionRequest,
   ) => Promise<{ textToPlay: string | undefined } | null>;
   error: string | null;
-  awaitingResponse: boolean;
+  awaitingNextQuestionGeneration: boolean;
   noAnswerDetected: boolean;
 }
 
@@ -33,12 +34,14 @@ export function useTranscriptionRecorder({
 }: {
   baseQuestions: Question[];
 }): AudioRecorderHook {
+  const [currentResponse] = useAtom(currentResponseAtom);
+  const [uploadSessionUrl] = useAtom(uploadSessionUrlAtom);
   const [isRecording, setIsRecording] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [awaitingResponse, setAwaitingResponse] = useState(false);
+  const [awaitingNextQuestionGeneration, setAwaitingNextQuestionGeneration] =
+    useState(false);
   const [, setCurrentQuestion] = useAtom(currentQuestionAtom);
   const [responses, setResponses] = useAtom(responsesAtom);
-  const [currentResponse] = useAtom(currentResponseAtom);
   const [followUpQuestions, setFollowUpQuestions] = useAtom(
     followUpQuestionsAtom,
   );
@@ -99,17 +102,17 @@ export function useTranscriptionRecorder({
       );
     } catch (err) {
       console.error("Error starting recording:", err);
-      setIsRecording(false);
       setError(
         "Failed to start recording. Please check your microphone permissions.",
       );
     }
   }, [stopRecording]);
 
+  // TODO(ronit): update eagerly created response as necessary here
   const submitAudio = useCallback(
     async (additionalData: TranscribeAndGenerateNextQuestionRequest) => {
       if (audioChunks.current.length === 0) return null;
-      setAwaitingResponse(true);
+      setAwaitingNextQuestionGeneration(true);
 
       const mimeType =
         mediaRecorder.current?.mimeType ?? "audio/webm;codecs=opus";
@@ -142,13 +145,13 @@ export function useTranscriptionRecorder({
         }
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        const data: TranscribeAndGenerateNextQuestionResponse =
+        const transcribeAndGenerateNextQuestionResponse: TranscribeAndGenerateNextQuestionResponse =
           await response.json();
 
         audioChunks.current = [];
 
-        if (data.noAnswerDetected) {
-          setAwaitingResponse(false);
+        if (transcribeAndGenerateNextQuestionResponse.noAnswerDetected) {
+          setAwaitingNextQuestionGeneration(false);
           showWarningToast("Sorry, I couldn't hear you. Please try again!");
           setNoAnswerDetected(true);
           return null;
@@ -158,12 +161,22 @@ export function useTranscriptionRecorder({
 
         let nextCurrentQuestion: Question | FollowUpQuestion | null = null;
 
-        if (data.isFollowUp && data.followUpQuestion) {
-          setCurrentQuestion(data.followUpQuestion);
-          nextCurrentQuestion = data.followUpQuestion;
-          setFollowUpQuestions([...followUpQuestions, data.followUpQuestion]);
-        } else if (data.nextQuestionId) {
-          const nextQuestionId = data.nextQuestionId;
+        if (
+          transcribeAndGenerateNextQuestionResponse.isFollowUp &&
+          transcribeAndGenerateNextQuestionResponse.followUpQuestion
+        ) {
+          setCurrentQuestion(
+            transcribeAndGenerateNextQuestionResponse.followUpQuestion,
+          );
+          nextCurrentQuestion =
+            transcribeAndGenerateNextQuestionResponse.followUpQuestion;
+          setFollowUpQuestions([
+            ...followUpQuestions,
+            transcribeAndGenerateNextQuestionResponse.followUpQuestion,
+          ]);
+        } else if (transcribeAndGenerateNextQuestionResponse.nextQuestionId) {
+          const nextQuestionId =
+            transcribeAndGenerateNextQuestionResponse.nextQuestionId;
           const nextQuestion = baseQuestions.find(
             (question) => question.id === nextQuestionId,
           );
@@ -176,11 +189,15 @@ export function useTranscriptionRecorder({
           });
         }
 
-        setAwaitingResponse(false);
+        setAwaitingNextQuestionGeneration(false);
         setResponses(
           responses.map((response) =>
             response.id === currentResponse?.id
-              ? { ...response, fastTranscribedText: data.transcribedText }
+              ? {
+                  ...response,
+                  fastTranscribedText:
+                    transcribeAndGenerateNextQuestionResponse.transcribedText,
+                }
               : response,
           ),
         );
@@ -189,7 +206,7 @@ export function useTranscriptionRecorder({
       } catch (error) {
         console.error("Error submitting audio:", error);
         setError("Failed to submit audio. Please try again.");
-        setAwaitingResponse(false);
+        setAwaitingNextQuestionGeneration(false);
         throw error;
       }
     },
@@ -218,7 +235,7 @@ export function useTranscriptionRecorder({
   }, []);
 
   return {
-    awaitingResponse,
+    awaitingNextQuestionGeneration: awaitingNextQuestionGeneration,
     noAnswerDetected,
     isRecording,
     startRecording,

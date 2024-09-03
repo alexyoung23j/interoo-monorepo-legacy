@@ -95,7 +95,7 @@ export interface UploadUrlRequest {
     organizationId: string;
     studyId: string;
     questionId: string;
-    responseId: string;
+    interviewSessionId: string; // Change this from responseId
     fileExtension: string;
     contentType: string;
 }
