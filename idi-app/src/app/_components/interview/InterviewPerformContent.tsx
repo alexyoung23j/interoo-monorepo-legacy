@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect, useRef } from "react";
 import { DisplayQuestion } from "./DisplayQuestion";
 import {
   FollowUpQuestion,
@@ -13,9 +13,8 @@ import {
   currentQuestionAtom,
   responsesAtom,
   interviewSessionAtom,
-  currentResponseAtom,
   followUpQuestionsAtom,
-  uploadSessionUrlAtom,
+  currentResponseAndUploadUrlAtom,
 } from "@/app/state/atoms";
 import { useAtom } from "jotai";
 import InterviewBottomBarWithVideo from "./interviewBottomBarWithVideo";
@@ -31,8 +30,9 @@ export const InterviewPerformContent: React.FC<
 > = ({ organization, study, interviewSessionRefetching }) => {
   const [currentQuestion, setCurrentQuestion] = useAtom(currentQuestionAtom);
   const [interviewSession, setInterviewSession] = useAtom(interviewSessionAtom);
-  const [, setCurrentResponse] = useAtom(currentResponseAtom);
-  const [, setUploadSessionUrl] = useAtom(uploadSessionUrlAtom);
+  const [, setCurrentResponseAndUploadUrl] = useAtom(
+    currentResponseAndUploadUrlAtom,
+  );
 
   const [multipleChoiceOptionSelectionId, setMultipleChoiceOptionSelectionId] =
     useState<string | null>(null);
@@ -41,10 +41,13 @@ export const InterviewPerformContent: React.FC<
   );
   const [awaitingOptionResponse, setAwaitingOptionResponse] = useState(false);
 
-  const createMultipleChoiceResponse =
-    api.responses.createMultipleChoiceResponse.useMutation();
+  // Update the response to include the user's selection- or create in case user answers
+  // before we get a chance to get the signed url and create the response on the backend
+  const createOrUpdateMultipleChoiceResponse =
+    api.responses.createOrUpdateMultipleChoiceResponse.useMutation();
 
-  const createRangeResponse = api.responses.createRangeResponse.useMutation();
+  const createOrUpdateRangeResponse =
+    api.responses.createOrUpdateRangeResponse.useMutation();
 
   const getNextQuestion = useCallback(
     (currentQuestion: Question) => {
@@ -77,7 +80,7 @@ export const InterviewPerformContent: React.FC<
         ...prev!,
         status: "COMPLETED",
       }));
-      createMultipleChoiceResponse.mutate({
+      createOrUpdateMultipleChoiceResponse.mutate({
         multipleChoiceOptionSelectionId: multipleChoiceOptionSelectionId,
         interviewSessionId: interviewSession?.id ?? "",
         studyId: study.id,
@@ -91,7 +94,7 @@ export const InterviewPerformContent: React.FC<
 
     setCurrentQuestion(nextQuestion);
 
-    createMultipleChoiceResponse.mutate({
+    createOrUpdateMultipleChoiceResponse.mutate({
       multipleChoiceOptionSelectionId: multipleChoiceOptionSelectionId,
       interviewSessionId: interviewSession?.id ?? "",
       studyId: study.id,
@@ -119,7 +122,7 @@ export const InterviewPerformContent: React.FC<
       }));
     }
 
-    createRangeResponse.mutate({
+    createOrUpdateRangeResponse.mutate({
       rangeSelection: rangeSelectionValue,
       interviewSessionId: interviewSession?.id ?? "",
       studyId: study.id,
@@ -131,42 +134,44 @@ export const InterviewPerformContent: React.FC<
     setRangeSelectionValue(null);
   };
 
-  useEffect(() => {
-    if (currentQuestion && interviewSession) {
-      const fetchUploadUrlAndCreateResponse = async () => {
-        try {
-          const response = await fetch(
-            `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/get-signed-url`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                organizationId: organization.id,
-                studyId: study.id,
-                questionId: currentQuestion.id,
-                interviewSessionId: interviewSession.id,
-                fileExtension: "webm",
-                contentType: study.videoEnabled ? "video/webm" : "audio/webm",
-              }),
-              credentials: "include",
-            },
-          );
+  const fetchUploadUrlAndCreateResponse = useCallback(async () => {
+    if (!currentQuestion || !interviewSession) return;
 
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
+    try {
+      const isFollowUpQuestion = "followUpQuestionOrder" in currentQuestion;
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/get-current-question-metadata`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            organizationId: organization.id,
+            studyId: study.id,
+            questionId: isFollowUpQuestion
+              ? currentQuestion.parentQuestionId
+              : currentQuestion.id,
+            interviewSessionId: interviewSession.id,
+            followUpQuestionId: isFollowUpQuestion ? currentQuestion.id : null,
+            fileExtension: "webm",
+            contentType: study.videoEnabled ? "video/webm" : "audio/webm",
+          }),
+          credentials: "include",
+        },
+      );
 
-          const data = await response.json();
-          setUploadSessionUrl(data.sessionUrl);
-          setCurrentResponse(data.newResponse);
-        } catch (error) {
-          console.error("Error fetching upload URL:", error);
-        }
-      };
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-      fetchUploadUrlAndCreateResponse();
+      const data = await response.json();
+      setCurrentResponseAndUploadUrl({
+        response: data.newResponse,
+        uploadSessionUrl: data.sessionUrl,
+      });
+    } catch (error) {
+      console.error("Error fetching upload URL:", error);
     }
   }, [
     currentQuestion,
@@ -174,9 +179,12 @@ export const InterviewPerformContent: React.FC<
     organization.id,
     study.id,
     study.videoEnabled,
-    setUploadSessionUrl,
-    setCurrentResponse,
+    setCurrentResponseAndUploadUrl,
   ]);
+
+  useEffect(() => {
+    fetchUploadUrlAndCreateResponse();
+  }, [fetchUploadUrlAndCreateResponse]);
 
   return (
     <>

@@ -6,11 +6,16 @@ import {
   FollowUpQuestion,
 } from "@shared/generated/client";
 import { CurrentQuestionType } from "@shared/types";
+import { CurrentResponseAndUploadUrl } from "@shared/types";
 
 export const currentQuestionAtom = atom<CurrentQuestionType | null>(null);
-export const currentResponseAtom = atom<Response | null>(null);
 export const responsesAtom = atom<Response[]>([]);
 export const followUpQuestionsAtom = atom<FollowUpQuestion[]>([]);
+export const currentResponseAndUploadUrlAtom =
+  atom<CurrentResponseAndUploadUrl>({
+    response: null,
+    uploadSessionUrl: null,
+  });
 
 // Only read from this atom for data about the interviewSession that isn't going to change during the performance
 export const interviewSessionAtom = atom<
@@ -37,5 +42,3 @@ export const mediaAccessAtom = atom<{
   microphone: false,
   camera: false,
 });
-
-export const uploadSessionUrlAtom = atom<string | null>(null);

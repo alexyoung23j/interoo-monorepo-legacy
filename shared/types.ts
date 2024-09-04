@@ -1,4 +1,11 @@
 import { FollowUpQuestion, Question, VideoStimulusType, FollowUpLevel } from "./generated/client";
+import { Response } from "./generated/client";
+
+// Add this new type
+export interface CurrentResponseAndUploadUrl {
+  response: Response | null;
+  uploadSessionUrl: string | null;
+}
 
 export type ConversationState = Array<{ 
   questionText?: string;
@@ -108,7 +115,7 @@ export interface TranscribeAndGenerateNextQuestionResponse {
   noAnswerDetected: boolean
 }
 
-// NEed to keep up to date with Prisma schema
+// Need to keep up to date with Prisma schema
 export type BaseQuestionExtended = Question & {
   imageStimuli?: {
     bucketUrl: string;
@@ -132,3 +139,13 @@ export type BaseQuestionExtended = Question & {
 }
 
 export type CurrentQuestionType = BaseQuestionExtended | FollowUpQuestion;
+
+export interface CurrentQuestionMetadataRequest {
+  organizationId: string;
+  studyId: string;
+  questionId: string;
+  interviewSessionId: string;
+  followUpQuestionId?: string; // Add this line
+  fileExtension: string;
+  contentType: string;
+}

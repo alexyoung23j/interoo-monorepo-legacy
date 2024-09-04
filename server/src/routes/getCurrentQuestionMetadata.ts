@@ -1,27 +1,29 @@
 import { Router, Request, Response } from "express";
 import path from "path";
 import { bucket, bucketName, prisma } from "../index";
-import { UploadUrlRequest } from "../../../shared/types";
+import { CurrentQuestionMetadataRequest } from "../../../shared/types";
 import axios from "axios";
 
 const router = Router();
 
-const getSignedUrl = async (req: Request, res: Response) => {
+const getCurrentQuestionMetadata = async (req: Request, res: Response) => {
   try {
     const { 
       organizationId, 
       studyId, 
       questionId, 
-      interviewSessionId, // Changed from responseId
+      interviewSessionId,
+      followUpQuestionId,
       fileExtension,
       contentType
-    }: UploadUrlRequest = req.body;
+    }: CurrentQuestionMetadataRequest = req.body;
 
-    // Create a new response
+    // Create a new response with default values
     const newResponse = await prisma.response.create({
       data: {
         questionId: questionId,
         interviewSessionId: interviewSessionId,
+        followUpQuestionId: followUpQuestionId,
         fastTranscribedText: "",
       }
     });
@@ -64,11 +66,11 @@ const getSignedUrl = async (req: Request, res: Response) => {
     res.json({ sessionUrl, path: filePath, newResponse });
 
   } catch (error) {
-    console.error('Error generating upload session URL:', error);
-    res.status(500).json({ error: 'Failed to generate upload URL' });
+    console.error('Error generating metadata and upload session URL:', error);
+    res.status(500).json({ error: 'Failed to generate metadata and upload URL' });
   }
 };
 
-router.post('/', getSignedUrl);
+router.post('/', getCurrentQuestionMetadata);
 
-export const getSignedUrlRoute = router;
+export const getCurrentQuestionMetadataRoute = router;

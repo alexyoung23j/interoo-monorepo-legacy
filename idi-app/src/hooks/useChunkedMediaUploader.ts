@@ -1,12 +1,14 @@
 import { useState, useRef, useCallback } from "react";
 import { useAtom } from "jotai";
-import { uploadSessionUrlAtom } from "@/app/state/atoms";
+import { currentResponseAndUploadUrlAtom } from "@/app/state/atoms";
 import type { UploadUrlRequest } from "@shared/types";
 
 const CHUNK_SIZE = 2 * 1024 * 1024; // 2 MiB
 
 export function useChunkedMediaUploader() {
-  const [uploadSessionUrl] = useAtom(uploadSessionUrlAtom);
+  const [currentResponseAndUploadUrl] = useAtom(
+    currentResponseAndUploadUrlAtom,
+  );
   const [isRecording, setIsRecording] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -21,7 +23,7 @@ export function useChunkedMediaUploader() {
 
   const uploadNextChunk = async (isLastChunk = false) => {
     if (
-      !uploadSessionUrl ||
+      !currentResponseAndUploadUrl.uploadSessionUrl ||
       buffer.current.size === 0 ||
       isUploading.current ||
       uploadComplete.current
@@ -38,13 +40,16 @@ export function useChunkedMediaUploader() {
 
     try {
       console.log(`Uploading chunk: bytes ${start}-${end}/${total}`);
-      const response = await fetch(uploadSessionUrl, {
-        method: "PUT",
-        headers: {
-          "Content-Range": `bytes ${start}-${end}/${total}`,
+      const response = await fetch(
+        currentResponseAndUploadUrl.uploadSessionUrl,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Range": `bytes ${start}-${end}/${total}`,
+          },
+          body: chunk,
         },
-        body: chunk,
-      });
+      );
 
       if (response.status === 308) {
         const range = response.headers.get("Range");
@@ -84,7 +89,7 @@ export function useChunkedMediaUploader() {
     });
     totalSize.current += chunk.size;
     console.log(
-      `Added chunk to buffer. Total size: ${totalSize.current} bytes`,
+      `Added chunk to buffer. Total size: ${totalSize.current} bytes, Buffer size: ${buffer.current.size} bytes`,
     );
 
     if (
@@ -92,13 +97,14 @@ export function useChunkedMediaUploader() {
       !isUploading.current &&
       !uploadComplete.current
     ) {
-      uploadNextChunk().catch(console.error);
+      console.log("Buffer size reached threshold, triggering upload");
+      void uploadNextChunk();
     }
   }, []);
 
   const startRecording = useCallback(
     async (isVideoEnabled: boolean) => {
-      if (!uploadSessionUrl) {
+      if (!currentResponseAndUploadUrl.uploadSessionUrl) {
         throw new Error("No upload session URL available");
       }
 
@@ -135,13 +141,13 @@ export function useChunkedMediaUploader() {
         };
 
         setIsRecording(true);
-        mediaRecorder.current.start(1000); // Collect data every second
+        mediaRecorder.current.start(500);
       } catch (err) {
         console.error("Error starting recording:", err);
         setError("Failed to start recording. Please check your permissions.");
       }
     },
-    [uploadSessionUrl, addChunkToBuffer],
+    [currentResponseAndUploadUrl.uploadSessionUrl, addChunkToBuffer],
   );
 
   const stopRecording = useCallback(async () => {
@@ -152,13 +158,37 @@ export function useChunkedMediaUploader() {
             setIsRecording(false);
             console.log("Recording stopped, uploading final chunks...");
 
-            while (buffer.current.size > 0 && !uploadComplete.current) {
-              await uploadNextChunk(true);
-              if (uploadComplete.current) break;
-              await new Promise((r) => setTimeout(r, 100)); // Small delay to prevent tight loop
+            let retryCount = 0;
+            const maxRetries = 5;
+
+            while (
+              buffer.current.size > 0 &&
+              !uploadComplete.current &&
+              retryCount < maxRetries
+            ) {
+              try {
+                const uploadSuccessful = await uploadNextChunk(true);
+                if (uploadSuccessful) {
+                  break;
+                }
+              } catch (error) {
+                console.error("Error uploading chunk:", error);
+              }
+
+              retryCount++;
+              if (retryCount < maxRetries) {
+                console.log(`Retry attempt ${retryCount} of ${maxRetries}`);
+                await new Promise((r) => setTimeout(r, 1000)); // Wait 1 second before retrying
+              }
             }
 
-            console.log("All chunks uploaded.");
+            if (retryCount === maxRetries) {
+              console.error("Max retries reached. Upload may be incomplete.");
+              setError("Failed to upload all chunks. Please try again.");
+            } else {
+              console.log("All chunks uploaded successfully.");
+            }
+
             resolve();
           };
           mediaRecorder.current.stop();
@@ -167,7 +197,7 @@ export function useChunkedMediaUploader() {
         }
       });
     }
-  }, []);
+  }, [uploadNextChunk]);
 
   return {
     isRecording,

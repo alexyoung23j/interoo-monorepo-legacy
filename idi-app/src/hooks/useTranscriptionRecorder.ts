@@ -5,11 +5,10 @@ import type {
 import { useState, useRef, useCallback, useEffect } from "react";
 import {
   currentQuestionAtom,
-  currentResponseAtom,
   followUpQuestionsAtom,
   interviewSessionAtom,
   responsesAtom,
-  uploadSessionUrlAtom,
+  currentResponseAndUploadUrlAtom,
 } from "../app/state/atoms";
 import { useAtom } from "jotai";
 import type { FollowUpQuestion, Question } from "@shared/generated/client";
@@ -23,7 +22,6 @@ interface AudioRecorderHook {
     additionalData: TranscribeAndGenerateNextQuestionRequest,
   ) => Promise<{ textToPlay: string | undefined } | null>;
   error: string | null;
-  awaitingNextQuestionGeneration: boolean;
   noAnswerDetected: boolean;
 }
 
@@ -34,12 +32,12 @@ export function useTranscriptionRecorder({
 }: {
   baseQuestions: Question[];
 }): AudioRecorderHook {
-  const [currentResponse] = useAtom(currentResponseAtom);
-  const [uploadSessionUrl] = useAtom(uploadSessionUrlAtom);
+  const [currentResponseAndUploadUrl, setCurrentResponseAndUploadUrl] = useAtom(
+    currentResponseAndUploadUrlAtom,
+  );
+
   const [isRecording, setIsRecording] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [awaitingNextQuestionGeneration, setAwaitingNextQuestionGeneration] =
-    useState(false);
   const [, setCurrentQuestion] = useAtom(currentQuestionAtom);
   const [responses, setResponses] = useAtom(responsesAtom);
   const [followUpQuestions, setFollowUpQuestions] = useAtom(
@@ -108,11 +106,9 @@ export function useTranscriptionRecorder({
     }
   }, [stopRecording]);
 
-  // TODO(ronit): update eagerly created response as necessary here
   const submitAudio = useCallback(
     async (additionalData: TranscribeAndGenerateNextQuestionRequest) => {
       if (audioChunks.current.length === 0) return null;
-      setAwaitingNextQuestionGeneration(true);
 
       const mimeType =
         mediaRecorder.current?.mimeType ?? "audio/webm;codecs=opus";
@@ -151,7 +147,6 @@ export function useTranscriptionRecorder({
         audioChunks.current = [];
 
         if (transcribeAndGenerateNextQuestionResponse.noAnswerDetected) {
-          setAwaitingNextQuestionGeneration(false);
           showWarningToast("Sorry, I couldn't hear you. Please try again!");
           setNoAnswerDetected(true);
           return null;
@@ -189,10 +184,9 @@ export function useTranscriptionRecorder({
           });
         }
 
-        setAwaitingNextQuestionGeneration(false);
         setResponses(
           responses.map((response) =>
-            response.id === currentResponse?.id
+            response.id === currentResponseAndUploadUrl.response?.id
               ? {
                   ...response,
                   fastTranscribedText:
@@ -206,13 +200,12 @@ export function useTranscriptionRecorder({
       } catch (error) {
         console.error("Error submitting audio:", error);
         setError("Failed to submit audio. Please try again.");
-        setAwaitingNextQuestionGeneration(false);
         throw error;
       }
     },
     [
       baseQuestions,
-      currentResponse,
+      currentResponseAndUploadUrl,
       followUpQuestions,
       interviewSession,
       responses,
@@ -220,6 +213,7 @@ export function useTranscriptionRecorder({
       setFollowUpQuestions,
       setInterviewSession,
       setResponses,
+      setCurrentResponseAndUploadUrl,
     ],
   );
 
@@ -235,7 +229,6 @@ export function useTranscriptionRecorder({
   }, []);
 
   return {
-    awaitingNextQuestionGeneration: awaitingNextQuestionGeneration,
     noAnswerDetected,
     isRecording,
     startRecording,
