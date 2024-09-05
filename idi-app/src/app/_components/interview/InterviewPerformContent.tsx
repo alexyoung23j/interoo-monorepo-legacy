@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useEffect, useRef } from "react";
 import { DisplayQuestion } from "./DisplayQuestion";
 import {
   FollowUpQuestion,
@@ -13,8 +13,8 @@ import {
   currentQuestionAtom,
   responsesAtom,
   interviewSessionAtom,
-  currentResponseAtom,
   followUpQuestionsAtom,
+  currentResponseAndUploadUrlAtom,
 } from "@/app/state/atoms";
 import { useAtom } from "jotai";
 import InterviewBottomBarWithVideo from "./interviewBottomBarWithVideo";
@@ -30,6 +30,9 @@ export const InterviewPerformContent: React.FC<
 > = ({ organization, study, interviewSessionRefetching }) => {
   const [currentQuestion, setCurrentQuestion] = useAtom(currentQuestionAtom);
   const [interviewSession, setInterviewSession] = useAtom(interviewSessionAtom);
+  const [, setCurrentResponseAndUploadUrl] = useAtom(
+    currentResponseAndUploadUrlAtom,
+  );
 
   const [multipleChoiceOptionSelectionId, setMultipleChoiceOptionSelectionId] =
     useState<string | null>(null);
@@ -38,15 +41,21 @@ export const InterviewPerformContent: React.FC<
   );
   const [awaitingOptionResponse, setAwaitingOptionResponse] = useState(false);
 
-  const createMultipleChoiceResponse =
-    api.responses.createMultipleChoiceResponse.useMutation();
+  // Update the response to include the user's selection- or create in case user answers
+  // before we get a chance to get the signed url and create the response on the backend
+  const createOrUpdateMultipleChoiceResponse =
+    api.responses.createOrUpdateMultipleChoiceResponse.useMutation();
 
-  const createRangeResponse = api.responses.createRangeResponse.useMutation();
+  const createOrUpdateRangeResponse =
+    api.responses.createOrUpdateRangeResponse.useMutation();
 
   const getNextQuestion = useCallback(
     (currentQuestion: Question) => {
-      const nextOrder = currentQuestion.questionOrder + 1;
-      return study.questions.find((q) => q.questionOrder === nextOrder) ?? null;
+      const nextQuestionNumber = currentQuestion.questionOrder + 1;
+      return (
+        study.questions.find((q) => q.questionOrder === nextQuestionNumber) ??
+        null
+      );
     },
     [study.questions],
   );
@@ -71,7 +80,7 @@ export const InterviewPerformContent: React.FC<
         ...prev!,
         status: "COMPLETED",
       }));
-      createMultipleChoiceResponse.mutate({
+      createOrUpdateMultipleChoiceResponse.mutate({
         multipleChoiceOptionSelectionId: multipleChoiceOptionSelectionId,
         interviewSessionId: interviewSession?.id ?? "",
         studyId: study.id,
@@ -85,7 +94,7 @@ export const InterviewPerformContent: React.FC<
 
     setCurrentQuestion(nextQuestion);
 
-    createMultipleChoiceResponse.mutate({
+    createOrUpdateMultipleChoiceResponse.mutate({
       multipleChoiceOptionSelectionId: multipleChoiceOptionSelectionId,
       interviewSessionId: interviewSession?.id ?? "",
       studyId: study.id,
@@ -113,7 +122,7 @@ export const InterviewPerformContent: React.FC<
       }));
     }
 
-    createRangeResponse.mutate({
+    createOrUpdateRangeResponse.mutate({
       rangeSelection: rangeSelectionValue,
       interviewSessionId: interviewSession?.id ?? "",
       studyId: study.id,
@@ -124,6 +133,60 @@ export const InterviewPerformContent: React.FC<
     setAwaitingOptionResponse(false);
     setRangeSelectionValue(null);
   };
+
+  const fetchUploadUrlAndCreateResponse = useCallback(async () => {
+    if (!currentQuestion || !interviewSession) return;
+
+    console.log("Fetching upload URL...");
+    try {
+      const isFollowUpQuestion = "followUpQuestionOrder" in currentQuestion;
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/get-current-question-metadata`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            organizationId: organization.id,
+            studyId: study.id,
+            questionId: isFollowUpQuestion
+              ? currentQuestion.parentQuestionId
+              : currentQuestion.id,
+            interviewSessionId: interviewSession.id,
+            followUpQuestionId: isFollowUpQuestion ? currentQuestion.id : null,
+            fileExtension: "webm",
+            contentType: study.videoEnabled ? "video/webm" : "audio/webm",
+          }),
+          credentials: "include",
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("Upload URL fetched successfully:", data.sessionUrl);
+      setCurrentResponseAndUploadUrl({
+        response: data.newResponse,
+        uploadSessionUrl: data.sessionUrl,
+      });
+    } catch (error) {
+      console.error("Error fetching upload URL:", error);
+    }
+  }, [
+    currentQuestion,
+    interviewSession,
+    organization.id,
+    study.id,
+    study.videoEnabled,
+    setCurrentResponseAndUploadUrl,
+  ]);
+
+  useEffect(() => {
+    fetchUploadUrlAndCreateResponse();
+  }, [fetchUploadUrlAndCreateResponse]);
 
   return (
     <>

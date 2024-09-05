@@ -1,22 +1,34 @@
 import { Router, Request, Response } from "express";
 import path from "path";
 import { bucket, bucketName, prisma } from "../index";
-import { UploadUrlRequest } from "../../../shared/types";
+import { CurrentQuestionMetadataRequest } from "../../../shared/types";
 import axios from "axios";
 
 const router = Router();
 
-const getSignedUrl = async (req: Request, res: Response) => {
+const getCurrentQuestionMetadata = async (req: Request, res: Response) => {
   try {
     const { 
       organizationId, 
       studyId, 
       questionId, 
-      responseId, 
+      interviewSessionId,
+      followUpQuestionId,
       fileExtension,
       contentType
-    }: UploadUrlRequest = req.body;
+    }: CurrentQuestionMetadataRequest = req.body;
 
+    // Create a new response with default values
+    const newResponse = await prisma.response.create({
+      data: {
+        questionId: questionId,
+        interviewSessionId: interviewSessionId,
+        followUpQuestionId: followUpQuestionId,
+        fastTranscribedText: "",
+      }
+    });
+
+    const responseId = newResponse.id;
     const basePath = path.join(organizationId, studyId, questionId, responseId);
     const fileName = `recording.${fileExtension}`;
     const filePath = path.join(basePath, fileName);
@@ -43,31 +55,22 @@ const getSignedUrl = async (req: Request, res: Response) => {
       throw new Error('Failed to get session URL');
     }
 
-    const existingResponse = await prisma.response.findUnique({
-      where: { id: responseId },
-      select: { fastTranscribedText: true }
-    });
-
-    if (!existingResponse) {
-      return res.status(404).json({ error: 'Response not found' });
-    }
-
     await prisma.responseMedia.create({
       data: {
         responseId: responseId,
         mediaUrl: `https://storage.googleapis.com/${bucketName}/${filePath}`,
-        transcribedText: existingResponse.fastTranscribedText
+        transcribedText: "" // Initialize with empty string
       }
     });
 
-    res.json({ sessionUrl, path: filePath });
+    res.json({ sessionUrl, path: filePath, newResponse });
 
   } catch (error) {
-    console.error('Error generating upload session URL:', error);
-    res.status(500).json({ error: 'Failed to generate upload URL' });
+    console.error('Error generating metadata and upload session URL:', error);
+    res.status(500).json({ error: 'Failed to generate metadata and upload URL' });
   }
 };
 
-router.post('/', getSignedUrl);
+router.post('/', getCurrentQuestionMetadata);
 
-export const getSignedUrlRoute = router;
+export const getCurrentQuestionMetadataRoute = router;

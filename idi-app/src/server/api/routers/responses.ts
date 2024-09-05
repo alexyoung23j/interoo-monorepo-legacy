@@ -8,41 +8,10 @@ import {
 import { TRPCError } from "@trpc/server";
 
 export const responsesRouter = createTRPCRouter({
-  /**
-   * Used to get study details for interview pages
-   */
-  createOpenEndedResponse: publicProcedure
+  createOrUpdateMultipleChoiceResponse: publicProcedure
     .input(
       z.object({
-        questionId: z.string(),
-        interviewSessionId: z.string(),
-        followUpQuestionId: z.string().optional(),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      const { questionId, interviewSessionId, followUpQuestionId } = input;
-
-      const response = await ctx.db.response.create({
-        data: {
-          questionId,
-          interviewSessionId,
-          followUpQuestionId,
-          fastTranscribedText: "",
-        },
-      });
-
-      if (!response) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to create response",
-        });
-      }
-
-      return response;
-    }),
-  createMultipleChoiceResponse: publicProcedure
-    .input(
-      z.object({
+        responseId: z.string().optional(),
         questionId: z.string(),
         interviewSessionId: z.string(),
         studyId: z.string(),
@@ -52,6 +21,7 @@ export const responsesRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const {
+        responseId,
         questionId,
         interviewSessionId,
         multipleChoiceOptionSelectionId,
@@ -59,9 +29,15 @@ export const responsesRouter = createTRPCRouter({
         studyId,
       } = input;
 
-      // Create response
-      await ctx.db.response.create({
-        data: {
+      // Create or update response
+      const response = await ctx.db.response.upsert({
+        where: {
+          id: responseId ?? "",
+        },
+        update: {
+          multipleChoiceOptionId: multipleChoiceOptionSelectionId,
+        },
+        create: {
           questionId,
           interviewSessionId,
           multipleChoiceOptionId: multipleChoiceOptionSelectionId,
@@ -100,9 +76,11 @@ export const responsesRouter = createTRPCRouter({
 
       return { nextQuestion, wasFinalQuestion: !nextQuestion };
     }),
-  createRangeResponse: publicProcedure
+
+  createOrUpdateRangeResponse: publicProcedure
     .input(
       z.object({
+        responseId: z.string().optional(),
         questionId: z.string(),
         interviewSessionId: z.string(),
         studyId: z.string(),
@@ -112,6 +90,7 @@ export const responsesRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const {
+        responseId,
         questionId,
         interviewSessionId,
         rangeSelection,
@@ -119,9 +98,15 @@ export const responsesRouter = createTRPCRouter({
         studyId,
       } = input;
 
-      // Create response
-      await ctx.db.response.create({
-        data: {
+      // Create or update response
+      const response = await ctx.db.response.upsert({
+        where: {
+          id: responseId ?? "",
+        },
+        update: {
+          rangeSelection,
+        },
+        create: {
           questionId,
           interviewSessionId,
           rangeSelection,

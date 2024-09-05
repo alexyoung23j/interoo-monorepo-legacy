@@ -12,11 +12,10 @@ import { createClient as createDeepgramClient } from "@deepgram/sdk";
 import { protectedRoute } from "./routes/test/protected";
 import { audioResponseRoute } from "./routes/audioResponse";
 import { testFollowUpRoute } from "./routes/test/testFollowUp";
-import { getSignedUrlRoute } from "./routes/getSignedUrl";
 import { testTranscribeRoute } from "./routes/test/testTranscribe";
 import { getTtsAudioRoute } from "./routes/getTtsAudio";
 import { TextToSpeechClient } from "@google-cloud/text-to-speech";
-
+import { getCurrentQuestionMetadataRoute } from "./routes/getCurrentQuestionMetadata";
 
 // Configuration and Setup
 const rootDir = path.resolve(__dirname, "../..");
@@ -56,14 +55,13 @@ app.use((req, res, next) => {
 app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
 app.use(express.json());
 
-
 // Routes
 app.use("/protected", protectedRoute);
 app.use("/api/audio-response", audioResponseRoute);
-app.use("/api/get-signed-url", getSignedUrlRoute);
 app.use("/api/get-tts-audio", getTtsAudioRoute);
 app.use("/test-follow-up", testFollowUpRoute);
 app.use("/test-transcribe", testTranscribeRoute);
+app.use("/api/get-current-question-metadata", getCurrentQuestionMetadataRoute);
 
 // Server Startup
 const startServer = () => {

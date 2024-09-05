@@ -1,14 +1,17 @@
-import { useState, useRef, useCallback } from "react";
-import type { UploadUrlRequest } from "@shared/types";
+import { useState, useRef, useCallback, useEffect } from "react";
 
 const CHUNK_SIZE = 2 * 1024 * 1024; // 2 MiB
 
 export function useChunkedMediaUploader() {
+  const [uploadUrl, setUploadUrl] = useState<string | null>(null);
+  const updateUploadUrl = useCallback((newUrl: string | null) => {
+    setUploadUrl(newUrl);
+  }, []);
+
   const [isRecording, setIsRecording] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const mediaRecorder = useRef<MediaRecorder | null>(null);
-  const uploadUrl = useRef<string | null>(null);
   const uploadedSize = useRef<number>(0);
   const buffer = useRef<Blob>(
     new Blob([], { type: "video/webm;codecs=vp8,opus" }),
@@ -17,82 +20,91 @@ export function useChunkedMediaUploader() {
   const isUploading = useRef<boolean>(false);
   const uploadComplete = useRef<boolean>(false);
 
-  const getResumableUploadUrl = async (uploadUrlRequest: UploadUrlRequest) => {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/get-signed-url`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(uploadUrlRequest),
-        credentials: "include",
-      },
-    );
-    if (!response.ok) {
-      throw new Error(`Failed to get upload URL: ${await response.text()}`);
-    }
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const data: { sessionUrl: string } = await response.json();
-    uploadUrl.current = data.sessionUrl;
-  };
-
-  const uploadNextChunk = async (isLastChunk = false) => {
-    if (
-      !uploadUrl.current ||
-      buffer.current.size === 0 ||
-      isUploading.current ||
-      uploadComplete.current
-    )
-      return;
-
-    isUploading.current = true;
-    const chunkSize = Math.min(CHUNK_SIZE, buffer.current.size);
-    const chunk = buffer.current.slice(0, chunkSize);
-
-    const start = uploadedSize.current;
-    const end = start + chunk.size - 1;
-    const total = isLastChunk ? totalSize.current.toString() : "*";
-
-    try {
-      console.log(`Uploading chunk: bytes ${start}-${end}/${total}`);
-      const response = await fetch(uploadUrl.current, {
-        method: "PUT",
-        headers: {
-          "Content-Range": `bytes ${start}-${end}/${total}`,
-        },
-        body: chunk,
+  const uploadNextChunk = useCallback(
+    async (isLastChunk = false) => {
+      console.log("uploadNextChunk called", {
+        uploadSessionUrl: uploadUrl,
+        bufferSize: buffer.current.size,
+        isUploading: isUploading.current,
+        uploadComplete: uploadComplete.current,
       });
 
-      if (response.status === 308) {
-        const range = response.headers.get("Range");
-        if (range) {
-          const [, serverEnd] = range.split("-").map(Number);
-          if (serverEnd !== undefined) {
-            uploadedSize.current = serverEnd + 1;
-          }
-        }
-        console.log(
-          `Partial upload successful, uploaded to byte ${uploadedSize.current}`,
-        );
-        buffer.current = buffer.current.slice(chunkSize);
-      } else if (response.status === 200 || response.status === 201) {
-        console.log("Upload completed");
-        setUploadProgress(100);
-        uploadComplete.current = true;
-        return true;
-      } else {
-        throw new Error(`Unexpected response: ${response.status}`);
+      if (
+        !uploadUrl ||
+        buffer.current.size === 0 ||
+        isUploading.current ||
+        uploadComplete.current
+      ) {
+        console.log("uploadNextChunk returning early", {
+          reason: !uploadUrl
+            ? "No upload URL"
+            : buffer.current.size === 0
+              ? "Empty buffer"
+              : isUploading.current
+                ? "Already uploading"
+                : "Upload complete",
+        });
+        return;
       }
 
-      setUploadProgress((uploadedSize.current / totalSize.current) * 100);
-    } catch (error) {
-      console.error("Chunk upload failed:", error);
-      setError("Failed to upload media chunk. Please try again.");
-    } finally {
-      isUploading.current = false;
-    }
+      isUploading.current = true;
+      const chunkSize = Math.min(CHUNK_SIZE, buffer.current.size);
+      const chunk = buffer.current.slice(0, chunkSize);
 
-    return false;
-  };
+      const start = uploadedSize.current;
+      const end = start + chunk.size - 1;
+      const total = isLastChunk ? totalSize.current.toString() : "*";
+
+      try {
+        console.log(`Uploading chunk: bytes ${start}-${end}/${total}`);
+        const response = await fetch(uploadUrl, {
+          method: "PUT",
+          headers: {
+            "Content-Range": `bytes ${start}-${end}/${total}`,
+          },
+          body: chunk,
+        });
+
+        if (
+          response.status === 308 ||
+          response.status === 200 ||
+          response.status === 201
+        ) {
+          const range = response.headers.get("Range");
+          if (range) {
+            const [, serverEnd] = range.split("-").map(Number);
+            if (serverEnd !== undefined) {
+              uploadedSize.current = serverEnd + 1;
+            }
+          }
+
+          if (response.status === 308) {
+            console.log(
+              `Partial upload successful, uploaded to byte ${uploadedSize.current}`,
+            );
+            buffer.current = buffer.current.slice(chunkSize);
+          } else {
+            console.log("Upload completed");
+            setUploadProgress(100);
+            uploadComplete.current = true;
+            return true;
+          }
+
+          setUploadProgress((uploadedSize.current / totalSize.current) * 100);
+          return false; // Indicate that upload should continue
+        } else {
+          throw new Error(`Unexpected response: ${response.status}`);
+        }
+      } catch (error) {
+        console.error("Chunk upload failed:", error);
+        setError("Failed to upload media chunk. Please try again.");
+        throw error; // Re-throw the error instead of returning null
+      } finally {
+        isUploading.current = false;
+      }
+    },
+    [uploadUrl, buffer, isUploading, uploadComplete],
+  );
 
   const addChunkToBuffer = useCallback((chunk: Blob) => {
     buffer.current = new Blob([buffer.current, chunk], {
@@ -100,7 +112,7 @@ export function useChunkedMediaUploader() {
     });
     totalSize.current += chunk.size;
     console.log(
-      `Added chunk to buffer. Total size: ${totalSize.current} bytes`,
+      `Added chunk to buffer. Total size: ${totalSize.current} bytes, Buffer size: ${buffer.current.size} bytes`,
     );
 
     if (
@@ -108,14 +120,18 @@ export function useChunkedMediaUploader() {
       !isUploading.current &&
       !uploadComplete.current
     ) {
-      uploadNextChunk().catch(console.error);
+      console.log("Buffer size reached threshold, triggering upload");
+      void uploadNextChunk();
     }
   }, []);
 
   const startRecording = useCallback(
-    async (uploadUrlRequest: UploadUrlRequest, isVideoEnabled: boolean) => {
+    async (isVideoEnabled: boolean) => {
+      if (!uploadUrl) {
+        throw new Error("No upload session URL available");
+      }
+
       try {
-        await getResumableUploadUrl(uploadUrlRequest);
         uploadedSize.current = 0;
         totalSize.current = 0;
         buffer.current = new Blob([], {
@@ -148,13 +164,13 @@ export function useChunkedMediaUploader() {
         };
 
         setIsRecording(true);
-        mediaRecorder.current.start(1000); // Collect data every second
+        mediaRecorder.current.start(500);
       } catch (err) {
         console.error("Error starting recording:", err);
         setError("Failed to start recording. Please check your permissions.");
       }
     },
-    [addChunkToBuffer],
+    [uploadUrl, addChunkToBuffer],
   );
 
   const stopRecording = useCallback(async () => {
@@ -165,13 +181,35 @@ export function useChunkedMediaUploader() {
             setIsRecording(false);
             console.log("Recording stopped, uploading final chunks...");
 
+            let retryCount = 0;
+            const maxRetries = 5;
+
             while (buffer.current.size > 0 && !uploadComplete.current) {
-              await uploadNextChunk(true);
-              if (uploadComplete.current) break;
-              await new Promise((r) => setTimeout(r, 100)); // Small delay to prevent tight loop
+              try {
+                const uploadResult = await uploadNextChunk(true);
+                if (uploadResult) {
+                  break; // Upload is complete
+                }
+                // If uploadResult is false, continue uploading next chunk
+              } catch (error) {
+                console.error("Error uploading chunk:", error);
+                retryCount++;
+                if (retryCount >= maxRetries) {
+                  console.error(
+                    "Max retries reached. Upload may be incomplete.",
+                  );
+                  setError("Failed to upload all chunks. Please try again.");
+                  break;
+                }
+                console.log(`Retry attempt ${retryCount} of ${maxRetries}`);
+                await new Promise((r) => setTimeout(r, 1000)); // Wait 1 second before retrying
+              }
             }
 
-            console.log("All chunks uploaded.");
+            if (uploadComplete.current) {
+              console.log("All chunks uploaded successfully.");
+            }
+
             resolve();
           };
           mediaRecorder.current.stop();
@@ -180,7 +218,7 @@ export function useChunkedMediaUploader() {
         }
       });
     }
-  }, []);
+  }, [uploadNextChunk]);
 
   return {
     isRecording,
@@ -188,5 +226,6 @@ export function useChunkedMediaUploader() {
     stopRecording,
     error,
     uploadProgress,
+    updateUploadUrl,
   };
 }

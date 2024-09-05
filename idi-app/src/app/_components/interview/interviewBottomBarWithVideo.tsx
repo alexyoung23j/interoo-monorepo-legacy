@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { ArrowRight, Microphone } from "@phosphor-icons/react";
@@ -17,7 +17,7 @@ import {
 import { showErrorToast } from "@/app/utils/toastUtils";
 import {
   currentQuestionAtom,
-  currentResponseAtom,
+  currentResponseAndUploadUrlAtom,
   followUpQuestionsAtom,
   interviewSessionAtom,
   responsesAtom,
@@ -54,22 +54,16 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
   handleSubmitRangeResponse,
 }) => {
   const [currentQuestion] = useAtom(currentQuestionAtom);
-  const [currentResponse, setCurrentResponse] = useAtom(currentResponseAtom);
+  const [currentResponseAndUploadUrl, setCurrentResponseAndUploadUrl] = useAtom(
+    currentResponseAndUploadUrlAtom,
+  );
   const [interviewSession] = useAtom(interviewSessionAtom);
   const [responses, setResponses] = useAtom(responsesAtom);
   const [followUpQuestions] = useAtom(followUpQuestionsAtom);
   const [audioOn, setAudioOn] = useState(true);
-  const [responseStopped, setResponseStopped] = useState(false);
   const [isFullyRecording, setIsFullyRecording] = useState(false);
-
-  // Add this effect to reset responseStopped when currentQuestion changes
-  useEffect(() => {
-    setResponseStopped(false);
-  }, [currentQuestion]);
-
-  const createOpenEndedResponse =
-    api.responses.createOpenEndedResponse.useMutation();
-
+  const [awaitingNextQuestionGeneration, setAwaitingNextQuestionGeneration] =
+    useState(false);
   const transcriptionRecorder = useTranscriptionRecorder({
     baseQuestions: study.questions,
   });
@@ -83,13 +77,58 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
     audioDuration: ttsAudioDuration,
   } = useTtsAudio();
 
-  const chunkedMediaUploader = useChunkedMediaUploader();
+  const {
+    startRecording: startChunkedMediaUploader,
+    stopRecording: stopChunkedMediaUploader,
+    updateUploadUrl,
+    isRecording,
+    uploadProgress,
+    error: uploadError,
+  } = useChunkedMediaUploader();
+
+  useEffect(() => {
+    console.log(
+      "Updating upload URL:",
+      currentResponseAndUploadUrl.uploadSessionUrl,
+    );
+    updateUploadUrl(currentResponseAndUploadUrl.uploadSessionUrl);
+  }, [currentResponseAndUploadUrl, updateUploadUrl]);
+
+  const [uploadStatus, setUploadStatus] = useState<
+    "idle" | "uploading" | "slow" | "verySlow" | "failed"
+  >("idle");
+  const [uploadStartTime, setUploadStartTime] = useState<number | null>(null);
+
+  const updateUploadStatus = useCallback(() => {
+    if (uploadStartTime === null) return;
+
+    const elapsedTime = Date.now() - uploadStartTime;
+    if (elapsedTime > 30000 && uploadProgress < 90) {
+      setUploadStatus("verySlow");
+    } else if (elapsedTime > 15000 && uploadProgress < 50) {
+      setUploadStatus("slow");
+    }
+  }, [uploadStartTime, uploadProgress]);
+
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout;
+    if (uploadStatus === "uploading" || uploadStatus === "slow") {
+      intervalId = setInterval(updateUploadStatus, 5000);
+    }
+    return () => clearInterval(intervalId);
+  }, [uploadStatus, updateUploadStatus]);
 
   const startResponse = async () => {
     if (!navigator.mediaDevices?.getUserMedia) {
       console.error("getUserMedia is not supported in this browser");
       return;
     }
+
+    console.log("Starting response...");
+    console.log(
+      "Current upload URL:",
+      currentResponseAndUploadUrl.uploadSessionUrl,
+    );
 
     try {
       ttsAudioStop();
@@ -98,69 +137,68 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
       if (transcriptionRecorder.noAnswerDetected) {
         return;
       }
-
-      let newResponse;
-      if (currentQuestion) {
-        const isFollowUpQuestion = "followUpQuestionOrder" in currentQuestion;
-        newResponse = await createOpenEndedResponse.mutateAsync({
-          questionId: isFollowUpQuestion
-            ? currentQuestion.parentQuestionId
-            : currentQuestion.id,
-          interviewSessionId: interviewSession?.id ?? "",
-          followUpQuestionId: isFollowUpQuestion
-            ? currentQuestion.id
-            : undefined,
-        });
-        setCurrentResponse(newResponse);
-        setResponses([...responses, newResponse]);
-      }
-
-      if (newResponse) {
-        const uploadUrlRequest: UploadUrlRequest = {
-          organizationId: organization.id,
-          studyId: study.id,
-          questionId: currentQuestion?.id ?? "",
-          responseId: newResponse.id,
-          fileExtension: "webm",
-          contentType: study.videoEnabled ? "video/webm" : "audio/webm",
-        };
-        await chunkedMediaUploader.startRecording(
-          uploadUrlRequest,
-          study.videoEnabled ?? false,
-        );
-        setIsFullyRecording(true);
-      }
+      await startChunkedMediaUploader(study.videoEnabled ?? false);
+      console.log("Chunked media uploader started");
+      setIsFullyRecording(true);
+      setUploadStatus("idle");
+      setUploadStartTime(null);
     } catch (err) {
       console.error("Error starting response:", err);
       showErrorToast("Error starting response. Please try again.");
+      setIsFullyRecording(false);
     }
   };
 
   const stopResponse = async () => {
-    await chunkedMediaUploader.stopRecording();
-    transcriptionRecorder.stopRecording();
     setIsFullyRecording(false);
-    setResponseStopped(true); // Set the responseStopped state to true
+    setAwaitingNextQuestionGeneration(true);
+    setUploadStatus("uploading");
+    setUploadStartTime(Date.now());
 
     try {
+      await Promise.all([
+        stopChunkedMediaUploader(),
+        transcriptionRecorder.stopRecording(),
+      ]);
+
       const requestBody = calculateTranscribeAndGenerateNextQuestionRequest({
         currentQuestion,
         interviewSession,
         study,
         responses,
         followUpQuestions,
-        currentResponseId: currentResponse?.id ?? "",
+        currentResponseId: currentResponseAndUploadUrl.response?.id ?? "",
       });
 
       const res = await transcriptionRecorder.submitAudio(requestBody);
+      setAwaitingNextQuestionGeneration(false);
+      setUploadStatus("idle");
 
       if (res?.textToPlay && audioOn) {
-        // Play TTS audio
         await playTtsAudio(res.textToPlay);
       }
     } catch (err) {
       console.error("Error submitting audio:", err);
-      showErrorToast("Error submitting audio. Please try again.");
+      setUploadStatus("failed");
+      showErrorToast("Error uploading your answer. Please try again.");
+      setAwaitingNextQuestionGeneration(false);
+    }
+  };
+
+  const getButtonText = () => {
+    switch (uploadStatus) {
+      case "uploading":
+        return `Uploading... ${uploadProgress.toFixed(0)}%`;
+      case "slow":
+        return "Your network is a bit slow - bear with us!";
+      case "verySlow":
+        return "Hang on - almost there!";
+      case "failed":
+        return "Upload failed. Click to retry.";
+      default:
+        return isFullyRecording
+          ? "Click when finished speaking"
+          : "Click to speak";
     }
   };
 
@@ -170,12 +208,22 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
         variant="unstyled"
         className={cx(
           "h-14 w-14 rounded-sm border border-black border-opacity-25",
-          isFullyRecording
+          isFullyRecording || uploadStatus !== "idle"
             ? "bg-org-secondary hover:opacity-80"
             : "bg-neutral-100 hover:bg-neutral-300",
         )}
-        onClick={isFullyRecording ? stopResponse : startResponse}
-        disabled={responseStopped} // Disable the button if responseStopped is true
+        onClick={
+          uploadStatus === "failed"
+            ? startResponse
+            : isFullyRecording
+              ? stopResponse
+              : startResponse
+        }
+        disabled={
+          uploadStatus === "uploading" ||
+          uploadStatus === "slow" ||
+          uploadStatus === "verySlow"
+        }
       >
         {isFullyRecording ? (
           <SyncLoader
@@ -188,18 +236,21 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
             speedMultiplier={0.5}
             margin={3}
           />
-        ) : (transcriptionRecorder.awaitingResponse ?? ttsAudioLoading) ? (
-          <ClipLoader size={16} color="#525252" />
+        ) : uploadStatus !== "idle" ? (
+          <ClipLoader
+            size={16}
+            color={
+              isColorLight(organization.secondaryColor ?? "")
+                ? "black"
+                : "white"
+            }
+          />
         ) : (
           <Microphone className="size-8 text-neutral-600" />
         )}
       </Button>
       <div className="mt-3 text-sm text-neutral-500 md:absolute md:-bottom-[1.75rem]">
-        {isFullyRecording
-          ? "Click when finished speaking"
-          : transcriptionRecorder.awaitingResponse
-            ? "Thinking..."
-            : "Click to speak"}
+        {getButtonText()}
       </div>
     </>
   );

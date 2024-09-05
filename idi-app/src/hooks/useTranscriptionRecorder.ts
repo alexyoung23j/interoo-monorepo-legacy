@@ -5,10 +5,10 @@ import type {
 import { useState, useRef, useCallback, useEffect } from "react";
 import {
   currentQuestionAtom,
-  currentResponseAtom,
   followUpQuestionsAtom,
   interviewSessionAtom,
   responsesAtom,
+  currentResponseAndUploadUrlAtom,
 } from "../app/state/atoms";
 import { useAtom } from "jotai";
 import type { FollowUpQuestion, Question } from "@shared/generated/client";
@@ -22,7 +22,6 @@ interface AudioRecorderHook {
     additionalData: TranscribeAndGenerateNextQuestionRequest,
   ) => Promise<{ textToPlay: string | undefined } | null>;
   error: string | null;
-  awaitingResponse: boolean;
   noAnswerDetected: boolean;
 }
 
@@ -33,12 +32,14 @@ export function useTranscriptionRecorder({
 }: {
   baseQuestions: Question[];
 }): AudioRecorderHook {
+  const [currentResponseAndUploadUrl, setCurrentResponseAndUploadUrl] = useAtom(
+    currentResponseAndUploadUrlAtom,
+  );
+
   const [isRecording, setIsRecording] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [awaitingResponse, setAwaitingResponse] = useState(false);
   const [, setCurrentQuestion] = useAtom(currentQuestionAtom);
   const [responses, setResponses] = useAtom(responsesAtom);
-  const [currentResponse] = useAtom(currentResponseAtom);
   const [followUpQuestions, setFollowUpQuestions] = useAtom(
     followUpQuestionsAtom,
   );
@@ -99,7 +100,6 @@ export function useTranscriptionRecorder({
       );
     } catch (err) {
       console.error("Error starting recording:", err);
-      setIsRecording(false);
       setError(
         "Failed to start recording. Please check your microphone permissions.",
       );
@@ -109,7 +109,6 @@ export function useTranscriptionRecorder({
   const submitAudio = useCallback(
     async (additionalData: TranscribeAndGenerateNextQuestionRequest) => {
       if (audioChunks.current.length === 0) return null;
-      setAwaitingResponse(true);
 
       const mimeType =
         mediaRecorder.current?.mimeType ?? "audio/webm;codecs=opus";
@@ -142,13 +141,12 @@ export function useTranscriptionRecorder({
         }
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        const data: TranscribeAndGenerateNextQuestionResponse =
+        const transcribeAndGenerateNextQuestionResponse: TranscribeAndGenerateNextQuestionResponse =
           await response.json();
 
         audioChunks.current = [];
 
-        if (data.noAnswerDetected) {
-          setAwaitingResponse(false);
+        if (transcribeAndGenerateNextQuestionResponse.noAnswerDetected) {
           showWarningToast("Sorry, I couldn't hear you. Please try again!");
           setNoAnswerDetected(true);
           return null;
@@ -158,12 +156,22 @@ export function useTranscriptionRecorder({
 
         let nextCurrentQuestion: Question | FollowUpQuestion | null = null;
 
-        if (data.isFollowUp && data.followUpQuestion) {
-          setCurrentQuestion(data.followUpQuestion);
-          nextCurrentQuestion = data.followUpQuestion;
-          setFollowUpQuestions([...followUpQuestions, data.followUpQuestion]);
-        } else if (data.nextQuestionId) {
-          const nextQuestionId = data.nextQuestionId;
+        if (
+          transcribeAndGenerateNextQuestionResponse.isFollowUp &&
+          transcribeAndGenerateNextQuestionResponse.followUpQuestion
+        ) {
+          setCurrentQuestion(
+            transcribeAndGenerateNextQuestionResponse.followUpQuestion,
+          );
+          nextCurrentQuestion =
+            transcribeAndGenerateNextQuestionResponse.followUpQuestion;
+          setFollowUpQuestions([
+            ...followUpQuestions,
+            transcribeAndGenerateNextQuestionResponse.followUpQuestion,
+          ]);
+        } else if (transcribeAndGenerateNextQuestionResponse.nextQuestionId) {
+          const nextQuestionId =
+            transcribeAndGenerateNextQuestionResponse.nextQuestionId;
           const nextQuestion = baseQuestions.find(
             (question) => question.id === nextQuestionId,
           );
@@ -176,11 +184,14 @@ export function useTranscriptionRecorder({
           });
         }
 
-        setAwaitingResponse(false);
         setResponses(
           responses.map((response) =>
-            response.id === currentResponse?.id
-              ? { ...response, fastTranscribedText: data.transcribedText }
+            response.id === currentResponseAndUploadUrl.response?.id
+              ? {
+                  ...response,
+                  fastTranscribedText:
+                    transcribeAndGenerateNextQuestionResponse.transcribedText,
+                }
               : response,
           ),
         );
@@ -189,13 +200,12 @@ export function useTranscriptionRecorder({
       } catch (error) {
         console.error("Error submitting audio:", error);
         setError("Failed to submit audio. Please try again.");
-        setAwaitingResponse(false);
         throw error;
       }
     },
     [
       baseQuestions,
-      currentResponse,
+      currentResponseAndUploadUrl,
       followUpQuestions,
       interviewSession,
       responses,
@@ -203,6 +213,7 @@ export function useTranscriptionRecorder({
       setFollowUpQuestions,
       setInterviewSession,
       setResponses,
+      setCurrentResponseAndUploadUrl,
     ],
   );
 
@@ -218,7 +229,6 @@ export function useTranscriptionRecorder({
   }, []);
 
   return {
-    awaitingResponse,
     noAnswerDetected,
     isRecording,
     startRecording,
