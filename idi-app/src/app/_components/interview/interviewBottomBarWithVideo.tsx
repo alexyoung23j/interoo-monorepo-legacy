@@ -80,10 +80,19 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
   const {
     startRecording: startChunkedMediaUploader,
     stopRecording: stopChunkedMediaUploader,
+    updateUploadUrl,
     isRecording,
     uploadProgress,
     error: uploadError,
   } = useChunkedMediaUploader();
+
+  useEffect(() => {
+    console.log(
+      "Updating upload URL:",
+      currentResponseAndUploadUrl.uploadSessionUrl,
+    );
+    updateUploadUrl(currentResponseAndUploadUrl.uploadSessionUrl);
+  }, [currentResponseAndUploadUrl, updateUploadUrl]);
 
   const [uploadStatus, setUploadStatus] = useState<
     "idle" | "uploading" | "slow" | "verySlow" | "failed"
@@ -115,6 +124,12 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
       return;
     }
 
+    console.log("Starting response...");
+    console.log(
+      "Current upload URL:",
+      currentResponseAndUploadUrl.uploadSessionUrl,
+    );
+
     try {
       ttsAudioStop();
       await transcriptionRecorder.startRecording();
@@ -123,6 +138,7 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
         return;
       }
       await startChunkedMediaUploader(study.videoEnabled ?? false);
+      console.log("Chunked media uploader started");
       setIsFullyRecording(true);
       setUploadStatus("idle");
       setUploadStartTime(null);

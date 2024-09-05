@@ -137,6 +137,7 @@ export const InterviewPerformContent: React.FC<
   const fetchUploadUrlAndCreateResponse = useCallback(async () => {
     if (!currentQuestion || !interviewSession) return;
 
+    console.log("Fetching upload URL...");
     try {
       const isFollowUpQuestion = "followUpQuestionOrder" in currentQuestion;
       const response = await fetch(
@@ -166,6 +167,7 @@ export const InterviewPerformContent: React.FC<
       }
 
       const data = await response.json();
+      console.log("Upload URL fetched successfully:", data.sessionUrl);
       setCurrentResponseAndUploadUrl({
         response: data.newResponse,
         uploadSessionUrl: data.sessionUrl,
