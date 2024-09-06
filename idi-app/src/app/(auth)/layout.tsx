@@ -12,9 +12,9 @@ const RootLayout: React.FC<{ children: React.ReactNode }> = async ({
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (user) {
-    redirect("/");
-  }
+  // if (user) {
+  //   redirect("/");
+  // }
   return <>{children}</>;
 };
 
