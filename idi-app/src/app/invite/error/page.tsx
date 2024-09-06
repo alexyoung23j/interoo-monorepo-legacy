@@ -1,10 +1,9 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+import { useParams } from "next/navigation";
 
 const InviteErrorPage = () => {
-  const searchParams = useSearchParams();
-  const error = searchParams.get("error") || "An unknown error occurred";
+  const { error } = useParams();
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gray-100">

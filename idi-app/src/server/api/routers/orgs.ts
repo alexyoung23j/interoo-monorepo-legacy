@@ -12,11 +12,28 @@ export const orgsRouter = createTRPCRouter({
    * Used to get study details for interview pages
    */
   getUserOrgMembership: privateProcedure
-    .input(z.object({ shortenedStudyId: z.string() }))
+    .input(z.object({ orgId: z.string() }))
     .query(async ({ ctx, input }) => {
       const { session } = ctx;
 
-      // check if the session
+      const profile = await ctx.db.profile.findUnique({
+        where: {
+          email: session.data.session?.user.email ?? "",
+        },
+      });
+
+      if (!profile) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Profile not found",
+        });
+      }
+
+      const isOrgMember = profile.organizationId === input.orgId;
+
+      return {
+        isOrgMember,
+      };
     }),
   getProfile: privateProcedure.query(async ({ ctx }) => {
     const { session } = ctx;
@@ -105,8 +122,10 @@ export const orgsRouter = createTRPCRouter({
       // Create a new profile for the user
       const newProfile = await ctx.db.profile.create({
         data: {
-          name: session.data.session?.user.user_metadata.full_name ?? "",
-          email: session.data.session?.user.email ?? "",
+          name:
+            (session.data?.session?.user?.user_metadata?.full_name as string) ??
+            "",
+          email: session.data?.session?.user?.email ?? "",
           organizationId: invite.organizationId,
           supabaseUserID: session.data.session?.user.id ?? "",
         },

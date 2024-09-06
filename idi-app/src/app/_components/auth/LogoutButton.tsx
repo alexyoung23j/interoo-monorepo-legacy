@@ -18,7 +18,7 @@ const LogoutButton: React.FC<LogoutButtonProps> = ({ children }) => {
     if (error) {
       console.error("Error logging out:", error.message);
     } else {
-      router.push("/login?message=Successfully logged out");
+      router.push("/");
     }
   };
 
