@@ -14,11 +14,9 @@ const generateTtsAudio = async (
   try {
     const request: protos.google.cloud.texttospeech.v1.ISynthesizeSpeechRequest = {
       input: { text },
-      voice: { languageCode: 'en-US', name: "en-US-Journey-O" },
+      voice: { languageCode: 'en-US', name: "en-GB-News-L" },
       audioConfig: {
         audioEncoding: protos.google.cloud.texttospeech.v1.AudioEncoding.LINEAR16,
-        pitch: 0,
-        speakingRate: 2
       },
     };
 
