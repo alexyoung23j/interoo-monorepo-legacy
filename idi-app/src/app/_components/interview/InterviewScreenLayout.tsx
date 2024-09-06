@@ -53,7 +53,7 @@ export const InterviewScreenLayout: React.FC<InterviewScreenLayoutProps> = ({
         {isLoading ? (
           <div className="flex h-full items-center justify-center">
             <ClipLoader
-              color={organization.secondaryColor!}
+              color={organization.secondaryColor ?? "grey"}
               size={40}
               aria-label="Loading Spinner"
               data-testid="loader"

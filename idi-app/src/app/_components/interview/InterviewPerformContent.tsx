@@ -168,7 +168,9 @@ export const InterviewPerformContent: React.FC<
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        const data = await response.json();
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        const data: { sessionUrl: string; newResponse: Response } =
+          await response.json();
         console.log("Upload URL fetched successfully:", data.sessionUrl);
         setCurrentResponseAndUploadUrl({
           response: data.newResponse,
@@ -179,7 +181,7 @@ export const InterviewPerformContent: React.FC<
       }
     };
 
-    fetchUploadUrlAndCreateResponse();
+    void fetchUploadUrlAndCreateResponse();
   }, [currentQuestion, setCurrentResponseAndUploadUrl]);
 
   return (

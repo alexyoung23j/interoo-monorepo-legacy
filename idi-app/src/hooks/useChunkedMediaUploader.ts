@@ -230,7 +230,7 @@ export function useChunkedMediaUploader() {
               resolve();
             } catch (error) {
               clearTimeout(timeoutId);
-              reject(error);
+              reject(new Error(String(error)));
             }
           };
           mediaRecorder.current.stop();

@@ -179,7 +179,7 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
   const getButtonText = () => {
     switch (uploadStatus) {
       case "uploading":
-        return `Uploading... ${uploadProgress.toFixed(0)}%`;
+        return `Thinking...`;
       case "slow":
         return "Hang on - almost there!";
       case "verySlow":
