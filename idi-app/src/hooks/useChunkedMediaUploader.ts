@@ -1,12 +1,14 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import { useAtomValue } from "jotai";
+import { currentResponseAndUploadUrlAtom } from "@/app/state/atoms";
 
 const CHUNK_SIZE = 2 * 1024 * 1024; // 2 MiB
+const UPLOAD_TIMEOUT = 7000; // 7 seconds in milliseconds
 
 export function useChunkedMediaUploader() {
-  const [uploadUrl, setUploadUrl] = useState<string | null>(null);
-  const updateUploadUrl = useCallback((newUrl: string | null) => {
-    setUploadUrl(newUrl);
-  }, []);
+  const currentResponseAndUploadUrl = useAtomValue(
+    currentResponseAndUploadUrlAtom,
+  );
 
   const [isRecording, setIsRecording] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,6 +24,8 @@ export function useChunkedMediaUploader() {
 
   const uploadNextChunk = useCallback(
     async (isLastChunk = false) => {
+      const uploadUrl = currentResponseAndUploadUrl.uploadSessionUrl;
+
       console.log("uploadNextChunk called", {
         uploadSessionUrl: uploadUrl,
         bufferSize: buffer.current.size,
@@ -103,31 +107,34 @@ export function useChunkedMediaUploader() {
         isUploading.current = false;
       }
     },
-    [uploadUrl, buffer, isUploading, uploadComplete],
+    [currentResponseAndUploadUrl, buffer, isUploading, uploadComplete],
   );
 
-  const addChunkToBuffer = useCallback((chunk: Blob) => {
-    buffer.current = new Blob([buffer.current, chunk], {
-      type: buffer.current.type,
-    });
-    totalSize.current += chunk.size;
-    console.log(
-      `Added chunk to buffer. Total size: ${totalSize.current} bytes, Buffer size: ${buffer.current.size} bytes`,
-    );
+  const addChunkToBuffer = useCallback(
+    (chunk: Blob) => {
+      buffer.current = new Blob([buffer.current, chunk], {
+        type: buffer.current.type,
+      });
+      totalSize.current += chunk.size;
+      console.log(
+        `Added chunk to buffer. Total size: ${totalSize.current} bytes, Buffer size: ${buffer.current.size} bytes`,
+      );
 
-    if (
-      buffer.current.size >= CHUNK_SIZE &&
-      !isUploading.current &&
-      !uploadComplete.current
-    ) {
-      console.log("Buffer size reached threshold, triggering upload");
-      void uploadNextChunk();
-    }
-  }, []);
+      if (
+        buffer.current.size >= CHUNK_SIZE &&
+        !isUploading.current &&
+        !uploadComplete.current
+      ) {
+        console.log("Buffer size reached threshold, triggering upload");
+        void uploadNextChunk();
+      }
+    },
+    [uploadNextChunk],
+  ); // Explicit dependency on uploadNextChunk just in case
 
   const startRecording = useCallback(
     async (isVideoEnabled: boolean) => {
-      if (!uploadUrl) {
+      if (!currentResponseAndUploadUrl.uploadSessionUrl) {
         throw new Error("No upload session URL available");
       }
 
@@ -170,13 +177,21 @@ export function useChunkedMediaUploader() {
         setError("Failed to start recording. Please check your permissions.");
       }
     },
-    [uploadUrl, addChunkToBuffer],
+    [currentResponseAndUploadUrl, addChunkToBuffer],
   );
 
   const stopRecording = useCallback(async () => {
     if (mediaRecorder.current && mediaRecorder.current.state !== "inactive") {
-      return new Promise<void>((resolve) => {
+      return new Promise<void>((resolve, reject) => {
         if (mediaRecorder.current) {
+          const timeoutId = setTimeout(() => {
+            console.log(
+              "Video recording timed out after 7 seconds. Recording lost.",
+            );
+            setError("Recording timed out. Please try again.");
+            reject(new Error("Recording timed out"));
+          }, UPLOAD_TIMEOUT);
+
           mediaRecorder.current.onstop = async () => {
             setIsRecording(false);
             console.log("Recording stopped, uploading final chunks...");
@@ -184,33 +199,39 @@ export function useChunkedMediaUploader() {
             let retryCount = 0;
             const maxRetries = 5;
 
-            while (buffer.current.size > 0 && !uploadComplete.current) {
-              try {
-                const uploadResult = await uploadNextChunk(true);
-                if (uploadResult) {
-                  break; // Upload is complete
+            try {
+              while (buffer.current.size > 0 && !uploadComplete.current) {
+                try {
+                  const uploadResult = await uploadNextChunk(true);
+                  if (uploadResult) {
+                    break; // Upload is complete
+                  }
+                  // If uploadResult is false, continue uploading next chunk
+                } catch (error) {
+                  console.error("Error uploading chunk:", error);
+                  retryCount++;
+                  if (retryCount >= maxRetries) {
+                    console.error(
+                      "Max retries reached. Upload may be incomplete.",
+                    );
+                    setError("Failed to upload all chunks. Please try again.");
+                    throw error;
+                  }
+                  console.log(`Retry attempt ${retryCount} of ${maxRetries}`);
+                  await new Promise((r) => setTimeout(r, 1000)); // Wait 1 second before retrying
                 }
-                // If uploadResult is false, continue uploading next chunk
-              } catch (error) {
-                console.error("Error uploading chunk:", error);
-                retryCount++;
-                if (retryCount >= maxRetries) {
-                  console.error(
-                    "Max retries reached. Upload may be incomplete.",
-                  );
-                  setError("Failed to upload all chunks. Please try again.");
-                  break;
-                }
-                console.log(`Retry attempt ${retryCount} of ${maxRetries}`);
-                await new Promise((r) => setTimeout(r, 1000)); // Wait 1 second before retrying
               }
-            }
 
-            if (uploadComplete.current) {
-              console.log("All chunks uploaded successfully.");
-            }
+              if (uploadComplete.current) {
+                console.log("All chunks uploaded successfully.");
+              }
 
-            resolve();
+              clearTimeout(timeoutId);
+              resolve();
+            } catch (error) {
+              clearTimeout(timeoutId);
+              reject(error);
+            }
           };
           mediaRecorder.current.stop();
         } else {
@@ -226,6 +247,5 @@ export function useChunkedMediaUploader() {
     stopRecording,
     error,
     uploadProgress,
-    updateUploadUrl,
   };
 }

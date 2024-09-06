@@ -16,7 +16,7 @@ import {
   followUpQuestionsAtom,
   currentResponseAndUploadUrlAtom,
 } from "@/app/state/atoms";
-import { useAtom } from "jotai";
+import { useAtom, useSetAtom } from "jotai";
 import InterviewBottomBarWithVideo from "./interviewBottomBarWithVideo";
 
 interface InterviewPerformContentProps {
@@ -30,7 +30,7 @@ export const InterviewPerformContent: React.FC<
 > = ({ organization, study, interviewSessionRefetching }) => {
   const [currentQuestion, setCurrentQuestion] = useAtom(currentQuestionAtom);
   const [interviewSession, setInterviewSession] = useAtom(interviewSessionAtom);
-  const [, setCurrentResponseAndUploadUrl] = useAtom(
+  const setCurrentResponseAndUploadUrl = useSetAtom(
     currentResponseAndUploadUrlAtom,
   );
 
@@ -134,59 +134,53 @@ export const InterviewPerformContent: React.FC<
     setRangeSelectionValue(null);
   };
 
-  const fetchUploadUrlAndCreateResponse = useCallback(async () => {
-    if (!currentQuestion || !interviewSession) return;
-
-    console.log("Fetching upload URL...");
-    try {
-      const isFollowUpQuestion = "followUpQuestionOrder" in currentQuestion;
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/get-current-question-metadata`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            organizationId: organization.id,
-            studyId: study.id,
-            questionId: isFollowUpQuestion
-              ? currentQuestion.parentQuestionId
-              : currentQuestion.id,
-            interviewSessionId: interviewSession.id,
-            followUpQuestionId: isFollowUpQuestion ? currentQuestion.id : null,
-            fileExtension: "webm",
-            contentType: study.videoEnabled ? "video/webm" : "audio/webm",
-          }),
-          credentials: "include",
-        },
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log("Upload URL fetched successfully:", data.sessionUrl);
-      setCurrentResponseAndUploadUrl({
-        response: data.newResponse,
-        uploadSessionUrl: data.sessionUrl,
-      });
-    } catch (error) {
-      console.error("Error fetching upload URL:", error);
-    }
-  }, [
-    currentQuestion,
-    interviewSession,
-    organization.id,
-    study.id,
-    study.videoEnabled,
-    setCurrentResponseAndUploadUrl,
-  ]);
-
   useEffect(() => {
+    const fetchUploadUrlAndCreateResponse = async () => {
+      if (!currentQuestion || !interviewSession) return;
+
+      try {
+        const isFollowUpQuestion = "followUpQuestionOrder" in currentQuestion;
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/get-current-question-metadata`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              organizationId: organization.id,
+              studyId: study.id,
+              questionId: isFollowUpQuestion
+                ? currentQuestion.parentQuestionId
+                : currentQuestion.id,
+              interviewSessionId: interviewSession.id,
+              followUpQuestionId: isFollowUpQuestion
+                ? currentQuestion.id
+                : null,
+              fileExtension: "webm",
+              contentType: study.videoEnabled ? "video/webm" : "audio/webm",
+            }),
+            credentials: "include",
+          },
+        );
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log("Upload URL fetched successfully:", data.sessionUrl);
+        setCurrentResponseAndUploadUrl({
+          response: data.newResponse,
+          uploadSessionUrl: data.sessionUrl,
+        });
+      } catch (error) {
+        console.error("Error fetching upload URL:", error);
+      }
+    };
+
     fetchUploadUrlAndCreateResponse();
-  }, [fetchUploadUrlAndCreateResponse]);
+  }, [currentQuestion, setCurrentResponseAndUploadUrl]);
 
   return (
     <>

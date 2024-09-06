@@ -80,19 +80,10 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
   const {
     startRecording: startChunkedMediaUploader,
     stopRecording: stopChunkedMediaUploader,
-    updateUploadUrl,
     isRecording,
     uploadProgress,
     error: uploadError,
   } = useChunkedMediaUploader();
-
-  useEffect(() => {
-    console.log(
-      "Updating upload URL:",
-      currentResponseAndUploadUrl.uploadSessionUrl,
-    );
-    updateUploadUrl(currentResponseAndUploadUrl.uploadSessionUrl);
-  }, [currentResponseAndUploadUrl, updateUploadUrl]);
 
   const [uploadStatus, setUploadStatus] = useState<
     "idle" | "uploading" | "slow" | "verySlow" | "failed"
@@ -103,9 +94,9 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
     if (uploadStartTime === null) return;
 
     const elapsedTime = Date.now() - uploadStartTime;
-    if (elapsedTime > 30000 && uploadProgress < 90) {
+    if (elapsedTime > 5000 && uploadProgress < 90) {
       setUploadStatus("verySlow");
-    } else if (elapsedTime > 15000 && uploadProgress < 50) {
+    } else if (elapsedTime > 30000 && uploadProgress < 50) {
       setUploadStatus("slow");
     }
   }, [uploadStartTime, uploadProgress]);
@@ -190,9 +181,9 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
       case "uploading":
         return `Uploading... ${uploadProgress.toFixed(0)}%`;
       case "slow":
-        return "Your network is a bit slow - bear with us!";
-      case "verySlow":
         return "Hang on - almost there!";
+      case "verySlow":
+        return "Your network is a bit slow- your video may be getting dropped";
       case "failed":
         return "Upload failed. Click to retry.";
       default:
