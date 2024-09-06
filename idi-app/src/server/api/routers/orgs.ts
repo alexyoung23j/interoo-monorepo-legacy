@@ -18,20 +18,29 @@ export const orgsRouter = createTRPCRouter({
 
       // check if the session
     }),
+  getProfile: privateProcedure.query(async ({ ctx }) => {
+    const { session } = ctx;
+
+    const currentProfile = await ctx.db.profile.findUnique({
+      where: {
+        email: session.data.session?.user.email ?? "",
+      },
+    });
+
+    return currentProfile;
+  }),
   // Create an invite for a user to join an organization
   createInvite: privateProcedure
     .input(z.object({ organizationId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const { session } = ctx;
-
       // Generate a unique token
       const token =
         Math.random().toString(36).substring(2, 15) +
         Math.random().toString(36).substring(2, 15);
 
-      // Set expiration date (e.g., 7 days from now)
+      // Set expiration date 2 days from now
       const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 7);
+      expiresAt.setDate(expiresAt.getDate() + 2);
 
       // Create the invite
       const invite = await ctx.db.invite.create({
@@ -44,14 +53,14 @@ export const orgsRouter = createTRPCRouter({
 
       return invite;
     }),
-  validateInvite: privateProcedure
-    .input(z.object({ token: z.string() }))
+  validateAndAcceptInvite: privateProcedure
+    .input(z.object({ inviteToken: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const { session } = ctx;
 
       const invite = await ctx.db.invite.findUnique({
         where: {
-          token: input.token,
+          token: input.inviteToken,
         },
         include: {
           organization: true,
@@ -79,6 +88,20 @@ export const orgsRouter = createTRPCRouter({
         });
       }
 
+      const existingProfileWithUserEmail = await ctx.db.profile.findUnique({
+        where: {
+          email: session.data.session?.user.email ?? "",
+          organizationId: invite.organizationId,
+        },
+      });
+
+      if (existingProfileWithUserEmail) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "User already has a profile",
+        });
+      }
+
       // Create a new profile for the user
       const newProfile = await ctx.db.profile.create({
         data: {
@@ -96,7 +119,6 @@ export const orgsRouter = createTRPCRouter({
       });
 
       return {
-        success: true,
         profile: newProfile,
         organization: invite.organization,
       };
