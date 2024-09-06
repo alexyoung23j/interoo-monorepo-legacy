@@ -12,6 +12,16 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+model Invite {
+  id             String       @id @default(uuid())
+  token          String       @unique
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  expiresAt      DateTime
+  usedAt         DateTime?
+  createdAt      DateTime     @default(now())
+}
+
 model Organization {
   id             String    @id @default(uuid())
   name           String
@@ -22,6 +32,7 @@ model Organization {
   updatedAt      DateTime  @default(now())
   users          Profile[]
   studies        Study[]
+  invites        Invite[]
 }
 
 model Profile {

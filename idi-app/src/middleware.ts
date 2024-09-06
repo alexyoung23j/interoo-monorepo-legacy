@@ -1,15 +1,23 @@
-// middleware.ts
-import { type NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/utils/supabase/middleware";
 
+/**
+ * Ensures that the user is authenticated when accessing the org routes
+ */
 export async function middleware(request: NextRequest) {
   const { supabase, response } = createClient(request);
 
-  await supabase.auth.getSession();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (request.nextUrl.pathname.startsWith("/org") && !user) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
 
   return response;
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/org/:path*"],
 };
