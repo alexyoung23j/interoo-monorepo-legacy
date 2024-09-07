@@ -8,10 +8,213 @@ export default function StudiesPage() {
   const { profile } = useProfile();
   console.log(profile);
   return (
-    <div>
+    <div className="bg-theme-off-white h-full w-full p-4">
       <h1>Studies Page</h1>
       {/* Add your content here */}
-      <LogoutButton>Logout</LogoutButton>
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>{" "}
     </div>
   );
 }

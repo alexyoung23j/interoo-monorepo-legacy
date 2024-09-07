@@ -8,9 +8,14 @@ import { Button } from "@/components/ui/button";
 interface LogoutButtonProps {
   children: React.ReactNode;
   className?: string;
+  variant?: "default" | "secondary" | "unstyled";
 }
 
-const LogoutButton: React.FC<LogoutButtonProps> = ({ children, className }) => {
+const LogoutButton: React.FC<LogoutButtonProps> = ({
+  children,
+  className,
+  variant = "secondary",
+}) => {
   const supabase = createClient();
   const router = useRouter();
 
@@ -27,7 +32,7 @@ const LogoutButton: React.FC<LogoutButtonProps> = ({ children, className }) => {
   return (
     <Button
       onClick={() => handleLogout().catch(console.error)}
-      variant="secondary"
+      variant={variant}
       className={className}
     >
       {children}

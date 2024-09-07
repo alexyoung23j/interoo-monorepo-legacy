@@ -14,14 +14,30 @@ export default function SidebarContainer({
   const { shouldShowInnerSidebar } = useSidebar(pathname);
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen overflow-hidden">
       <OuterSidebar />
-      <div className="flex flex-grow flex-col">
+      <div className="flex flex-grow flex-col overflow-hidden">
         {shouldShowInnerSidebar && <InnerSidebar.TopContent />}
-        <div className="flex flex-grow">
+        <div className="flex flex-grow overflow-hidden">
           {shouldShowInnerSidebar && <InnerSidebar.SideContent />}
-          <main className="flex-grow p-4">{children}</main>
+          <div className="flex flex-grow overflow-hidden">
+            <main
+              className={`w-full ${
+                shouldShowInnerSidebar
+                  ? "border-theme-200 rounded-md border"
+                  : ""
+              } overflow-auto`}
+            >
+              {children}
+            </main>
+            {shouldShowInnerSidebar && (
+              <div className="bg-theme-50 h-full w-3 flex-shrink-0" />
+            )}
+          </div>
         </div>
+        {shouldShowInnerSidebar && (
+          <div className="bg-theme-50 h-3 w-full flex-shrink-0" />
+        )}
       </div>
     </div>
   );
