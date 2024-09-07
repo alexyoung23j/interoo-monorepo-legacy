@@ -2,6 +2,8 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@/server/db";
 import { api } from "@/trpc/server";
+import SidebarContainer from "@/app/_components/layouts/sidebar/SidebarContainer";
+import { Study } from "@shared/generated/client";
 
 export default async function OrgLayout({
   children,
@@ -22,5 +24,9 @@ export default async function OrgLayout({
     redirect("/404");
   }
 
-  return <>{children}</>;
+  return (
+    <div className="bg-theme-50 h-screen w-full">
+      <SidebarContainer>{children}</SidebarContainer>
+    </div>
+  );
 }

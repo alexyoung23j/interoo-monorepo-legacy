@@ -50,4 +50,20 @@ export const studiesRouter = createTRPCRouter({
 
       return { study, organization };
     }),
+  /**
+   * Used to get study for org study page
+   */
+  getStudy: privateProcedure
+    .input(z.object({ studyId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const { studyId } = input;
+
+      const study = await ctx.db.study.findUnique({
+        where: {
+          id: studyId,
+        },
+      });
+
+      return study;
+    }),
 });

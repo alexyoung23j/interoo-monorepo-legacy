@@ -1,16 +1,13 @@
-"use client";
-
-import LogoutButton from "@/app/_components/auth/LogoutButton";
-import { useProfile } from "@/hooks/useProfile";
 import React from "react";
 
-export default function StudiesPage() {
-  const { profile } = useProfile();
-  console.log(profile);
+export default function ResultsPage() {
   return (
-    <div className="bg-theme-off-white grow p-4">
-      <h1>Studies Page</h1>
-      {/* Add your content here */}
+    <div className="bg-theme-off-white scrollbar-thin grow p-6">
+      <h1 className="text-theme-800 mb-4 text-3xl font-bold">Results</h1>
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>
       <p className="text-theme-600">
         This is the Results page for the study. Here you can view and analyze
         the study results.
@@ -215,6 +212,10 @@ export default function StudiesPage() {
         This is the Results page for the study. Here you can view and analyze
         the study results.
       </p>{" "}
+      <p className="text-theme-600">
+        This is the Results page for the study. Here you can view and analyze
+        the study results.
+      </p>
     </div>
   );
 }
