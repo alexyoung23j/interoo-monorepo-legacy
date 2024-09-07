@@ -105,6 +105,35 @@ export function calculateTranscribeAndGenerateNextQuestionRequest({
   // Start adding follow-ups from the base question
   addFollowUps(currentBaseQuestion.id, 1);
 
+  // Calculate numTotalEstimatedInterviewQuestions for interview timing
+  const estimateFollowUpsForQuestion = (question: Question): number => {
+    switch (question.followUpLevel) {
+      case FollowUpLevel.AUTOMATIC:
+        return 3;
+      case FollowUpLevel.SURFACE:
+        return 2;
+      case FollowUpLevel.LIGHT:
+        return 3;
+      case FollowUpLevel.DEEP:
+        return 5;
+      default:
+        return 3;
+    }
+  };
+
+  const completedFollowUps = followUpQuestions.length;
+  const estimatedRemainingFollowUps = study.questions
+    .slice(currentQuestionOrder)
+    .reduce((sum, question) => sum + estimateFollowUpsForQuestion(question), 0);
+
+  const totalBaseQuestions = study.questions.length;
+  const numTotalEstimatedInterviewQuestions =
+    totalBaseQuestions + completedFollowUps + estimatedRemainingFollowUps;
+
+  const interviewStartTime =
+    interviewSession?.startTime?.toISOString() ?? new Date().toISOString();
+  const currentTime = new Date().toISOString();
+
   return {
     nextBaseQuestionId: nextBaseQuestion?.id ?? "",
     currentBaseQuestionId: currentBaseQuestion.id,
@@ -117,5 +146,10 @@ export function calculateTranscribeAndGenerateNextQuestionRequest({
       : ((currentQuestion as Question).shouldFollowUp ?? false),
     currentResponseId: currentResponseId,
     thread: currentQuestionThreadState,
+    numTotalEstimatedInterviewQuestions,
+    interviewStartTime,
+    currentTime,
+    currentQuestionNumber: currentQuestionOrder,
+    targetInterviewLength: study.targetLength ?? undefined,
   };
 }
