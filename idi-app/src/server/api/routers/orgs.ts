@@ -35,6 +35,21 @@ export const orgsRouter = createTRPCRouter({
         isOrgMember,
       };
     }),
+  getUserOrg: publicProcedure.query(async ({ ctx }) => {
+    const { session } = ctx;
+
+    const profile = await ctx.db.profile.findFirst({
+      where: {
+        email: session.data.session?.user.email ?? "",
+      },
+    });
+
+    if (!profile) {
+      return null;
+    }
+
+    return profile.organizationId;
+  }),
   getProfile: privateProcedure.query(async ({ ctx }) => {
     const { session } = ctx;
 
@@ -69,6 +84,27 @@ export const orgsRouter = createTRPCRouter({
       });
 
       return invite;
+    }),
+  getInviteDetailsFromToken: publicProcedure
+    .input(z.object({ inviteToken: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const invite = await ctx.db.invite.findUnique({
+        where: {
+          token: input.inviteToken,
+        },
+        include: {
+          organization: true,
+        },
+      });
+
+      if (!invite) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Invite not found",
+        });
+      }
+
+      return { orgName: invite.organization.name };
     }),
   validateAndAcceptInvite: privateProcedure
     .input(z.object({ inviteToken: z.string() }))

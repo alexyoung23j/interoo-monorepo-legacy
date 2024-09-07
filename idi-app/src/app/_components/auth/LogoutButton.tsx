@@ -3,12 +3,14 @@
 import { useRouter } from "next/navigation";
 import React from "react";
 import { createClient } from "@/utils/supabase/client";
+import { Button } from "@/components/ui/button";
 
 interface LogoutButtonProps {
   children: React.ReactNode;
+  className?: string;
 }
 
-const LogoutButton: React.FC<LogoutButtonProps> = ({ children }) => {
+const LogoutButton: React.FC<LogoutButtonProps> = ({ children, className }) => {
   const supabase = createClient();
   const router = useRouter();
 
@@ -18,14 +20,18 @@ const LogoutButton: React.FC<LogoutButtonProps> = ({ children }) => {
     if (error) {
       console.error("Error logging out:", error.message);
     } else {
-      router.push("/");
+      router.push("/login");
     }
   };
 
   return (
-    <button onClick={() => handleLogout().catch(console.error)}>
+    <Button
+      onClick={() => handleLogout().catch(console.error)}
+      variant="secondary"
+      className={className}
+    >
       {children}
-    </button>
+    </Button>
   );
 };
 

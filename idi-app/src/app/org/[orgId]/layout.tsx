@@ -15,8 +15,6 @@ export default async function OrgLayout({
       orgId: params.orgId,
     });
 
-    console.log({ isOrgMember });
-
     if (!isOrgMember) {
       redirect("/404");
     }
