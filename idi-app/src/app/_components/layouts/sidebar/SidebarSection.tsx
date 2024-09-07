@@ -26,7 +26,7 @@ export default function SidebarSection({
   const renderItem = (item: RouteItem) => {
     const itemPath = item.path
       .replace("[orgId]", orgId)
-      .replace("[studyId]", studyId || "");
+      .replace("[studyId]", studyId ?? "");
 
     return (
       <SidebarItem

@@ -24,8 +24,6 @@ export default async function OrgLayout({
     redirect("/404");
   }
 
-  let study: Study | null = null;
-
   return (
     <div className="bg-theme-50 h-screen w-full">
       <SidebarContainer>{children}</SidebarContainer>

@@ -34,10 +34,10 @@ function SideContent() {
       <div className="mt-7 flex w-full flex-col items-start gap-1">
         {INNER_SIDEBAR_ROUTES.map((section, index) => (
           <SidebarSection
-            key={section.title || `section-${index}`}
+            key={section.title ?? `section-${index}`}
             title={section.items ? section.title : undefined}
             items={
-              section.items || [{ title: section.title, path: section.path }]
+              section.items ?? [{ title: section.title, path: section.path }]
             }
             currentPath={pathname}
             orgId={orgId}
