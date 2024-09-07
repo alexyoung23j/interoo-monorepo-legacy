@@ -170,7 +170,7 @@ export const orgsRouter = createTRPCRouter({
       // Mark the invite as used
       await ctx.db.invite.update({
         where: { id: invite.id },
-        data: { usedAt: new Date() },
+        data: { usedAt: new Date().toISOString() },
       });
 
       return {
