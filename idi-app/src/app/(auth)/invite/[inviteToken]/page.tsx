@@ -19,7 +19,7 @@ const AcceptInvitePage: FC = () => {
     <SimpleLayout showLogo={true}>
       <div className="flex flex-col items-center justify-center gap-2">
         <h1 className="text-theme-600 mb-4 text-center text-xl leading-10">
-          You've been invited to join
+          {`You've been invited to join`}
           <br />
           <span className="text-2xl font-bold">{inviteDetails?.orgName}</span>
         </h1>
