@@ -24,6 +24,11 @@ export interface TranscribeAndGenerateNextQuestionRequest {
   shouldFollowUp: boolean;
   currentResponseId: string;
   thread: ConversationState
+  numTotalEstimatedInterviewQuestions: number;
+  interviewStartTime: string;
+  currentTime: string;
+  currentQuestionNumber: number;
+  targetInterviewLength?: number; // in minutes
 }
 
 export class TranscribeAndGenerateNextQuestionRequestBuilder {
@@ -36,7 +41,12 @@ export class TranscribeAndGenerateNextQuestionRequestBuilder {
     studyBackground: "",
     shouldFollowUp: false,
     currentResponseId: "",
-    thread: []
+    thread: [],
+    numTotalEstimatedInterviewQuestions: 0,
+    interviewStartTime: "",
+    currentTime: "",
+    currentQuestionNumber: 0,
+    targetInterviewLength: undefined,
   };
 
   setNextBaseQuestionId(val: string): this {
@@ -89,6 +99,31 @@ export class TranscribeAndGenerateNextQuestionRequestBuilder {
     value: TranscribeAndGenerateNextQuestionRequest[K]
   ): this {
     (this.data as any)[key] = value;
+    return this;
+  }
+
+  setNumTotalEstimatedInterviewQuestions(val: number): this {
+    this.data.numTotalEstimatedInterviewQuestions = val;
+    return this;
+  }
+
+  setInterviewStartTime(val: string): this {
+    this.data.interviewStartTime = val;
+    return this;
+  }
+
+  setCurrentTime(val: string): this {
+    this.data.currentTime = val;
+    return this;
+  }
+
+  setCurrentQuestionNumber(val: number): this {
+    this.data.currentQuestionNumber = val;
+    return this;
+  }
+
+  setTargetInterviewLength(val: number | undefined): this {
+    this.data.targetInterviewLength = val;
     return this;
   }
 

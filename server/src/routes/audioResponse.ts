@@ -35,7 +35,13 @@ const extractRequestData = (req: Request): Promise<{ audioBuffer: Buffer, reques
         case 'followUpLevel':
         case 'studyBackground':
         case 'currentResponseId':
+        case 'interviewStartTime':
+        case 'currentTime':
           requestDataBuilder.set(fieldname as keyof TranscribeAndGenerateNextQuestionRequest, val);
+          break;
+        case 'numTotalEstimatedInterviewQuestions':
+        case 'currentQuestionNumber':
+          requestDataBuilder.set(fieldname as keyof TranscribeAndGenerateNextQuestionRequest, parseInt(val, 10));
           break;
         case 'shouldFollowUp':
           requestDataBuilder.setShouldFollowUp(val === 'true');
@@ -48,6 +54,9 @@ const extractRequestData = (req: Request): Promise<{ audioBuffer: Buffer, reques
             console.warn('Failed to parse thread, setting as empty array', error);
             requestDataBuilder.setThread([]);
           }
+          break;
+        case 'targetInterviewLength':
+          requestDataBuilder.setTargetInterviewLength(val ? parseInt(val, 10) : undefined);
           break;
         default:
           console.warn(`Unexpected field: ${fieldname}`);
@@ -94,7 +103,10 @@ const handleNoFollowUp = async (
   if (requestData.nextBaseQuestionId) {
     await prisma.interviewSession.update({
       where: { id: requestData.interviewSessionId },
-      data: { currentQuestionId: requestData.nextBaseQuestionId }
+      data: { 
+        currentQuestionId: requestData.nextBaseQuestionId,
+        lastUpdatedTime: new Date().toISOString()
+      }
     });
   }
 
@@ -131,7 +143,8 @@ const handlePotentialFollowUp = async (
               connect: { id: newResponse.id }
             }
           }
-        }
+        },
+        lastUpdatedTime: new Date().toISOString()
       },
       include: {
         FollowUpQuestions: {
@@ -151,6 +164,37 @@ const handlePotentialFollowUp = async (
     return handleNoFollowUp(requestData, transcribedText);
   }
 };
+
+const shouldFollowUpBasedOnTime = (requestData: TranscribeAndGenerateNextQuestionRequest): boolean => {
+  const requestLogger = createRequestLogger();
+
+  if (!requestData.targetInterviewLength) {
+    return true; // If no target length is set, always allow follow-ups
+  }
+
+  const startTime = new Date(requestData.interviewStartTime);
+  const currentTime = new Date(requestData.currentTime);
+  const elapsedTimeInMinutes = (currentTime.getTime() - startTime.getTime()) / (1000 * 60);
+
+  const targetTimePerQuestion = requestData.targetInterviewLength / requestData.numTotalEstimatedInterviewQuestions;
+  const expectedElapsedTime = targetTimePerQuestion * requestData.currentQuestionNumber;
+
+  // If we're more than 10% behind schedule, don't follow up
+  if (elapsedTimeInMinutes > expectedElapsedTime * 1.1) {
+    requestLogger.info('Not following up because we\'re more than 10% behind schedule', { elapsedTimeInMinutes, expectedElapsedTime });
+    return false;
+  }
+
+  // If we have less than 80% of the target time remaining for the rest of the questions, don't follow up
+  const remainingQuestions = requestData.numTotalEstimatedInterviewQuestions - requestData.currentQuestionNumber;
+  const remainingTime = requestData.targetInterviewLength - elapsedTimeInMinutes;
+  if (remainingTime / remainingQuestions < targetTimePerQuestion * 0.8) {
+    requestLogger.info('Not following up because we\'re less than 80% of the target time remaining for the rest of the questions', { remainingTime, remainingQuestions, targetTimePerQuestion });
+    return false;
+  }
+
+  return true;
+}
 
 const processAudioResponse = async (
   audioBuffer: Buffer, 
@@ -172,7 +216,9 @@ const processAudioResponse = async (
   const [minFollowUps, maxFollowUps] = getFollowUpLevelRange(requestData.followUpLevel);
   const numberOfPriorFollowUps = requestData.thread.filter(t => t.responseId === undefined).length;
 
-  if (!requestData.shouldFollowUp || numberOfPriorFollowUps > maxFollowUps) {
+  if (!requestData.shouldFollowUp || 
+      numberOfPriorFollowUps > maxFollowUps || 
+      !shouldFollowUpBasedOnTime(requestData)) {
     return handleNoFollowUp(requestData, transcribedText);
   } else {
     return handlePotentialFollowUp(requestData, transcribedText, newResponse, requestLogger, minFollowUps, maxFollowUps, numberOfPriorFollowUps);

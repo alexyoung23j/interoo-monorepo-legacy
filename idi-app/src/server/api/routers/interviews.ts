@@ -44,7 +44,7 @@ export const interviewsRouter = createTRPCRouter({
       const interviewSession = await ctx.db.interviewSession.create({
         data: {
           studyId: study.id,
-          startTime: new Date(),
+          startTime: new Date().toISOString(),
         },
       });
 
@@ -174,7 +174,7 @@ export const interviewsRouter = createTRPCRouter({
         data: {
           currentQuestionId: firstQuestion.id,
           status: "IN_PROGRESS",
-          lastUpdatedTime: new Date(),
+          lastUpdatedTime: new Date().toISOString(),
         },
         include: {
           CurrentQuestion: {

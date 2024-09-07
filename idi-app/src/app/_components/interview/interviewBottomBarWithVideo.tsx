@@ -23,10 +23,6 @@ import {
   responsesAtom,
 } from "@/app/state/atoms";
 import { useAtom } from "jotai";
-import {
-  TranscribeAndGenerateNextQuestionRequest,
-  UploadUrlRequest,
-} from "@shared/types";
 import { calculateTranscribeAndGenerateNextQuestionRequest } from "@/app/utils/functions";
 import WebcamPreview from "./WebcamPreview";
 import { useTranscriptionRecorder } from "@/hooks/useTranscriptionRecorder";
