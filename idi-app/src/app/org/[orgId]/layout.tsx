@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/server/db";
 import { api } from "@/trpc/server";
 import SidebarContainer from "@/app/_components/layouts/sidebar/SidebarContainer";
+import { Study } from "@shared/generated/client";
 
 export default async function OrgLayout({
   children,
@@ -22,6 +23,8 @@ export default async function OrgLayout({
   } catch (error) {
     redirect("/404");
   }
+
+  let study: Study | null = null;
 
   return (
     <div className="bg-theme-50 h-screen w-full">

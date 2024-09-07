@@ -108,6 +108,21 @@ const config = {
             display: "none",
           },
         },
+        ".scrollbar-thin": {
+          scrollbarWidth: "thin",
+          scrollbarColor: "var(--scrollbar-thumb) var(--scrollbar-track)",
+          "&::-webkit-scrollbar": {
+            width: "8px",
+          },
+          "&::-webkit-scrollbar-track": {
+            background: "var(--scrollbar-track)",
+          },
+          "&::-webkit-scrollbar-thumb": {
+            backgroundColor: "var(--scrollbar-thumb)",
+            borderRadius: "20px",
+            border: "2px solid var(--scrollbar-track)",
+          },
+        },
       });
     }),
   ],

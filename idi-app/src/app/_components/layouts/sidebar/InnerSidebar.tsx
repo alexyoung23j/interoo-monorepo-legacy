@@ -3,11 +3,21 @@
 import { usePathname, useParams } from "next/navigation";
 import { INNER_SIDEBAR_ROUTES } from "./sidebarRoutes";
 import SidebarSection from "./SidebarSection";
+import { api } from "@/trpc/react";
+import { Study } from "@shared/generated/client";
+import { Button } from "@/components/ui/button";
+import { TestTube } from "@phosphor-icons/react";
 
-function TopContent() {
+function TopContent({ study }: { study: Study }) {
   return (
-    <div className="bg-theme-50 w-full p-4">
-      <h2 className="text-xl font-bold">Study Name - Overview</h2>
+    <div className="bg-theme-50 flex w-full items-center justify-between p-4">
+      <h2 className="text-theme-900 text-xl font-semibold">
+        {study?.title} - Overview
+      </h2>
+      <Button className="text-theme-off-white flex gap-2">
+        <TestTube className="text-theme-off-white" />
+        Test Study
+      </Button>
     </div>
   );
 }

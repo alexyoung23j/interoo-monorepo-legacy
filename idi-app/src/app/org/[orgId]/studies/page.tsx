@@ -8,7 +8,7 @@ export default function StudiesPage() {
   const { profile } = useProfile();
   console.log(profile);
   return (
-    <div className="bg-theme-off-white h-full w-full p-4">
+    <div className="bg-theme-off-white grow p-4">
       <h1>Studies Page</h1>
       {/* Add your content here */}
       <p className="text-theme-600">

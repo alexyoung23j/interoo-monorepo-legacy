@@ -24,7 +24,7 @@ export default function SidebarItem({
   return (
     <Link
       href={href}
-      className={`text-theme-900 flex w-full px-2 py-[6px] text-sm font-medium ${isActive ? "bg-theme-off-white shadow-standard border-theme-200 rounded-sm border" : ""}`}
+      className={`text-theme-900 flex w-full p-2 text-sm font-medium ${isActive ? "bg-theme-off-white shadow-standard border-theme-200 rounded-sm border" : ""}`}
     >
       {title}
     </Link>
