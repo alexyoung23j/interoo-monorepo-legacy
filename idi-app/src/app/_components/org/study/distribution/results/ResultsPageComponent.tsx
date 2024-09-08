@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Question, Study, Response } from "@shared/generated/client";
 import BasicTitleSection from "@/app/_components/reusable/BasicTitleSection";
 import SplitScreenLayout from "@/app/_components/layouts/org/SplitScreenLayout";
@@ -24,6 +24,13 @@ interface ResultsPageComponentProps {
 const ResultsPageComponent: React.FC<ResultsPageComponentProps> = ({
   study,
 }) => {
+  const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(
+    null,
+  );
+
+  const handleViewResponses = (questionId: string) => {
+    setSelectedQuestionId(questionId);
+  };
   return (
     <SplitScreenLayout
       mainContent={
@@ -67,11 +74,15 @@ const ResultsPageComponent: React.FC<ResultsPageComponentProps> = ({
               key={question.id}
               question={question}
               index={index}
+              onViewResponses={() => {
+                console.log("viewing responses");
+                handleViewResponses(question.id);
+              }}
             />
           ))}
         </div>
       }
-      showRightContent={false}
+      showRightContent={selectedQuestionId !== null}
       rightContent={<BasicCard>hi</BasicCard>}
     />
   );

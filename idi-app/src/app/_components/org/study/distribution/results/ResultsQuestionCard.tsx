@@ -15,6 +15,7 @@ import BasicTitleSection from "@/app/_components/reusable/BasicTitleSection";
 interface ResultsQuestionCardProps {
   question: Question & { _count?: { Response: number } };
   index: number;
+  onViewResponses: () => void;
 }
 
 const getFollowUpLevelAverage = (level: FollowUpLevel): number => {
@@ -35,6 +36,7 @@ const getFollowUpLevelAverage = (level: FollowUpLevel): number => {
 const ResultsQuestionCard: React.FC<ResultsQuestionCardProps> = ({
   question,
   index,
+  onViewResponses,
 }) => {
   return (
     <BasicCard className="shadow-standard flex flex-col gap-4 p-6">
@@ -47,6 +49,7 @@ const ResultsQuestionCard: React.FC<ResultsQuestionCardProps> = ({
           variant="secondary"
           className="flex flex-row items-center"
           size="sm"
+          onClick={onViewResponses}
         >
           <span>See Responses</span>
           <CaretRight className="ml-2" size={16} />

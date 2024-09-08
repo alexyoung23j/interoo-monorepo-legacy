@@ -16,7 +16,9 @@ const SplitScreenLayout: React.FC<SplitScreenLayoutProps> = ({
     <div className="bg-theme-off-white flex h-full w-full flex-row">
       <PanelGroup direction="horizontal">
         <Panel defaultSize={60} minSize={30}>
-          <div className="flex h-full w-full flex-col p-9">{mainContent}</div>
+          <div className="scrollbar-thin flex h-full w-full flex-col overflow-y-auto p-9">
+            {mainContent}
+          </div>
         </Panel>
         {showRightContent && (
           <>
