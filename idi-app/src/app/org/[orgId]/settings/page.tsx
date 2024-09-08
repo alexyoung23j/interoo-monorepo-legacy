@@ -1,17 +1,12 @@
-"use client";
-
-import LogoutButton from "@/app/_components/auth/LogoutButton";
-import { useProfile } from "@/hooks/useProfile";
+import SettingsPageComponent from "@/app/_components/org/settings/SettingsPageComponent";
+import { api } from "@/trpc/server";
 import React from "react";
 
-export default function SettingsPage() {
-  const { profile } = useProfile();
-  console.log(profile);
-  return (
-    <div>
-      <h1>Settings Page</h1>
-      {/* Add your content here */}
-      <LogoutButton>Logout</LogoutButton>
-    </div>
-  );
+export default async function SettingsPage({
+  params,
+}: {
+  params: { orgId: string };
+}) {
+  const org = await api.orgs.getOrgDetails({ orgId: params.orgId });
+  return <SettingsPageComponent org={org} />;
 }

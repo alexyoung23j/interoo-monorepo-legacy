@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { randomBytes } from "crypto";
 
 import {
   createTRPCRouter,
@@ -101,14 +102,23 @@ export const orgsRouter = createTRPCRouter({
           study.interviews[0]?.lastUpdatedTime || study.updatedAt,
       }));
     }),
+  getOrgDetails: privateProcedure
+    .input(z.object({ orgId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const org = await ctx.db.organization.findUnique({
+        where: { id: input.orgId },
+        include: {
+          users: true,
+        },
+      });
+      return org;
+    }),
   // Create an invite for a user to join an organization
   createInvite: privateProcedure
     .input(z.object({ organizationId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       // Generate a unique token
-      const token =
-        Math.random().toString(36).substring(2, 15) +
-        Math.random().toString(36).substring(2, 15);
+      const token = randomBytes(12).toString("base64url");
 
       // Set expiration date 2 days from now
       const expiresAt = new Date();

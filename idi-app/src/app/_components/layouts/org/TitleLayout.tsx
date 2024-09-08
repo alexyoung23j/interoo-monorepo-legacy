@@ -4,12 +4,14 @@ interface TitleLayoutProps {
   title: string;
   rightElement?: ReactNode;
   children: ReactNode;
+  className?: string;
 }
 
 const TitleLayout: React.FC<TitleLayoutProps> = ({
   title,
   rightElement,
   children,
+  className,
 }) => {
   return (
     <div className="bg-theme-off-white flex h-full flex-col items-center pt-10">
@@ -20,7 +22,9 @@ const TitleLayout: React.FC<TitleLayoutProps> = ({
         </div>
         <div className="bg-theme-200 h-[1px] w-full" />
       </div>
-      <div className="mt-6 w-[80%] flex-grow py-4">{children}</div>
+      <div className={`mt-6 w-[80%] flex-grow py-4 ${className}`}>
+        {children}
+      </div>
     </div>
   );
 };
