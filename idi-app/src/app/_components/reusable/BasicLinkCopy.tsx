@@ -27,7 +27,7 @@ export function BasicLinkCopy({ link, toastString }: BasicLinkCopyProps) {
   }, [copied]);
 
   return (
-    <div className="bg-theme-100 border-theme-200 flex w-fit flex-row items-center gap-4 rounded-md border p-2">
+    <div className="bg-theme-50 border-theme-200 flex w-fit flex-row items-center gap-4 rounded-md border p-2">
       <span className="text-theme-900 flex-grow truncate text-sm font-semibold underline">
         {displayLink}
       </span>

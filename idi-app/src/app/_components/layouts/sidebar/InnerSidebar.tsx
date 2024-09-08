@@ -8,11 +8,33 @@ import { Study } from "@shared/generated/client";
 import { Button } from "@/components/ui/button";
 import { TestTube } from "@phosphor-icons/react";
 
+const resolveCurrentRoute = (pathname: string) => {
+  switch (pathname.split("/").pop()) {
+    case "results":
+      return "Results";
+    case "codebook":
+      return "Codebook";
+    case "approve-codes":
+      return "Approve Codes";
+    case "distribution":
+      return "Distribution";
+    default:
+      return "Overview";
+  }
+};
+
 function TopContent({ study }: { study: Study }) {
+  const pathname = usePathname();
+  const currentRoute = pathname.split("/").pop() ?? "";
+
   return (
     <div className="bg-theme-50 flex w-full items-center justify-between p-4">
       <h2 className="text-theme-900 text-xl font-semibold">
-        {study?.title} - Overview
+        {study?.title}{" "}
+        <span className="text-theme-600 font-light">
+          {" "}
+          - {resolveCurrentRoute(pathname)}
+        </span>
       </h2>
       <Button className="text-theme-off-white flex gap-2">
         <TestTube className="text-theme-off-white" />
