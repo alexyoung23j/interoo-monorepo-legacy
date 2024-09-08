@@ -6,6 +6,7 @@ import {
   publicProcedure,
 } from "@/server/api/trpc";
 import { TRPCError } from "@trpc/server";
+import { InterviewSessionStatus } from "@shared/generated/client";
 
 export const orgsRouter = createTRPCRouter({
   /**
@@ -61,6 +62,45 @@ export const orgsRouter = createTRPCRouter({
 
     return currentProfile;
   }),
+  getOrgStudies: privateProcedure
+    .input(z.object({ orgId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const studies = await ctx.db.study.findMany({
+        where: {
+          organizationId: input.orgId,
+        },
+        include: {
+          _count: {
+            select: {
+              interviews: {
+                where: {
+                  status: InterviewSessionStatus.COMPLETED,
+                },
+              },
+            },
+          },
+          interviews: {
+            where: {
+              status: InterviewSessionStatus.COMPLETED,
+            },
+            orderBy: {
+              lastUpdatedTime: "desc",
+            },
+            take: 1,
+            select: {
+              lastUpdatedTime: true,
+            },
+          },
+        },
+      });
+
+      return studies.map((study) => ({
+        ...study,
+        completedInterviewsCount: study._count.interviews,
+        mostRecentUpdate:
+          study.interviews[0]?.lastUpdatedTime || study.updatedAt,
+      }));
+    }),
   // Create an invite for a user to join an organization
   createInvite: privateProcedure
     .input(z.object({ organizationId: z.string() }))
