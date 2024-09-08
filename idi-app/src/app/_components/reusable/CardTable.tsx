@@ -17,6 +17,7 @@ interface CardTableProps<T> {
   tableClassName?: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function CardTable<T extends Record<string, any>>({
   data,
   columns,
@@ -43,7 +44,7 @@ function CardTable<T extends Record<string, any>>({
                 width: column.width,
                 flexGrow: column.width ? 0 : 1,
                 flexShrink: column.width ? 0 : 1,
-                flexBasis: column.width || "0%",
+                flexBasis: column.width ?? "0%",
               }}
               role="columnheader"
             >
@@ -75,10 +76,11 @@ function CardTable<T extends Record<string, any>>({
                     width: column.width,
                     flexGrow: column.width ? 0 : 1,
                     flexShrink: column.width ? 0 : 1,
-                    flexBasis: column.width || "0%",
+                    flexBasis: column.width ?? "0%",
                   }}
                   role="cell"
                 >
+                  {/* eslint-disable-next-line @typescript-eslint/no-unsafe-argument */}
                   {React.isValidElement(row[column.key])
                     ? row[column.key]
                     : String(row[column.key])}

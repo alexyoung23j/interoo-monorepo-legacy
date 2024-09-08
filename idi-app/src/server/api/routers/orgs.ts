@@ -99,7 +99,7 @@ export const orgsRouter = createTRPCRouter({
         ...study,
         completedInterviewsCount: study._count.interviews,
         mostRecentUpdate:
-          study.interviews[0]?.lastUpdatedTime || study.updatedAt,
+          study.interviews[0]?.lastUpdatedTime ?? study.updatedAt,
       }));
     }),
   getOrgDetails: privateProcedure

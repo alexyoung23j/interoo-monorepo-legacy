@@ -7,6 +7,9 @@ import SplitScreenLayout from "@/app/_components/layouts/org/SplitScreenLayout";
 import BasicCard from "@/app/_components/reusable/BasicCard";
 import BasicHeaderCard from "@/app/_components/reusable/BasicHeaderCard";
 import ResultsQuestionCard from "./ResultsQuestionCard";
+import { api } from "@/trpc/react";
+import { Button } from "@/components/ui/button";
+import { ArrowSquareOut } from "@phosphor-icons/react";
 
 export type ExtendedStudy = Study & {
   completedInterviewsCount: number;
@@ -21,13 +24,24 @@ interface ResultsPageComponentProps {
 const ResultsPageComponent: React.FC<ResultsPageComponentProps> = ({
   study,
 }) => {
-  console.log({ study });
   return (
     <SplitScreenLayout
       mainContent={
         <div className="flex flex-col gap-4">
-          <div className="text-theme-900 text-lg font-medium">
-            Study Statistics
+          <div className="flex w-full flex-row items-center justify-between">
+            <div className="text-theme-900 text-lg font-medium">
+              Study Statistics
+            </div>
+            <Button
+              variant="secondary"
+              className="flex flex-row gap-2"
+              onClick={() => {
+                // TODO
+              }}
+            >
+              <ArrowSquareOut size={16} className="text-theme-900" /> Export
+              Data
+            </Button>
           </div>
           <BasicHeaderCard
             items={[
@@ -45,11 +59,15 @@ const ResultsPageComponent: React.FC<ResultsPageComponentProps> = ({
               },
             ]}
           />
-          <div className="text-theme-900 text-lg font-medium">
-            InterviewResults
+          <div className="text-theme-900 mt-8 text-lg font-medium">
+            Interview Results
           </div>
-          {study.questions?.map((question) => (
-            <ResultsQuestionCard key={question.id} question={question} />
+          {study.questions?.map((question, index) => (
+            <ResultsQuestionCard
+              key={question.id}
+              question={question}
+              index={index}
+            />
           ))}
         </div>
       }
