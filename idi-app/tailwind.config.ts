@@ -89,6 +89,7 @@ const config = {
       },
       boxShadow: {
         standard: "0px 4px 12px 0px rgba(0, 0, 0, 0.06)",
+        light: "0px 4px 12px 0px rgba(0, 0, 0, 0.03)",
       },
     },
   },
