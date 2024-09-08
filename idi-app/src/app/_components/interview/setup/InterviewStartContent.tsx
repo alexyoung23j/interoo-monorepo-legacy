@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import type { Organization, Study } from "@shared/generated/client";
-import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { getColorWithOpacity } from "@/app/utils/color";
 import { ArrowRight, Microphone } from "@phosphor-icons/react";
@@ -24,15 +23,18 @@ export enum Stage {
 interface InterviewStartContentProps {
   organization: Organization;
   study: Study;
+  stage: Stage;
+  setStage: (stage: Stage) => void;
+  onStartInterview: () => void;
 }
 
 export const InterviewStartContent: React.FC<InterviewStartContentProps> = ({
   organization,
   study,
+  stage,
+  setStage,
+  onStartInterview,
 }) => {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [stage, setStage] = useState<Stage>(Stage.Intro);
   const [isInitializing, setIsInitializing] = useState(false);
   const [, setInterviewSession] = useAtom(interviewSessionAtom);
   const interviewSession = useAtomValue(interviewSessionAtom);
@@ -44,38 +46,26 @@ export const InterviewStartContent: React.FC<InterviewStartContentProps> = ({
   const startInterviewSession =
     api.interviews.startInterviewSessionQuestions.useMutation();
 
-  useEffect(() => {
-    const currentStage = searchParams.get("stage") as Stage;
-    if (Object.values(Stage).includes(currentStage)) {
-      setStage(currentStage);
-    }
-  }, [searchParams]);
-
-  const updateStage = (newStage: Stage) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("stage", newStage);
-    router.push(`?${params.toString()}`);
-  };
-
-  const removeStage = () => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete("stage");
-    router.push(`?${params.toString()}`);
-  };
-
   const startInterview = async () => {
-    // Kick off the interview session by assigning the first question to CurrentQuestion
-    const firstQuestion = await startInterviewSession.mutateAsync({
-      interviewSessionId: interviewSession?.id ?? "",
-    });
-    setCurrentQuestion(firstQuestion);
-
-    // Update the interview session status to IN_PROGRESS
-    setInterviewSession({
-      ...interviewSession!,
-      status: "IN_PROGRESS",
-    });
-    removeStage();
+    setIsInitializing(true);
+    try {
+      const firstQuestion = await startInterviewSession.mutateAsync({
+        interviewSessionId: interviewSession?.id ?? "",
+      });
+      setCurrentQuestion(firstQuestion);
+      setInterviewSession({
+        ...interviewSession!,
+        status: "IN_PROGRESS",
+      });
+      onStartInterview();
+    } catch (error) {
+      console.error("Error starting interview:", error);
+      setAccessError(
+        "An error occurred while starting the interview. Please try again.",
+      );
+    } finally {
+      setIsInitializing(false);
+    }
   };
 
   const renderContent = () => {
@@ -85,7 +75,7 @@ export const InterviewStartContent: React.FC<InterviewStartContentProps> = ({
           <IntroContent
             study={study}
             organization={organization}
-            onStart={() => updateStage(Stage.Access)}
+            onStart={() => setStage(Stage.Access)}
           />
         );
       case Stage.Form:
@@ -98,10 +88,7 @@ export const InterviewStartContent: React.FC<InterviewStartContentProps> = ({
             organization={organization}
             isInitializing={isInitializing}
             accessError={accessError}
-            handleStart={async () => {
-              setIsInitializing(true);
-              await startInterview();
-            }}
+            handleStart={startInterview}
           />
         ) : (
           <AccessContent
@@ -111,7 +98,6 @@ export const InterviewStartContent: React.FC<InterviewStartContentProps> = ({
             accessError={accessError}
             handleGrantAccess={async () => {
               setIsInitializing(true);
-
               try {
                 await navigator.mediaDevices.getUserMedia({
                   audio: true,
@@ -121,12 +107,14 @@ export const InterviewStartContent: React.FC<InterviewStartContentProps> = ({
                   microphone: true,
                   camera: study.videoEnabled ?? false,
                 });
-                await startInterview();
+                // After granting access, we move to the BeginContent
+                setStage(Stage.Access);
               } catch (error) {
                 console.error("Error accessing camera and microphone:", error);
                 setAccessError(
                   "Please allow access to continue. You can change this in your browser settings.",
                 );
+              } finally {
                 setIsInitializing(false);
               }
             }}
@@ -137,7 +125,7 @@ export const InterviewStartContent: React.FC<InterviewStartContentProps> = ({
           <IntroContent
             study={study}
             organization={organization}
-            onStart={() => updateStage(Stage.Access)}
+            onStart={() => setStage(Stage.Access)}
           />
         );
     }
@@ -146,7 +134,6 @@ export const InterviewStartContent: React.FC<InterviewStartContentProps> = ({
   return (
     <div className="flex w-full items-center justify-center">
       {renderContent()}
-      {/* Add navigation buttons or logic here */}
     </div>
   );
 };

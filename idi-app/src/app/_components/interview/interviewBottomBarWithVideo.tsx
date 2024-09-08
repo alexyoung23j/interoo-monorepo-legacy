@@ -243,9 +243,7 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
         )}
       </Button>
       <div className="mt-3 text-sm text-neutral-500 md:absolute md:-bottom-[1.75rem]">
-        {currentResponseAndUploadUrl.uploadSessionUrl
-          ? getButtonText()
-          : "Preparing..."}
+        {getButtonText()}
       </div>
     </>
   );

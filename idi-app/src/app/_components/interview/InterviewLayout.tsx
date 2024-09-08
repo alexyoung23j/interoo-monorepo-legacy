@@ -27,6 +27,8 @@ import {
 } from "@/app/state/atoms";
 import { useAtom } from "jotai";
 import { CurrentQuestionType } from "@shared/types";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Stage } from "./setup/InterviewStartContent";
 
 interface InterviewLayoutProps {
   study: Study & {
@@ -55,8 +57,18 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
   backgroundLight,
   fetchedInterviewSession,
 }) => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const params = useParams();
   const interviewSessionId = params.interviewSessionId as string;
+
+  // Local state for initial stages
+  const [localStage, setLocalStage] = useState<Stage>(Stage.Intro);
+
+  // URL param for interview progress
+  const [interviewProgress, setInterviewProgress] = useState(() => {
+    return searchParams.get("progress") || "not-started";
+  });
 
   const [currentQuestion, setCurrentQuestion] = useAtom(currentQuestionAtom);
   const [responses, setResponses] = useAtom(responsesAtom);
@@ -77,6 +89,13 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
         setCurrentQuestion(calculatedCurrentQuestion ?? null);
         setResponses(fetchedSession.responses ?? []);
         setFollowUpQuestions(fetchedSession.FollowUpQuestions ?? []);
+
+        // Update the progress based on the fetched session
+        if (fetchedSession.status === InterviewSessionStatus.IN_PROGRESS) {
+          updateProgress("in-progress");
+        } else if (fetchedSession.status === InterviewSessionStatus.COMPLETED) {
+          updateProgress("completed");
+        }
       }
 
       // Check media access permissions
@@ -113,6 +132,13 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
     setMediaAccess,
   ]);
 
+  const updateProgress = (progress: string) => {
+    setInterviewProgress(progress);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("progress", progress);
+    router.push(`?${params.toString()}`, { scroll: false });
+  };
+
   // Interview Phases
   const hasCurrentQuestion = currentQuestion !== null;
 
@@ -121,44 +147,38 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
       return <div>Loading...</div>;
     }
 
-    switch (interviewSession?.status) {
-      case InterviewSessionStatus.IN_PROGRESS:
-        return hasCurrentQuestion ? (
-          <InterviewPerformContent
-            organization={organization}
-            study={study}
-            interviewSessionRefetching={isLoading}
-          />
-        ) : null;
-      case InterviewSessionStatus.NOT_STARTED:
-        return (
-          <>
-            <InterviewStartContent organization={organization} study={study} />
-            <div className="h-20"></div>
-          </>
-        );
-      case InterviewSessionStatus.COMPLETED:
-        return (
-          <>
-            <InterviewFinishedContent
-              organization={organization}
-              study={study}
-              onFinish={() => {
-                // TODO: decide what comes here
-              }}
-            />
-            <div className="h-20"></div>
-          </>
-        );
-      default:
-        // TODO Some kind of error screen
-        return (
-          <>
-            <InterviewStartContent organization={organization} study={study} />
-            <div className="h-20"></div>
-          </>
-        );
+    if (interviewProgress === "in-progress") {
+      return hasCurrentQuestion ? (
+        <InterviewPerformContent
+          organization={organization}
+          study={study}
+          interviewSessionRefetching={isLoading}
+        />
+      ) : null;
     }
+
+    if (interviewProgress === "completed") {
+      return (
+        <InterviewFinishedContent
+          organization={organization}
+          study={study}
+          onFinish={() => {
+            // TODO: decide what comes here
+          }}
+        />
+      );
+    }
+
+    // Use local state for initial stages
+    return (
+      <InterviewStartContent
+        organization={organization}
+        study={study}
+        stage={localStage}
+        setStage={setLocalStage}
+        onStartInterview={() => updateProgress("in-progress")}
+      />
+    );
   };
 
   return (
