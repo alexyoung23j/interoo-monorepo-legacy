@@ -60,10 +60,7 @@ export default function StudiesPageComponent({
     <TitleLayout
       title="Studies"
       rightElement={
-        <Button
-          className="text-theme-off-white text-md flex cursor-not-allowed gap-2"
-          size="lg"
-        >
+        <Button className="text-theme-off-white flex cursor-not-allowed gap-2">
           <Plus className="text-theme-off-white" />
           Create New
         </Button>

@@ -20,6 +20,14 @@ export const INNER_SIDEBAR_ROUTES = [
         title: "Approve Codes",
         path: "/org/[orgId]/study/[studyId]/analysis/approve-codes",
       },
+      {
+        title: "Themes",
+        path: "/org/[orgId]/study/[studyId]/analysis/themes",
+      },
     ],
+  },
+  {
+    title: "Configuration",
+    path: "/org/[orgId]/study/[studyId]/configuration",
   },
 ];

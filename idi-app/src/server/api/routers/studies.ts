@@ -6,6 +6,7 @@ import {
   publicProcedure,
 } from "@/server/api/trpc";
 import { TRPCError } from "@trpc/server";
+import { Language, StudyStatus } from "@shared/generated/client";
 
 export const studiesRouter = createTRPCRouter({
   /**
@@ -65,5 +66,32 @@ export const studiesRouter = createTRPCRouter({
       });
 
       return study;
+    }),
+  updateStudy: privateProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        title: z.string().optional(),
+        targetLength: z.number().int().optional(),
+        welcomeDescription: z.string().optional(),
+        termsAndConditions: z.string().optional(),
+        welcomeImageUrl: z.string().optional(),
+        studyBackground: z.string().optional(),
+        videoEnabled: z.boolean().optional(),
+        maxResponses: z.number().int().optional(),
+        status: z.nativeEnum(StudyStatus).optional(),
+        reportingLanguage: z.nativeEnum(Language).optional(),
+        languages: z.array(z.nativeEnum(Language)).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { id, ...updateData } = input;
+
+      const updatedStudy = await ctx.db.study.update({
+        where: { id },
+        data: updateData,
+      });
+
+      return updatedStudy;
     }),
 });

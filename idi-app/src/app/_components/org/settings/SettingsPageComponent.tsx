@@ -9,6 +9,7 @@ import React, { useState } from "react";
 import { BasicLinkCopy } from "../../reusable/BasicLinkCopy";
 import { showErrorToast } from "@/app/utils/toastUtils";
 import { TRPCClientError } from "@trpc/client";
+import BasicTitleSection from "../../reusable/BasicTitleSection";
 
 export default function SettingsPageComponent({
   org,
@@ -39,11 +40,10 @@ export default function SettingsPageComponent({
 
   return (
     <TitleLayout title="Settings" className="flex flex-col gap-20">
-      <div className="text-theme-900 flex flex-col gap-2">
-        <div className="text-base font-semibold">Team</div>
-        <div className="text-theme-600 mb-4 text-sm">
-          Send an invite link to a team member to join your org.
-        </div>
+      <BasicTitleSection
+        title="Team"
+        subtitle="Send an invite link to a team member to join your org."
+      >
         {inviteLink ? (
           <div className="flex flex-col gap-2">
             <div className="flex flex-row items-center gap-2">
@@ -54,8 +54,8 @@ export default function SettingsPageComponent({
               <div className="text-theme-600 text-xs">Shareable link</div>
             </div>
             <div className="text-theme-600 mt-4 max-w-[50%] text-sm font-light">
-              *Note that this link will only allow a single member to join. To
-              create additional invites, refresh this page and regenerate. Email
+              *This link will only allow a single member to join. To create
+              additional invites, refresh this page and regenerate. Email
               invites are coming soon!
             </div>
           </div>
@@ -68,15 +68,15 @@ export default function SettingsPageComponent({
             {isGeneratingLink ? "Generating..." : "Generate invite link"}
           </Button>
         )}
-      </div>
-      <div className="text-theme-900 flex flex-col gap-2">
-        <div className="text-base font-semibold">Panel Credits</div>
-        <div className="text-theme-600 mb-4 text-sm">Coming soon.</div>
-      </div>
-      <div className="text-theme-900 flex flex-col gap-2">
-        <div className="text-base font-semibold">Billing</div>
-        <div className="text-theme-600 mb-4 text-sm">Coming soon.</div>
-      </div>
+      </BasicTitleSection>
+
+      <BasicTitleSection title="Panel Credits" subtitle="Coming soon.">
+        <div></div>
+      </BasicTitleSection>
+
+      <BasicTitleSection title="Billing" subtitle="Coming soon.">
+        <div></div>
+      </BasicTitleSection>
     </TitleLayout>
   );
 }
