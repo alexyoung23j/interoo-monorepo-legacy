@@ -10,7 +10,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-theme-700 text-theme-off-white shadow rounded-sm hover:bg-theme-900/90 text-medium",
+          "bg-theme-700 text-theme-off-white shadow rounded-sm hover:bg-theme-900/90 text-medium w-fit",
         secondary:
           "bg-theme-50 border border-theme-400 rounded-sm text-theme-900 shadow-sm hover:bg-theme-200/80 text-medium",
         unstyled: "",
