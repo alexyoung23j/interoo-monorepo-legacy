@@ -7,6 +7,8 @@ import { Link } from "@phosphor-icons/react";
 import { Organization, Profile } from "@shared/generated/client";
 import React, { useState } from "react";
 import { BasicLinkCopy } from "../../reusable/BasicLinkCopy";
+import { showErrorToast } from "@/app/utils/toastUtils";
+import { TRPCClientError } from "@trpc/client";
 
 export default function SettingsPageComponent({
   org,
@@ -20,11 +22,19 @@ export default function SettingsPageComponent({
 
   const handleGenerateInviteLink = async () => {
     setIsGeneratingLink(true);
-    const link = await createInvite.mutateAsync({
-      organizationId: org?.id as string,
-    });
-    setInviteLink(`${window.location.origin}/invite/${link.token}`);
-    setIsGeneratingLink(false);
+    try {
+      const link = await createInvite.mutateAsync({
+        organizationId: org?.id as string,
+      });
+      setInviteLink(`${window.location.origin}/invite/${link.token}`);
+      setIsGeneratingLink(false);
+    } catch (error) {
+      console.log(error);
+      setIsGeneratingLink(false);
+      if (error instanceof TRPCClientError) {
+        showErrorToast(error.message);
+      }
+    }
   };
 
   return (

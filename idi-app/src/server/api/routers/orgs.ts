@@ -117,6 +117,21 @@ export const orgsRouter = createTRPCRouter({
   createInvite: privateProcedure
     .input(z.object({ organizationId: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      const numberOfProfiles = await ctx.db.profile.count({
+        where: {
+          organizationId: input.organizationId,
+        },
+      });
+
+      // TODO: Figure out how we want to handle seats
+      if (numberOfProfiles >= 10) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            "Maximum number of profiles reached. Update your plan to add more users.",
+        });
+      }
+
       // Generate a unique token
       const token = randomBytes(12).toString("base64url");
 
