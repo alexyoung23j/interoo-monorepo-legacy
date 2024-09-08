@@ -33,6 +33,7 @@ export const studiesRouter = createTRPCRouter({
               multipleChoiceOptions: true,
             },
           },
+          boostedKeywords: true,
         },
       });
 

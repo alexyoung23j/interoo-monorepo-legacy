@@ -136,8 +136,9 @@ export const orgsRouter = createTRPCRouter({
       const token = randomBytes(12).toString("base64url");
 
       // Set expiration date 2 days from now
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 2);
+      const expiresAt = new Date(
+        Date.now() + 2 * 24 * 60 * 60 * 1000,
+      ).toISOString();
 
       // Create the invite
       const invite = await ctx.db.invite.create({

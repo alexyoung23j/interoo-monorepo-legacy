@@ -45,7 +45,7 @@ export const InterviewScreenLayout: React.FC<InterviewScreenLayoutProps> = ({
             // TODO: redirect to home page
           }}
         >
-          Powered by ResearchEcho
+          Powered by Interoo
         </div>
       </div>
 
@@ -71,7 +71,7 @@ export const InterviewScreenLayout: React.FC<InterviewScreenLayoutProps> = ({
           // TODO: redirect to home page
         }}
       >
-        Powered by ResearchEcho
+        Powered by Interoo
       </div>
     </div>
   );

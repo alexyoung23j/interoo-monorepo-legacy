@@ -18,9 +18,18 @@ import {
 } from "@/app/state/atoms";
 import { useAtom, useSetAtom } from "jotai";
 import InterviewBottomBarWithVideo from "./interviewBottomBarWithVideo";
+import { useTtsAudio } from "@/hooks/useTtsAudio";
 
 interface InterviewPerformContentProps {
-  study: Study & { questions: Question[] };
+  study: Study & {
+    questions: Question[];
+    boostedKeywords: {
+      id: string;
+      keyword: string;
+      definition: string | null;
+      studyId: string;
+    }[];
+  };
   organization: Organization;
   interviewSessionRefetching: boolean;
 }
@@ -40,6 +49,15 @@ export const InterviewPerformContent: React.FC<
     null,
   );
   const [awaitingOptionResponse, setAwaitingOptionResponse] = useState(false);
+
+  const {
+    isLoading: ttsAudioLoading,
+    isPlaying: ttsAudioPlaying,
+    error: ttsAudioError,
+    playAudio: playTtsAudio,
+    stopAudio: stopTtsAudio,
+    audioDuration: ttsAudioDuration,
+  } = useTtsAudio();
 
   // Update the response to include the user's selection- or create in case user answers
   // before we get a chance to get the signed url and create the response on the backend
@@ -192,6 +210,7 @@ export const InterviewPerformContent: React.FC<
         setMultipleChoiceOptionSelectionId={setMultipleChoiceOptionSelectionId}
         rangeSelectionValue={rangeSelectionValue}
         setRangeSelectionValue={setRangeSelectionValue}
+        ttsAudioDuration={ttsAudioDuration}
       />
       <InterviewBottomBarWithVideo
         organization={organization}
@@ -202,6 +221,8 @@ export const InterviewPerformContent: React.FC<
         awaitingOptionResponse={awaitingOptionResponse}
         interviewSessionRefetching={interviewSessionRefetching}
         handleSubmitRangeResponse={handleSubmitRangeResponse}
+        playTtsAudio={playTtsAudio}
+        stopTtsAudio={stopTtsAudio}
       />
     </>
   );

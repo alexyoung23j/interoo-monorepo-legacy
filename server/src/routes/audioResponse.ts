@@ -3,7 +3,7 @@ import { Request, Response } from "express";
 import Busboy from 'busboy';
 import { transcribeAudio, decideFollowUpPromptIfNecessary, getFollowUpLevelRange } from "../utils/audioProcessing";
 import { prisma } from "..";
-import { TranscribeAndGenerateNextQuestionRequestBuilder, ConversationState, TranscribeAndGenerateNextQuestionResponse, TranscribeAndGenerateNextQuestionRequest } from "../../../shared/types";
+import { TranscribeAndGenerateNextQuestionRequestBuilder, ConversationState, TranscribeAndGenerateNextQuestionResponse, TranscribeAndGenerateNextQuestionRequest, BoostedKeyword } from "../../../shared/types";
 import { createRequestLogger } from '../utils/logger';
 
 const router = Router();
@@ -57,6 +57,15 @@ const extractRequestData = (req: Request): Promise<{ audioBuffer: Buffer, reques
           break;
         case 'targetInterviewLength':
           requestDataBuilder.setTargetInterviewLength(val ? parseInt(val, 10) : undefined);
+          break;
+        case 'boostedKeywords':
+          try {
+            const boostedKeywords = JSON.parse(val) as BoostedKeyword[];
+            requestDataBuilder.setBoostedKeywords(boostedKeywords);
+          } catch (error) {
+            console.warn('Failed to parse boostedKeywords, setting as empty array', error);
+            requestDataBuilder.setBoostedKeywords([]);
+          }
           break;
         default:
           console.warn(`Unexpected field: ${fieldname}`);

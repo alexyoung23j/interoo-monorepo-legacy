@@ -171,13 +171,15 @@ const IntroContent: React.FC<{
       <div className="text-sm text-neutral-500 md:text-base">
         {study.termsAndConditions}
       </div>
-      <div className="text-sm text-neutral-500 md:text-base">
-        This interview should take ~
-        <span className="font-bold text-neutral-700">
-          {study.targetLength} minutes
-        </span>
-        .
-      </div>
+      {study.targetLength && (
+        <div className="text-sm text-neutral-500 md:text-base">
+          This interview should take ~
+          <span className="font-bold text-neutral-700">
+            {study.targetLength} minutes
+          </span>
+          .
+        </div>
+      )}
       <Button
         variant="unstyled"
         className={`mt-8 flex min-h-10 w-fit max-w-md gap-3 rounded-[1px] border border-black border-opacity-50 bg-[var(--button-bg)] text-black transition-colors hover:bg-[var(--button-hover-bg)]`}

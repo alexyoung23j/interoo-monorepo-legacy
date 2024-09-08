@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import type {
   Question,
   VideoStimulusType,
@@ -21,6 +21,7 @@ interface DisplayQuestionProps {
   setMultipleChoiceOptionSelectionId: (id: string | null) => void;
   rangeSelectionValue: number | null;
   setRangeSelectionValue: (value: number | null) => void;
+  ttsAudioDuration: number | null;
 }
 
 export const DisplayQuestion: React.FC<DisplayQuestionProps> = ({
@@ -29,14 +30,42 @@ export const DisplayQuestion: React.FC<DisplayQuestionProps> = ({
   setMultipleChoiceOptionSelectionId,
   rangeSelectionValue,
   setRangeSelectionValue,
+  ttsAudioDuration,
 }) => {
   const isBackgroundLight = isColorLight(organization.secondaryColor ?? "");
   const [currentQuestion] = useAtom(currentQuestionAtom);
 
+  const words = useMemo(
+    () => currentQuestion?.title?.split(" ") || [],
+    [currentQuestion?.title],
+  );
+
+  // Calculate delay for each word based on ttsAudioDuration
+  const getDelay = (index: number) => {
+    if (ttsAudioDuration === null) return "0ms";
+    const totalWords = words.length;
+    return `${(index / totalWords) * ttsAudioDuration}ms`;
+  };
+
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-4 p-4 md:w-[70%] md:py-0">
       <div className="text-center text-lg md:text-2xl">
-        {currentQuestion?.title}
+        {ttsAudioDuration === null ? (
+          <span className="animate-fade-in">{currentQuestion?.title}</span>
+        ) : (
+          words.map((word, index) => (
+            <span
+              key={index}
+              className="animate-fade-in inline-block opacity-0"
+              style={{
+                animationDelay: getDelay(index),
+                animationFillMode: "forwards",
+              }}
+            >
+              {word}{" "}
+            </span>
+          ))
+        )}
       </div>
       {currentQuestion?.questionType === "RANGE" && (
         <RangeChoiceSelect

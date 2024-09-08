@@ -67,6 +67,9 @@ export const decideFollowUpPromptIfNecessary = async (
     study_goals: requestData.studyBackground,
     question_context: requestData.currentBaseQuestionContext,
     conversation_history: conversationHistory,
+    boosted_keywords: requestData.boostedKeywords.map(kw => 
+      `${kw.keyword}${kw.definition ? `: ${kw.definition}` : ''}`
+    ).join('\n'),
   });
   const chainEndTime = Date.now();
   requestLogger.debug('Chain execution completed', { executionTime: chainEndTime - chainStartTime });
@@ -121,9 +124,16 @@ const buildDecideFollowUpPrompt = () => {
     The first question in this interview was pre-written. Here are some goals of the question that your research team
     wanted you to be aware of when thinking through your responses here: 
     {question_context}
-    
+
+    Important: Be aware of the following special keywords and their definitions. 
+    The format for each boosted keyword is:
+    keyword: definition (if available)
+
+    Pay extra attention if the participant uses these or similar words/phrases:
+    {boosted_keywords}
+
     Your goal is to decide whether a follow up question is necessary to ask the participant. Do this based on the 
-    goals of the study, the conversation history, and the context of the question.
+    goals of the study, the conversation history, the context of the question, and the special keywords provided.
 
     You should generally attempt to "probe deeper" as you go along. 
 
@@ -134,6 +144,7 @@ const buildDecideFollowUpPrompt = () => {
     language or encouraging them to elaborate. 
 
     Be friendly, and lightly complimentary of the particpant and their insights. Don't overdo it, or be cringey.
+    Do not repeat profanity back to the particpant whatsoever.
     
     Your response should be in YAML format with the following structure:
     shouldFollowUp: <boolean>
@@ -165,9 +176,16 @@ const buildAlwaysFollowUpPrompt = () => {
     The first question in this interview was pre-written. Here are some goals of the question that your research team
     wanted you to be aware of when thinking through your responses here: 
     {question_context}
-    
+
+    Important: Be aware of the following special keywords and their definitions. 
+    The format for each boosted keyword is:
+    keyword: definition (if available)
+
+    Pay extra attention if the participant uses these or similar words/phrases:
+    {boosted_keywords}
+
     Your goal is to write a follow up question. Do this based on the 
-    goals of the study, the conversation history, and the context of the question.
+    goals of the study, the conversation history, the context of the question, and the special keywords provided.
 
     You should generally attempt to "probe deeper" as you go along. 
 
@@ -175,6 +193,7 @@ const buildAlwaysFollowUpPrompt = () => {
     to dictate your next question. When possible, focus on honing in on surprising insights.
 
     Be friendly, and lightly complimentary of the particpant and their insights. Don't overdo it, or be cringey.
+    Do not repeat profanity back to the particpant whatsoever.
     
     Your response should be in YAML format with the following structure:
     followUpQuestion: <string>

@@ -1,13 +1,12 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import {
   Study,
   InterviewSession,
   Question,
   FollowUpQuestion,
   InterviewSessionStatus,
+  FollowUpLevel,
 } from "@shared/generated/client";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight } from "@phosphor-icons/react";
 import { CurrentQuestionType } from "@shared/types";
 
 interface InterviewProgressBarProps {
@@ -15,89 +14,113 @@ interface InterviewProgressBarProps {
   interviewSession: InterviewSession & {
     FollowUpQuestions: FollowUpQuestion[];
   };
-  onBack: () => void;
-  onNext: () => void;
   calculatedCurrentQuestion: CurrentQuestionType;
 }
 
 export function InterviewProgressBar({
   study,
   interviewSession,
-  onBack,
-  onNext,
   calculatedCurrentQuestion,
 }: InterviewProgressBarProps) {
+  const estimateFollowUpsForQuestion = (question: Question): number => {
+    switch (question.followUpLevel) {
+      case FollowUpLevel.AUTOMATIC:
+        return 3;
+      case FollowUpLevel.SURFACE:
+        return 2;
+      case FollowUpLevel.LIGHT:
+        return 3;
+      case FollowUpLevel.DEEP:
+        return 5;
+      default:
+        return 3;
+    }
+  };
+
   const calculateProgress = useCallback(() => {
-    const totalMainQuestions = study.questions.length;
-    const mainQuestionInterval = 100 / (totalMainQuestions + 1);
+    const totalBaseQuestions = study.questions.length;
+    const completedFollowUps = interviewSession.FollowUpQuestions.length;
+
+    let currentBaseQuestionIndex = 0;
+    let completedQuestionsCount = 0;
 
     if ("parentQuestionId" in calculatedCurrentQuestion) {
       // It's a follow-up question
       const parentQuestion = study.questions.find(
         (q) => q.id === calculatedCurrentQuestion.parentQuestionId,
       );
-      if (!parentQuestion) {
-        console.error("Parent question not found");
-        return 0;
+      if (parentQuestion) {
+        currentBaseQuestionIndex = parentQuestion.questionOrder;
+        completedQuestionsCount = currentBaseQuestionIndex + 1; // Include the current base question
+
+        // Add completed follow-ups for the current base question
+        const currentFollowUps = interviewSession.FollowUpQuestions.filter(
+          (fq) => fq.parentQuestionId === parentQuestion.id,
+        );
+        const currentFollowUpIndex = currentFollowUps.findIndex(
+          (fq) => fq.id === calculatedCurrentQuestion.id,
+        );
+        completedQuestionsCount += currentFollowUpIndex + 1; // Include the current follow-up
       }
-      const baseProgress =
-        (parentQuestion.questionOrder + 1) * mainQuestionInterval;
-      const followUpProgress = mainQuestionInterval * 0.2; // 20% of the interval for follow-ups TODO: this should technically use the follow-up levels to decide the sub-interval here
-      return Math.min(baseProgress + followUpProgress, 100);
     } else {
-      // It's a main question
+      // It's a base question
       const currentQuestion = study.questions.find(
         (q) => q.id === calculatedCurrentQuestion.id,
       );
-      if (!currentQuestion) {
-        console.error("Current question not found");
-        return 0;
+      if (currentQuestion) {
+        currentBaseQuestionIndex = currentQuestion.questionOrder;
+        completedQuestionsCount = currentBaseQuestionIndex; // Don't include the current question yet
       }
-      return Math.min(
-        (currentQuestion.questionOrder + 1) * mainQuestionInterval,
-        100,
-      );
     }
-  }, [study.questions, calculatedCurrentQuestion]);
 
-  const progress = (() => {
-    switch (interviewSession?.status) {
+    // Estimate total questions including follow-ups
+    const estimatedRemainingFollowUps = study.questions
+      .slice(currentBaseQuestionIndex)
+      .reduce(
+        (sum, question) => sum + estimateFollowUpsForQuestion(question),
+        0,
+      );
+
+    const totalEstimatedQuestions =
+      totalBaseQuestions + completedFollowUps + estimatedRemainingFollowUps;
+
+    return Math.min(
+      (completedQuestionsCount / totalEstimatedQuestions) * 100,
+      100,
+    );
+  }, [
+    study.questions,
+    calculatedCurrentQuestion,
+    interviewSession.FollowUpQuestions,
+  ]);
+
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    setProgress(calculateProgress());
+  }, [calculateProgress]);
+
+  const getProgressWidth = () => {
+    switch (interviewSession.status) {
       case InterviewSessionStatus.NOT_STARTED:
-        return 5;
+        return "5%";
       case InterviewSessionStatus.IN_PROGRESS:
-        return calculatedCurrentQuestion ? calculateProgress() : 0;
+        return `${progress}%`;
       case InterviewSessionStatus.COMPLETED:
-        return 100;
+        return "100%";
       default:
-        return 0;
+        return "0%";
     }
-  })();
+  };
 
   return (
     <div className="flex w-full items-center justify-between gap-6">
-      {/* <Button
-        onClick={onBack}
-        variant="icon"
-        className="hidden border border-black md:flex"
-        size="icon"
-      >
-        <ArrowLeft className="size-4 text-[#7A7A7A]" weight="bold" />
-      </Button> */}
-
-      <div className="relative h-2 w-full rounded-[1px] bg-[#EAE8E8] md:rounded-[2px]">
+      <div className="relative h-2 w-full rounded-[1px] bg-theme-100 md:rounded-[2px]">
         <div
-          className="absolute h-full rounded-[1px] bg-org-secondary md:rounded-[2px]"
-          style={{ width: `${progress}%` }}
+          className="absolute h-full rounded-[1px] bg-theme-600 transition-all duration-500 ease-in-out md:rounded-[2px]"
+          style={{ width: getProgressWidth() }}
         ></div>
       </div>
-      {/* <Button
-        onClick={onBack}
-        variant="icon"
-        className="hidden border border-black md:flex"
-        size="icon"
-      >
-        <ArrowRight className="size-4 text-[#7A7A7A]" weight="bold" />
-      </Button> */}
     </div>
   );
 }

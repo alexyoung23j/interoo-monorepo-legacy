@@ -29,7 +29,15 @@ import { useAtom } from "jotai";
 import { CurrentQuestionType } from "@shared/types";
 
 interface InterviewLayoutProps {
-  study: Study & { questions: Question[] };
+  study: Study & {
+    questions: Question[];
+    boostedKeywords: {
+      id: string;
+      keyword: string;
+      definition: string | null;
+      studyId: string;
+    }[];
+  };
   organization: Organization;
   backgroundLight: boolean;
   fetchedInterviewSession: {
@@ -168,12 +176,6 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
               }
             }
             study={study}
-            onNext={() => {
-              console.log("chill");
-            }}
-            onBack={() => {
-              console.log("chill");
-            }}
             calculatedCurrentQuestion={currentQuestion!}
           />
         </div>
