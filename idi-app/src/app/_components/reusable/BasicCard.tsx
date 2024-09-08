@@ -16,7 +16,7 @@ const BasicCard: React.FC<BasicCardProps> = ({
   return (
     <div
       onClick={onClick}
-      className={`border-theme-200 bg-theme-off-white shadow-standard rounded-sm border p-4 ${shouldHover ? "hover:bg-theme-50 transition-colors duration-200" : ""} ${onClick ? "cursor-pointer" : ""} ${className} `}
+      className={`border-theme-200 bg-theme-off-white rounded-sm border p-4 ${shouldHover ? "hover:bg-theme-50 transition-colors duration-200" : ""} ${onClick ? "cursor-pointer" : ""} ${className} `}
     >
       {children}
     </div>

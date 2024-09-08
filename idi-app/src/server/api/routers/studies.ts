@@ -6,7 +6,16 @@ import {
   publicProcedure,
 } from "@/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { Language, StudyStatus } from "@shared/generated/client";
+import {
+  InterviewSessionStatus,
+  Language,
+  Question,
+  Study,
+  StudyStatus,
+  Response,
+} from "@shared/generated/client";
+import { FastForwardCircle } from "@phosphor-icons/react/dist/ssr";
+import { ExtendedStudy } from "@/app/_components/org/study/distribution/results/ResultsPageComponent";
 
 export const studiesRouter = createTRPCRouter({
   /**
@@ -52,20 +61,66 @@ export const studiesRouter = createTRPCRouter({
       return { study, organization };
     }),
   /**
-   * Used to get study for org study page
+   * Used to get study for org study page. Returns an augmented Study type with additional calculated metadata needed for client display
    */
   getStudy: privateProcedure
-    .input(z.object({ studyId: z.string() }))
+    .input(
+      z.object({
+        studyId: z.string(),
+        includeQuestions: z.boolean().optional(),
+      }),
+    )
     .query(async ({ ctx, input }) => {
-      const { studyId } = input;
+      const { studyId, includeQuestions = false } = input;
 
       const study = await ctx.db.study.findUnique({
-        where: {
-          id: studyId,
+        where: { id: studyId },
+        include: {
+          interviews: {
+            select: { status: true },
+          },
+          ...(includeQuestions
+            ? {
+                questions: {
+                  include: {
+                    _count: {
+                      select: {
+                        Response: {
+                          where: {
+                            followUpQuestionId: null,
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              }
+            : {}),
         },
       });
 
-      return study;
+      if (!study) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Study not found",
+        });
+      }
+
+      const completedInterviewsCount = study.interviews.filter(
+        (session) => session.status === InterviewSessionStatus.COMPLETED,
+      ).length;
+      const inProgressInterviewsCount = study.interviews.filter(
+        (session) => session.status === InterviewSessionStatus.IN_PROGRESS,
+      ).length;
+
+      const result = {
+        ...study,
+        completedInterviewsCount,
+        inProgressInterviewsCount,
+        interviews: undefined,
+      };
+
+      return result;
     }),
   updateStudy: privateProcedure
     .input(
