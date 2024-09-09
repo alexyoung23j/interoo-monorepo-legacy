@@ -206,7 +206,7 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
             calculatedCurrentQuestion={currentQuestion}
           />
         </div>
-        <div className="flex-1 overflow-y-auto">{renderInterviewContent()}</div>
+        <div className="flex-1">{renderInterviewContent()}</div>
       </div>
     </InterviewScreenLayout>
   );
