@@ -18,7 +18,7 @@ export const InterviewScreenLayout: React.FC<InterviewScreenLayoutProps> = ({
 }) => {
   return (
     <div
-      className="relative flex h-screen items-center justify-center bg-org-primary px-4 pb-4 pt-16 md:px-32 md:py-24"
+      className="relative flex h-screen flex-col bg-org-primary px-4 pb-8 pt-16 md:px-32 md:py-24"
       style={
         {
           "--org-primary-color": organization.primaryColor,
@@ -26,32 +26,34 @@ export const InterviewScreenLayout: React.FC<InterviewScreenLayoutProps> = ({
         } as React.CSSProperties
       }
     >
-      <div className="absolute top-4 flex w-full items-center justify-between px-4">
-        {organization.logoUrl && (
-          <Image
-            src={organization.logoUrl}
-            alt=""
-            width={150}
-            height={150}
-            className="max-h-[100px] max-w-[100px] object-contain"
-            unoptimized
-          />
-        )}
+      <div className="absolute left-4 right-4 top-4 flex items-center justify-between">
+        <div className="flex items-center">
+          {organization.logoUrl && (
+            <Image
+              src={organization.logoUrl}
+              alt=""
+              width={150}
+              height={150}
+              className="max-h-[100px] max-w-[100px] object-contain"
+              unoptimized
+            />
+          )}
+        </div>
         <div
-          className={`block cursor-pointer text-center text-sm font-medium opacity-30 md:hidden ${
+          className={`cursor-pointer text-center text-sm font-medium opacity-30 md:hidden ${
             backgroundLight ? "text-black" : "text-white"
           }`}
           onClick={() => {
             // TODO: redirect to home page
           }}
         >
-          Powered by ResearchEcho
+          Powered by Interoo
         </div>
       </div>
 
-      <div className="flex h-full w-full max-w-[1200px] flex-col items-center justify-between rounded-[2px] border-2 border-org-secondary bg-off-white">
+      <div className="flex w-full flex-1 items-center justify-center overflow-y-auto rounded-[4px] border-2 border-org-secondary bg-off-white p-4 md:p-8">
         {isLoading ? (
-          <div className="flex h-full items-center justify-center">
+          <div className="flex items-center justify-center">
             <ClipLoader
               color={organization.secondaryColor ?? "grey"}
               size={40}
@@ -60,7 +62,9 @@ export const InterviewScreenLayout: React.FC<InterviewScreenLayoutProps> = ({
             />
           </div>
         ) : (
-          children
+          <div className="flex h-full w-full items-center justify-center">
+            {children}
+          </div>
         )}
       </div>
       <div
@@ -71,7 +75,7 @@ export const InterviewScreenLayout: React.FC<InterviewScreenLayoutProps> = ({
           // TODO: redirect to home page
         }}
       >
-        Powered by ResearchEcho
+        Powered by Interoo
       </div>
     </div>
   );

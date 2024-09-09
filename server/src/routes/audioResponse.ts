@@ -3,8 +3,9 @@ import { Request, Response } from "express";
 import Busboy from 'busboy';
 import { transcribeAudio, decideFollowUpPromptIfNecessary, getFollowUpLevelRange } from "../utils/audioProcessing";
 import { prisma } from "..";
-import { TranscribeAndGenerateNextQuestionRequestBuilder, ConversationState, TranscribeAndGenerateNextQuestionResponse, TranscribeAndGenerateNextQuestionRequest } from "../../../shared/types";
+import { TranscribeAndGenerateNextQuestionRequestBuilder, ConversationState, TranscribeAndGenerateNextQuestionResponse, TranscribeAndGenerateNextQuestionRequest, BoostedKeyword } from "../../../shared/types";
 import { createRequestLogger } from '../utils/logger';
+import { InterviewSessionStatus } from "@shared/generated/client";
 
 const router = Router();
 
@@ -58,6 +59,15 @@ const extractRequestData = (req: Request): Promise<{ audioBuffer: Buffer, reques
         case 'targetInterviewLength':
           requestDataBuilder.setTargetInterviewLength(val ? parseInt(val, 10) : undefined);
           break;
+        case 'boostedKeywords':
+          try {
+            const boostedKeywords = val ? JSON.parse(val) as BoostedKeyword[] : [];
+            requestDataBuilder.setBoostedKeywords(boostedKeywords);
+          } catch (error) {
+            console.warn('Failed to parse boostedKeywords, setting as empty array', error);
+            requestDataBuilder.setBoostedKeywords([]);
+          }
+          break;
         default:
           console.warn(`Unexpected field: ${fieldname}`);
       }
@@ -106,6 +116,16 @@ const handleNoFollowUp = async (
       data: { 
         currentQuestionId: requestData.nextBaseQuestionId,
         lastUpdatedTime: new Date().toISOString()
+      }
+    });
+  }
+
+  // Mark interview as completed if there are no more questions to ask
+  if (!requestData.nextBaseQuestionId) {
+    await prisma.interviewSession.update({
+      where: { id: requestData.interviewSessionId },
+      data: {
+        status: InterviewSessionStatus.COMPLETED
       }
     });
   }

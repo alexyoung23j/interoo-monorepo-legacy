@@ -30,13 +30,23 @@ import { useTtsAudio } from "@/hooks/useTtsAudio";
 
 interface InterviewBottomBarProps {
   organization: Organization;
-  study: Study & { questions: Question[] };
+  study: Study & {
+    questions: Question[];
+    boostedKeywords: {
+      id: string;
+      keyword: string;
+      definition: string | null;
+      studyId: string;
+    }[];
+  };
   multipleChoiceOptionSelectionId: string | null;
   rangeSelectionValue: number | null;
   handleSubmitMultipleChoiceResponse: () => void;
   awaitingOptionResponse: boolean;
   interviewSessionRefetching: boolean;
   handleSubmitRangeResponse: () => void;
+  playTtsAudio: (text: string) => Promise<void>;
+  stopTtsAudio: () => void;
 }
 
 const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
@@ -48,6 +58,8 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
   awaitingOptionResponse,
   interviewSessionRefetching,
   handleSubmitRangeResponse,
+  playTtsAudio,
+  stopTtsAudio,
 }) => {
   const [currentQuestion] = useAtom(currentQuestionAtom);
   const [currentResponseAndUploadUrl, setCurrentResponseAndUploadUrl] = useAtom(
@@ -63,15 +75,6 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
   const transcriptionRecorder = useTranscriptionRecorder({
     baseQuestions: study.questions,
   });
-
-  const {
-    isLoading: ttsAudioLoading,
-    isPlaying: ttsAudioPlaying,
-    error: ttsAudioError,
-    playAudio: playTtsAudio,
-    stopAudio: ttsAudioStop,
-    audioDuration: ttsAudioDuration,
-  } = useTtsAudio();
 
   const {
     startRecording: startChunkedMediaUploader,
@@ -118,7 +121,7 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
     );
 
     try {
-      ttsAudioStop();
+      stopTtsAudio();
       await transcriptionRecorder.startRecording();
 
       if (transcriptionRecorder.noAnswerDetected) {
@@ -190,7 +193,7 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
   };
 
   const renderOpenEndedButton = () => (
-    <>
+    <div className="flex flex-col items-center">
       <Button
         variant="unstyled"
         className={cx(
@@ -198,6 +201,8 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
           isFullyRecording || uploadStatus !== "idle"
             ? "bg-org-secondary hover:opacity-80"
             : "bg-neutral-100 hover:bg-neutral-300",
+          !currentResponseAndUploadUrl.uploadSessionUrl &&
+            "cursor-not-allowed opacity-50",
         )}
         onClick={
           uploadStatus === "failed"
@@ -209,7 +214,8 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
         disabled={
           uploadStatus === "uploading" ||
           uploadStatus === "slow" ||
-          uploadStatus === "verySlow"
+          uploadStatus === "verySlow" ||
+          !currentResponseAndUploadUrl.uploadSessionUrl
         }
       >
         {isFullyRecording ? (
@@ -236,10 +242,10 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
           <Microphone className="size-8 text-neutral-600" />
         )}
       </Button>
-      <div className="mt-3 text-sm text-neutral-500 md:absolute md:-bottom-[1.75rem]">
+      <div className="mt-2 text-sm leading-4 text-neutral-500">
         {getButtonText()}
       </div>
-    </>
+    </div>
   );
 
   const renderMultipleChoiceButton = () => (
@@ -329,34 +335,61 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
   const showWebcamPreview = study.videoEnabled && isOpenEndedQuestion;
 
   return (
-    <div className="mb-2 flex w-full flex-col items-center justify-between bg-off-white p-8 md:flex-row">
-      <div className="flex gap-2 md:w-1/3">
-        <Switch
-          className="hidden data-[state=checked]:bg-org-secondary md:block"
-          checked={audioOn}
-          onCheckedChange={(checked) => {
-            if (!checked) {
-              ttsAudioStop();
-            }
-            setAudioOn(checked);
-          }}
-        />
-        <div className="hidden text-sm text-neutral-400 md:block">
-          {audioOn ? "Sound on" : "Sound off"}
+    <div className="mb-2 flex w-full flex-col items-center justify-between bg-theme-off-white p-4 md:flex-row md:p-8">
+      {/* Mobile layout */}
+      <div className="flex w-full flex-col items-center md:hidden">
+        <div className="mb-10 flex w-full items-center justify-center space-x-9">
+          <div className="flex flex-col items-center">
+            {renderOpenEndedButton()}
+          </div>
+          {showWebcamPreview && (
+            <div>
+              <WebcamPreview />
+            </div>
+          )}
+        </div>
+        <div className="flex items-center justify-center">
+          <Switch
+            className="data-[state=checked]:bg-org-secondary"
+            checked={audioOn}
+            onCheckedChange={(checked) => {
+              if (!checked) {
+                stopTtsAudio();
+              }
+              setAudioOn(checked);
+            }}
+          />
+          <div className="ml-2 text-sm text-theme-600">
+            {audioOn ? "Sound On" : "Sound Off"}
+          </div>
         </div>
       </div>
 
-      {/* Position webcam differently on different screen sizes */}
-      <div className="relative flex flex-col items-center md:w-1/3">
-        {showWebcamPreview && (
-          <div className="mb-8 md:hidden">
-            <WebcamPreview />
+      {/* Desktop layout */}
+      <div className="hidden w-full md:flex md:flex-row md:items-center md:justify-between">
+        <div className="flex gap-2 md:w-1/3">
+          <Switch
+            className="data-[state=checked]:bg-org-secondary"
+            checked={audioOn}
+            onCheckedChange={(checked) => {
+              if (!checked) {
+                stopTtsAudio();
+              }
+              setAudioOn(checked);
+            }}
+          />
+          <div className="text-sm text-theme-600">
+            {audioOn ? "Sound On" : "Sound Off"}
           </div>
-        )}
-        {renderQuestionTypeButton()}
-      </div>
-      <div className="hidden items-center justify-end md:flex md:w-1/3">
-        {showWebcamPreview && <WebcamPreview />}
+        </div>
+
+        <div className="flex items-stretch justify-center md:w-1/3">
+          {renderQuestionTypeButton()}
+        </div>
+
+        <div className="flex items-center justify-end md:w-1/3">
+          {showWebcamPreview && <WebcamPreview />}
+        </div>
       </div>
     </div>
   );

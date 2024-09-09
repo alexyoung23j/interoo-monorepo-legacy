@@ -1,9 +1,11 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useAtomValue } from "jotai";
 import { currentResponseAndUploadUrlAtom } from "@/app/state/atoms";
+import { showWarningToast } from "@/app/utils/toastUtils";
 
 const CHUNK_SIZE = 2 * 1024 * 1024; // 2 MiB
 const UPLOAD_TIMEOUT = 7000; // 7 seconds in milliseconds
+const MAX_RECORDING_TIME = 10 * 60 * 1000; // 10 minutes in milliseconds
 
 export function useChunkedMediaUploader() {
   const currentResponseAndUploadUrl = useAtomValue(
@@ -21,6 +23,7 @@ export function useChunkedMediaUploader() {
   const totalSize = useRef<number>(0);
   const isUploading = useRef<boolean>(false);
   const uploadComplete = useRef<boolean>(false);
+  const recordingTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const uploadNextChunk = useCallback(
     async (isLastChunk = false) => {
@@ -172,6 +175,12 @@ export function useChunkedMediaUploader() {
 
         setIsRecording(true);
         mediaRecorder.current.start(500);
+
+        // Set timeout to stop recording after 10 minutes
+        recordingTimeout.current = setTimeout(() => {
+          void stopRecording();
+          showWarningToast("Recording time limit reached (10 minutes).");
+        }, MAX_RECORDING_TIME);
       } catch (err) {
         console.error("Error starting recording:", err);
         setError("Failed to start recording. Please check your permissions.");
@@ -181,6 +190,9 @@ export function useChunkedMediaUploader() {
   );
 
   const stopRecording = useCallback(async () => {
+    if (recordingTimeout.current) {
+      clearTimeout(recordingTimeout.current);
+    }
     if (mediaRecorder.current && mediaRecorder.current.state !== "inactive") {
       return new Promise<void>((resolve, reject) => {
         if (mediaRecorder.current) {

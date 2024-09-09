@@ -5,17 +5,22 @@ import {
   Question,
   Response,
   FollowUpLevel,
+  BoostedKeyword,
 } from "@shared/generated/client";
 import {
   CurrentQuestionType,
   TranscribeAndGenerateNextQuestionRequest,
+  TranscribeAndGenerateNextQuestionRequestBuilder,
   ConversationState,
 } from "@shared/types";
 
 interface CalculateRequestParams {
   currentQuestion: CurrentQuestionType | null;
   interviewSession: InterviewSession | null;
-  study: Study & { questions: Question[] };
+  study: Study & {
+    questions: Question[];
+    boostedKeywords: BoostedKeyword[];
+  };
   responses: Response[];
   followUpQuestions: FollowUpQuestion[];
   currentResponseId: string;
@@ -134,22 +139,26 @@ export function calculateTranscribeAndGenerateNextQuestionRequest({
     interviewSession?.startTime?.toISOString() ?? new Date().toISOString();
   const currentTime = new Date().toISOString();
 
-  return {
-    nextBaseQuestionId: nextBaseQuestion?.id ?? "",
-    currentBaseQuestionId: currentBaseQuestion.id,
-    currentBaseQuestionContext: currentBaseQuestion.context ?? "",
-    interviewSessionId: interviewSession?.id ?? "",
-    followUpLevel: currentBaseQuestion.followUpLevel,
-    studyBackground: study.studyBackground ?? "",
-    shouldFollowUp: isFollowUp
-      ? true
-      : ((currentQuestion as Question).shouldFollowUp ?? false),
-    currentResponseId: currentResponseId,
-    thread: currentQuestionThreadState,
-    numTotalEstimatedInterviewQuestions,
-    interviewStartTime,
-    currentTime,
-    currentQuestionNumber: currentQuestionOrder,
-    targetInterviewLength: study.targetLength ?? undefined,
-  };
+  // Use the builder to create the request
+  return new TranscribeAndGenerateNextQuestionRequestBuilder()
+    .setNextBaseQuestionId(nextBaseQuestion?.id ?? "")
+    .setCurrentBaseQuestionId(currentBaseQuestion.id)
+    .setCurrentBaseQuestionContext(currentBaseQuestion.context ?? "")
+    .setInterviewSessionId(interviewSession?.id ?? "")
+    .setFollowUpLevel(currentBaseQuestion.followUpLevel)
+    .setStudyBackground(study.studyBackground ?? "")
+    .setShouldFollowUp(
+      isFollowUp
+        ? true
+        : ((currentQuestion as Question).shouldFollowUp ?? false),
+    )
+    .setCurrentResponseId(currentResponseId)
+    .setThread(currentQuestionThreadState)
+    .setNumTotalEstimatedInterviewQuestions(numTotalEstimatedInterviewQuestions)
+    .setInterviewStartTime(interviewStartTime)
+    .setCurrentTime(currentTime)
+    .setCurrentQuestionNumber(currentQuestionOrder)
+    .setTargetInterviewLength(study.targetLength ?? undefined)
+    .setBoostedKeywords(study.boostedKeywords ?? [])
+    .build();
 }

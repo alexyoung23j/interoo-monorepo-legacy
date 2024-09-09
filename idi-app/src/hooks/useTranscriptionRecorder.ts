@@ -9,10 +9,12 @@ import {
   interviewSessionAtom,
   responsesAtom,
   currentResponseAndUploadUrlAtom,
+  interviewProgressAtom,
 } from "../app/state/atoms";
 import { useAtom } from "jotai";
 import type { FollowUpQuestion, Question } from "@shared/generated/client";
 import { showWarningToast } from "@/app/utils/toastUtils";
+import { useRouter, useSearchParams } from "next/navigation";
 
 interface AudioRecorderHook {
   isRecording: boolean;
@@ -25,7 +27,7 @@ interface AudioRecorderHook {
   noAnswerDetected: boolean;
 }
 
-const MAX_RECORDING_TIME = 15 * 60 * 1000; // 15 minutes
+const MAX_RECORDING_TIME = 10 * 60 * 1000; // 10 minutes in milliseconds
 
 export function useTranscriptionRecorder({
   baseQuestions,
@@ -45,7 +47,7 @@ export function useTranscriptionRecorder({
   );
   const [noAnswerDetected, setNoAnswerDetected] = useState(false);
   const [interviewSession, setInterviewSession] = useAtom(interviewSessionAtom);
-
+  const [_, setInterviewProgress] = useAtom(interviewProgressAtom);
   const mediaRecorder = useRef<MediaRecorder | null>(null);
   const audioChunks = useRef<Blob[]>([]);
   const recordingTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -92,12 +94,12 @@ export function useTranscriptionRecorder({
         }
       };
 
-      mediaRecorder.current.start(100); // Collect data every second
+      mediaRecorder.current.start(100); // collect data every 100ms
 
-      recordingTimeout.current = setTimeout(
-        () => stopRecording(),
-        MAX_RECORDING_TIME,
-      );
+      recordingTimeout.current = setTimeout(() => {
+        stopRecording();
+        showWarningToast("Recording time limit reached (10 minutes).");
+      }, MAX_RECORDING_TIME);
     } catch (err) {
       console.error("Error starting recording:", err);
       setError(
@@ -182,6 +184,7 @@ export function useTranscriptionRecorder({
             ...interviewSession!,
             status: "COMPLETED",
           });
+          setInterviewProgress("completed");
         }
 
         setResponses(

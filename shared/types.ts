@@ -29,6 +29,7 @@ export interface TranscribeAndGenerateNextQuestionRequest {
   currentTime: string;
   currentQuestionNumber: number;
   targetInterviewLength?: number; // in minutes
+  boostedKeywords: BoostedKeyword[];
 }
 
 export class TranscribeAndGenerateNextQuestionRequestBuilder {
@@ -47,6 +48,7 @@ export class TranscribeAndGenerateNextQuestionRequestBuilder {
     currentTime: "",
     currentQuestionNumber: 0,
     targetInterviewLength: undefined,
+    boostedKeywords: [],
   };
 
   setNextBaseQuestionId(val: string): this {
@@ -127,6 +129,11 @@ export class TranscribeAndGenerateNextQuestionRequestBuilder {
     return this;
   }
 
+  setBoostedKeywords(val: BoostedKeyword[]): this {
+    this.data.boostedKeywords = val;
+    return this;
+  }
+
   build(): TranscribeAndGenerateNextQuestionRequest {
     return this.data;
   }
@@ -183,4 +190,10 @@ export interface CurrentQuestionMetadataRequest {
   followUpQuestionId?: string; // Add this line
   fileExtension: string;
   contentType: string;
+}
+
+export interface BoostedKeyword {
+  id: string;
+  keyword: string;
+  definition: string | null;
 }

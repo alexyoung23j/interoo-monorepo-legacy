@@ -20,7 +20,7 @@ export async function GET(
     });
 
     return NextResponse.redirect(
-      `${origin}/study/${shortenedStudyId}/session/${interviewSession.id}?stage=intro`,
+      `${origin}/study/${shortenedStudyId}/session/${interviewSession.id}`,
     );
   } catch (error) {
     if (error instanceof TRPCError) {

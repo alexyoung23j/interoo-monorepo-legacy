@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   FollowUpQuestion,
   InterviewSession,
@@ -21,15 +21,26 @@ import {
   currentQuestionAtom,
   followUpQuestionsAtom,
   initializeInterviewAtom,
+  interviewProgressAtom,
   interviewSessionAtom,
   mediaAccessAtom,
   responsesAtom,
 } from "@/app/state/atoms";
 import { useAtom } from "jotai";
 import { CurrentQuestionType } from "@shared/types";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Stage } from "./setup/InterviewStartContent";
 
 interface InterviewLayoutProps {
-  study: Study & { questions: Question[] };
+  study: Study & {
+    questions: Question[];
+    boostedKeywords: {
+      id: string;
+      keyword: string;
+      definition: string | null;
+      studyId: string;
+    }[];
+  };
   organization: Organization;
   backgroundLight: boolean;
   fetchedInterviewSession: {
@@ -47,8 +58,17 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
   backgroundLight,
   fetchedInterviewSession,
 }) => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const params = useParams();
   const interviewSessionId = params.interviewSessionId as string;
+
+  // Local state for initial stages
+  const [localStage, setLocalStage] = useState<Stage>(Stage.Intro);
+
+  const [interviewProgress, setInterviewProgress] = useAtom(
+    interviewProgressAtom,
+  );
 
   const [currentQuestion, setCurrentQuestion] = useAtom(currentQuestionAtom);
   const [responses, setResponses] = useAtom(responsesAtom);
@@ -65,10 +85,24 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
       if (fetchedInterviewSession) {
         const { interviewSession: fetchedSession, calculatedCurrentQuestion } =
           fetchedInterviewSession;
-        setInterviewSession(fetchedSession);
+
+        // Batch state updates
+        setInterviewSession((prev) => ({
+          ...prev,
+          ...fetchedSession,
+          responses: fetchedSession.responses ?? [],
+          FollowUpQuestions: fetchedSession.FollowUpQuestions ?? [],
+        }));
         setCurrentQuestion(calculatedCurrentQuestion ?? null);
-        setResponses(fetchedSession.responses ?? []);
-        setFollowUpQuestions(fetchedSession.FollowUpQuestions ?? []);
+
+        console.log("Fetched interview session status:", fetchedSession.status);
+
+        // Update the progress based on the fetched session
+        if (fetchedSession.status === InterviewSessionStatus.IN_PROGRESS) {
+          updateProgress("in-progress");
+        } else if (fetchedSession.status === InterviewSessionStatus.COMPLETED) {
+          updateProgress("completed");
+        }
       }
 
       // Check media access permissions
@@ -105,6 +139,13 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
     setMediaAccess,
   ]);
 
+  const updateProgress = useCallback(
+    (progress: string) => {
+      setInterviewProgress(progress);
+    },
+    [setInterviewProgress],
+  );
+
   // Interview Phases
   const hasCurrentQuestion = currentQuestion !== null;
 
@@ -113,44 +154,38 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
       return <div>Loading...</div>;
     }
 
-    switch (interviewSession?.status) {
-      case InterviewSessionStatus.IN_PROGRESS:
-        return hasCurrentQuestion ? (
-          <InterviewPerformContent
-            organization={organization}
-            study={study}
-            interviewSessionRefetching={isLoading}
-          />
-        ) : null;
-      case InterviewSessionStatus.NOT_STARTED:
-        return (
-          <>
-            <InterviewStartContent organization={organization} study={study} />
-            <div className="h-20"></div>
-          </>
-        );
-      case InterviewSessionStatus.COMPLETED:
-        return (
-          <>
-            <InterviewFinishedContent
-              organization={organization}
-              study={study}
-              onFinish={() => {
-                // TODO: decide what comes here
-              }}
-            />
-            <div className="h-20"></div>
-          </>
-        );
-      default:
-        // TODO Some kind of error screen
-        return (
-          <>
-            <InterviewStartContent organization={organization} study={study} />
-            <div className="h-20"></div>
-          </>
-        );
+    if (interviewProgress === "in-progress") {
+      return hasCurrentQuestion ? (
+        <InterviewPerformContent
+          organization={organization}
+          study={study}
+          interviewSessionRefetching={isLoading}
+        />
+      ) : null;
     }
+
+    if (interviewProgress === "completed") {
+      return (
+        <InterviewFinishedContent
+          organization={organization}
+          study={study}
+          onFinish={() => {
+            // TODO: decide what comes here
+          }}
+        />
+      );
+    }
+
+    // Use local state for initial stages
+    return (
+      <InterviewStartContent
+        organization={organization}
+        study={study}
+        stage={localStage}
+        setStage={setLocalStage}
+        onStartInterview={() => updateProgress("in-progress")}
+      />
+    );
   };
 
   return (
@@ -159,8 +194,8 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
       backgroundLight={backgroundLight}
       isLoading={isLoading}
     >
-      <>
-        <div className="flex w-full md:p-8">
+      <div className="flex h-full w-full flex-col">
+        <div className="w-full p-4 md:p-8">
           <InterviewProgressBar
             interviewSession={
               interviewSession as InterviewSession & {
@@ -168,17 +203,11 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
               }
             }
             study={study}
-            onNext={() => {
-              console.log("chill");
-            }}
-            onBack={() => {
-              console.log("chill");
-            }}
-            calculatedCurrentQuestion={currentQuestion!}
+            calculatedCurrentQuestion={currentQuestion}
           />
         </div>
-        {renderInterviewContent()}
-      </>
+        <div className="flex-1 overflow-y-auto">{renderInterviewContent()}</div>
+      </div>
     </InterviewScreenLayout>
   );
 };

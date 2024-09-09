@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Study,
   InterviewSession,
@@ -6,8 +6,6 @@ import {
   FollowUpQuestion,
   InterviewSessionStatus,
 } from "@shared/generated/client";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight } from "@phosphor-icons/react";
 import { CurrentQuestionType } from "@shared/types";
 
 interface InterviewProgressBarProps {
@@ -15,89 +13,100 @@ interface InterviewProgressBarProps {
   interviewSession: InterviewSession & {
     FollowUpQuestions: FollowUpQuestion[];
   };
-  onBack: () => void;
-  onNext: () => void;
-  calculatedCurrentQuestion: CurrentQuestionType;
+  calculatedCurrentQuestion: CurrentQuestionType | null;
 }
 
 export function InterviewProgressBar({
   study,
   interviewSession,
-  onBack,
-  onNext,
   calculatedCurrentQuestion,
 }: InterviewProgressBarProps) {
-  const calculateProgress = useCallback(() => {
-    const totalMainQuestions = study.questions.length;
-    const mainQuestionInterval = 100 / (totalMainQuestions + 1);
+  const [progress, setProgress] = useState(0);
 
-    if ("parentQuestionId" in calculatedCurrentQuestion) {
-      // It's a follow-up question
-      const parentQuestion = study.questions.find(
-        (q) => q.id === calculatedCurrentQuestion.parentQuestionId,
-      );
-      if (!parentQuestion) {
-        console.error("Parent question not found");
-        return 0;
-      }
-      const baseProgress =
-        (parentQuestion.questionOrder + 1) * mainQuestionInterval;
-      const followUpProgress = mainQuestionInterval * 0.2; // 20% of the interval for follow-ups TODO: this should technically use the follow-up levels to decide the sub-interval here
-      return Math.min(baseProgress + followUpProgress, 100);
-    } else {
-      // It's a main question
-      const currentQuestion = study.questions.find(
-        (q) => q.id === calculatedCurrentQuestion.id,
-      );
-      if (!currentQuestion) {
-        console.error("Current question not found");
-        return 0;
-      }
-      return Math.min(
-        (currentQuestion.questionOrder + 1) * mainQuestionInterval,
-        100,
-      );
-    }
-  }, [study.questions, calculatedCurrentQuestion]);
+  useEffect(() => {
+    const calculateProgress = () => {
+      if (!calculatedCurrentQuestion) return 0;
 
-  const progress = (() => {
-    switch (interviewSession?.status) {
+      const totalBaseQuestions = study.questions.length;
+      const assumedFollowUpsPerQuestion = 3;
+      const totalSteps = totalBaseQuestions * (1 + assumedFollowUpsPerQuestion);
+
+      let completedSteps = 0;
+
+      const currentBaseQuestionIndex =
+        "parentQuestionId" in calculatedCurrentQuestion
+          ? study.questions.findIndex(
+              (q) => q.id === calculatedCurrentQuestion.parentQuestionId,
+            )
+          : study.questions.findIndex(
+              (q) => q.id === calculatedCurrentQuestion.id,
+            );
+
+      if (currentBaseQuestionIndex !== -1) {
+        // Count completed base questions
+        completedSteps =
+          currentBaseQuestionIndex * (1 + assumedFollowUpsPerQuestion);
+
+        if ("parentQuestionId" in calculatedCurrentQuestion) {
+          // It's a follow-up question
+          const followUpsForCurrentBase =
+            interviewSession.FollowUpQuestions.filter(
+              (fq) =>
+                fq.parentQuestionId ===
+                calculatedCurrentQuestion.parentQuestionId,
+            );
+          const currentFollowUpIndex = followUpsForCurrentBase.findIndex(
+            (fq) => fq.id === calculatedCurrentQuestion.id,
+          );
+
+          // Calculate progress for follow-ups
+          const baseQuestionProgress = 1 / (1 + assumedFollowUpsPerQuestion);
+          const followUpProgress =
+            (1 - baseQuestionProgress) / (assumedFollowUpsPerQuestion + 1);
+
+          completedSteps += 1; // Count the base question
+          completedSteps += (currentFollowUpIndex + 1) * followUpProgress;
+        } else {
+          // It's a base question
+          completedSteps += 1; // Count the base question itself
+        }
+      }
+
+      const calculatedProgress = (completedSteps / totalSteps) * 100;
+      return Math.min(Math.max(calculatedProgress, 0), 99.9); // Ensure progress is between 0 and 99.9
+    };
+
+    const newProgress = calculateProgress();
+    setProgress(newProgress);
+  }, [
+    study.questions,
+    calculatedCurrentQuestion,
+    interviewSession.FollowUpQuestions,
+  ]);
+
+  const getProgressWidth = () => {
+    switch (interviewSession.status) {
       case InterviewSessionStatus.NOT_STARTED:
-        return 5;
+        return "0%";
       case InterviewSessionStatus.IN_PROGRESS:
-        return calculatedCurrentQuestion ? calculateProgress() : 0;
+        return `${progress}%`;
       case InterviewSessionStatus.COMPLETED:
-        return 100;
+        return "100%";
       default:
-        return 0;
+        return "0%";
     }
-  })();
+  };
+
+  console.log("Progress width:", getProgressWidth());
 
   return (
     <div className="flex w-full items-center justify-between gap-6">
-      {/* <Button
-        onClick={onBack}
-        variant="icon"
-        className="hidden border border-black md:flex"
-        size="icon"
-      >
-        <ArrowLeft className="size-4 text-[#7A7A7A]" weight="bold" />
-      </Button> */}
-
-      <div className="relative h-2 w-full rounded-[1px] bg-[#EAE8E8] md:rounded-[2px]">
+      <div className="relative h-2 w-full rounded-[1px] bg-theme-100 md:rounded-[2px]">
         <div
-          className="absolute h-full rounded-[1px] bg-org-secondary md:rounded-[2px]"
-          style={{ width: `${progress}%` }}
+          className="absolute h-full rounded-[1px] bg-theme-600 transition-all duration-500 ease-in-out md:rounded-[2px]"
+          style={{ width: getProgressWidth() }}
         ></div>
       </div>
-      {/* <Button
-        onClick={onBack}
-        variant="icon"
-        className="hidden border border-black md:flex"
-        size="icon"
-      >
-        <ArrowRight className="size-4 text-[#7A7A7A]" weight="bold" />
-      </Button> */}
     </div>
   );
 }

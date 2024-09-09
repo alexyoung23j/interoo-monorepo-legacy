@@ -18,9 +18,18 @@ import {
 } from "@/app/state/atoms";
 import { useAtom, useSetAtom } from "jotai";
 import InterviewBottomBarWithVideo from "./interviewBottomBarWithVideo";
+import { useTtsAudio } from "@/hooks/useTtsAudio";
 
 interface InterviewPerformContentProps {
-  study: Study & { questions: Question[] };
+  study: Study & {
+    questions: Question[];
+    boostedKeywords: {
+      id: string;
+      keyword: string;
+      definition: string | null;
+      studyId: string;
+    }[];
+  };
   organization: Organization;
   interviewSessionRefetching: boolean;
 }
@@ -40,6 +49,15 @@ export const InterviewPerformContent: React.FC<
     null,
   );
   const [awaitingOptionResponse, setAwaitingOptionResponse] = useState(false);
+
+  const {
+    isLoading: ttsAudioLoading,
+    isPlaying: ttsAudioPlaying,
+    error: ttsAudioError,
+    playAudio: playTtsAudio,
+    stopAudio: stopTtsAudio,
+    audioDuration: ttsAudioDuration,
+  } = useTtsAudio();
 
   // Update the response to include the user's selection- or create in case user answers
   // before we get a chance to get the signed url and create the response on the backend
@@ -185,14 +203,19 @@ export const InterviewPerformContent: React.FC<
   }, [currentQuestion, setCurrentResponseAndUploadUrl]);
 
   return (
-    <>
-      <DisplayQuestion
-        organization={organization}
-        multipleChoiceOptionSelectionId={multipleChoiceOptionSelectionId}
-        setMultipleChoiceOptionSelectionId={setMultipleChoiceOptionSelectionId}
-        rangeSelectionValue={rangeSelectionValue}
-        setRangeSelectionValue={setRangeSelectionValue}
-      />
+    <div className="flex h-full flex-col">
+      <div className="flex-1 overflow-y-auto">
+        <DisplayQuestion
+          key={currentQuestion?.id}
+          organization={organization}
+          multipleChoiceOptionSelectionId={multipleChoiceOptionSelectionId}
+          setMultipleChoiceOptionSelectionId={
+            setMultipleChoiceOptionSelectionId
+          }
+          rangeSelectionValue={rangeSelectionValue}
+          setRangeSelectionValue={setRangeSelectionValue}
+        />
+      </div>
       <InterviewBottomBarWithVideo
         organization={organization}
         study={study}
@@ -202,7 +225,9 @@ export const InterviewPerformContent: React.FC<
         awaitingOptionResponse={awaitingOptionResponse}
         interviewSessionRefetching={interviewSessionRefetching}
         handleSubmitRangeResponse={handleSubmitRangeResponse}
+        playTtsAudio={playTtsAudio}
+        stopTtsAudio={stopTtsAudio}
       />
-    </>
+    </div>
   );
 };
