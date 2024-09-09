@@ -28,7 +28,7 @@ const WebcamPreview: React.FC = () => {
   }, []);
 
   return (
-    <div className="h-[20vw] max-h-[120px] min-h-[80px] w-[26.67vw] min-w-[106px] max-w-[160px] overflow-hidden rounded-lg shadow-lg md:h-24 md:w-32">
+    <div className="h-[30vw] max-h-[120px] min-h-[80px] w-[18vw] max-w-[160px] overflow-hidden rounded-lg shadow-lg md:h-24 md:w-32">
       <video
         ref={videoRef}
         autoPlay

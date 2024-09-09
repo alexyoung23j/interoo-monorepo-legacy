@@ -337,32 +337,17 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
   return (
     <div className="bg-theme-off-white flex w-full flex-col items-center justify-between p-4 md:flex-row md:px-2 md:py-0">
       {/* Mobile layout */}
-      <div className="flex w-full flex-col items-center md:hidden">
+      <div className="relative flex w-full flex-col items-center md:hidden">
+        {showWebcamPreview && (
+          <div className="absolute bottom-1 left-1">
+            <WebcamPreview />
+          </div>
+        )}
         <div className="flex w-full items-center justify-center space-x-9">
           <div className="flex flex-col items-center gap-2">
-            {showWebcamPreview && (
-              <div>
-                <WebcamPreview />
-              </div>
-            )}
             {renderOpenEndedButton()}
           </div>
         </div>
-        {/* <div className="flex items-center justify-center">
-          <Switch
-            className="data-[state=checked]:bg-org-secondary"
-            checked={audioOn}
-            onCheckedChange={(checked) => {
-              if (!checked) {
-                stopTtsAudio();
-              }
-              setAudioOn(checked);
-            }}
-          />
-          <div className="text-theme-600 ml-2 text-sm">
-            {audioOn ? "Sound On" : "Sound Off"}
-          </div>
-        </div> */}
       </div>
 
       {/* Desktop layout */}
