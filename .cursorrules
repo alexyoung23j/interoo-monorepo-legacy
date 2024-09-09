@@ -12,5 +12,7 @@ theme-800: #28424E
 theme-900: #1E3038
 theme-off-white: #FDFCFD
 
+Generally, if text is dark, it should be using theme-900, and if text is white it should use theme-off-white.
+
 
 When you write components, always explicitly use flexbox styling (with tailwind)

@@ -25,7 +25,7 @@ export default function SettingsPageComponent({
     setIsGeneratingLink(true);
     try {
       const link = await createInvite.mutateAsync({
-        organizationId: org?.id as string,
+        organizationId: org!.id,
       });
       setInviteLink(`${window.location.origin}/invite/${link.token}`);
       setIsGeneratingLink(false);
