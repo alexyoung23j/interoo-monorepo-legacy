@@ -100,10 +100,10 @@ export function InterviewProgressBar({
   console.log("Progress width:", getProgressWidth());
 
   return (
-    <div className="flex w-full items-center justify-between gap-6">
-      <div className="relative h-2 w-full rounded-[1px] bg-theme-100 md:rounded-[2px]">
+    <div className="flex w-full items-center justify-between gap-6 md:mb-8">
+      <div className="bg-theme-100 relative h-2 w-full rounded-[1px] md:rounded-[2px]">
         <div
-          className="absolute h-full rounded-[1px] bg-theme-600 transition-all duration-500 ease-in-out md:rounded-[2px]"
+          className="bg-theme-600 absolute h-full rounded-[1px] transition-all duration-500 ease-in-out md:rounded-[2px]"
           style={{ width: getProgressWidth() }}
         ></div>
       </div>

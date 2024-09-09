@@ -195,7 +195,7 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
       isLoading={isLoading}
     >
       <div className="flex h-full w-full flex-col">
-        <div className="w-full p-4 md:p-8">
+        <div className="w-full md:p-4">
           <InterviewProgressBar
             interviewSession={
               interviewSession as InterviewSession & {

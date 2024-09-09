@@ -34,8 +34,8 @@ export const DisplayQuestion: React.FC<DisplayQuestionProps> = ({
   const [currentQuestion] = useAtom(currentQuestionAtom);
 
   return (
-    <div className="mx-auto flex h-full w-full flex-col items-center justify-center gap-4 p-4 md:py-0">
-      <div className="animate-fade-in text-center text-lg md:text-2xl">
+    <div className="mx-auto flex h-full w-full flex-col items-center gap-4 p-4 pt-8 md:justify-center md:py-0">
+      <div className="animate-fade-in text-center text-lg md:px-20 md:text-2xl">
         {currentQuestion?.title}
       </div>
       {currentQuestion?.questionType === "RANGE" && (

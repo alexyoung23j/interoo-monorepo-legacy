@@ -193,11 +193,11 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
   };
 
   const renderOpenEndedButton = () => (
-    <div className="flex flex-col items-center">
+    <div className="md: flex flex-col items-center py-1">
       <Button
         variant="unstyled"
         className={cx(
-          "h-14 w-14 rounded-sm border border-black border-opacity-25",
+          "mt-5 h-14 w-14 rounded-sm border border-black border-opacity-25",
           isFullyRecording || uploadStatus !== "idle"
             ? "bg-org-secondary hover:opacity-80"
             : "bg-neutral-100 hover:bg-neutral-300",
@@ -335,20 +335,20 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
   const showWebcamPreview = study.videoEnabled && isOpenEndedQuestion;
 
   return (
-    <div className="mb-2 flex w-full flex-col items-center justify-between bg-theme-off-white p-4 md:flex-row md:p-8">
+    <div className="bg-theme-off-white flex w-full flex-col items-center justify-between p-4 md:flex-row md:px-2 md:py-0">
       {/* Mobile layout */}
       <div className="flex w-full flex-col items-center md:hidden">
-        <div className="mb-10 flex w-full items-center justify-center space-x-9">
-          <div className="flex flex-col items-center">
+        <div className="flex w-full items-center justify-center space-x-9">
+          <div className="flex flex-col items-center gap-2">
+            {showWebcamPreview && (
+              <div>
+                <WebcamPreview />
+              </div>
+            )}
             {renderOpenEndedButton()}
           </div>
-          {showWebcamPreview && (
-            <div>
-              <WebcamPreview />
-            </div>
-          )}
         </div>
-        <div className="flex items-center justify-center">
+        {/* <div className="flex items-center justify-center">
           <Switch
             className="data-[state=checked]:bg-org-secondary"
             checked={audioOn}
@@ -359,14 +359,14 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
               setAudioOn(checked);
             }}
           />
-          <div className="ml-2 text-sm text-theme-600">
+          <div className="text-theme-600 ml-2 text-sm">
             {audioOn ? "Sound On" : "Sound Off"}
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Desktop layout */}
-      <div className="hidden w-full md:flex md:flex-row md:items-center md:justify-between">
+      <div className="hidden w-full md:flex md:flex-row md:items-center md:justify-between md:px-2">
         <div className="flex gap-2 md:w-1/3">
           <Switch
             className="data-[state=checked]:bg-org-secondary"
@@ -378,7 +378,7 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
               setAudioOn(checked);
             }}
           />
-          <div className="text-sm text-theme-600">
+          <div className="text-theme-600 text-sm">
             {audioOn ? "Sound On" : "Sound Off"}
           </div>
         </div>
