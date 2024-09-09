@@ -122,6 +122,9 @@ export const studiesRouter = createTRPCRouter({
 
       return result;
     }),
+  /**
+   * Used to update study metadata
+   */
   updateStudy: privateProcedure
     .input(
       z.object({
