@@ -17,6 +17,7 @@ export const currentResponseAndUploadUrlAtom =
     uploadSessionUrl: null,
   });
 
+export const interviewProgressAtom = atom<string>("not-started");
 // Only read from this atom for data about the interviewSession that isn't going to change during the performance
 export const interviewSessionAtom = atom<
   | (InterviewSession & {

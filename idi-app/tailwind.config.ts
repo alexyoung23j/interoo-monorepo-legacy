@@ -90,7 +90,7 @@ const config = {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "fade-in": "fade-in 1s ease-out",
+        "fade-in": "fade-in 2s ease-out",
       },
       boxShadow: {
         standard: "0px 4px 12px 0px rgba(0, 0, 0, 0.06)",

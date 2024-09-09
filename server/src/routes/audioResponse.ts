@@ -5,6 +5,7 @@ import { transcribeAudio, decideFollowUpPromptIfNecessary, getFollowUpLevelRange
 import { prisma } from "..";
 import { TranscribeAndGenerateNextQuestionRequestBuilder, ConversationState, TranscribeAndGenerateNextQuestionResponse, TranscribeAndGenerateNextQuestionRequest, BoostedKeyword } from "../../../shared/types";
 import { createRequestLogger } from '../utils/logger';
+import { InterviewSessionStatus } from "@shared/generated/client";
 
 const router = Router();
 
@@ -115,6 +116,16 @@ const handleNoFollowUp = async (
       data: { 
         currentQuestionId: requestData.nextBaseQuestionId,
         lastUpdatedTime: new Date().toISOString()
+      }
+    });
+  }
+
+  // Mark interview as completed if there are no more questions to ask
+  if (!requestData.nextBaseQuestionId) {
+    await prisma.interviewSession.update({
+      where: { id: requestData.interviewSessionId },
+      data: {
+        status: InterviewSessionStatus.COMPLETED
       }
     });
   }

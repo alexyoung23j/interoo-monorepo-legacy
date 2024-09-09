@@ -51,7 +51,7 @@ export const InterviewScreenLayout: React.FC<InterviewScreenLayoutProps> = ({
         </div>
       </div>
 
-      <div className="flex w-full flex-1 items-center justify-center overflow-y-auto rounded-[2px] border-2 border-org-secondary bg-off-white p-4 md:p-8">
+      <div className="flex w-full flex-1 items-center justify-center overflow-y-auto rounded-[4px] border-2 border-org-secondary bg-off-white p-4 md:p-8">
         {isLoading ? (
           <div className="flex items-center justify-center">
             <ClipLoader

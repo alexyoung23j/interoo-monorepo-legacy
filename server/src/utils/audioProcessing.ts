@@ -143,7 +143,7 @@ const buildDecideFollowUpPrompt = () => {
     If the participant doesn't seem to be clearly answering the last question posed, you can try asking it again in slightly different
     language or encouraging them to elaborate. 
 
-    Be friendly, and lightly complimentary of the particpant and their insights. Don't overdo it, or be cringey.
+    Be friendly, but don't overdo it, or be cringey.
     Do not repeat profanity back to the particpant whatsoever.
     
     Your response should be in YAML format with the following structure:
@@ -192,7 +192,7 @@ const buildAlwaysFollowUpPrompt = () => {
     Your question should always be directly related to something said in the conversation history. Use the participants feedback 
     to dictate your next question. When possible, focus on honing in on surprising insights.
 
-    Be friendly, and lightly complimentary of the particpant and their insights. Don't overdo it, or be cringey.
+    Be friendly, but don't overdo it, or be cringey.
     Do not repeat profanity back to the particpant whatsoever.
     
     Your response should be in YAML format with the following structure:

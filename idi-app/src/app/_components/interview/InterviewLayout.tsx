@@ -21,6 +21,7 @@ import {
   currentQuestionAtom,
   followUpQuestionsAtom,
   initializeInterviewAtom,
+  interviewProgressAtom,
   interviewSessionAtom,
   mediaAccessAtom,
   responsesAtom,
@@ -65,10 +66,9 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
   // Local state for initial stages
   const [localStage, setLocalStage] = useState<Stage>(Stage.Intro);
 
-  // URL param for interview progress
-  const [interviewProgress, setInterviewProgress] = useState(() => {
-    return searchParams.get("progress") || "not-started";
-  });
+  const [interviewProgress, setInterviewProgress] = useAtom(
+    interviewProgressAtom,
+  );
 
   const [currentQuestion, setCurrentQuestion] = useAtom(currentQuestionAtom);
   const [responses, setResponses] = useAtom(responsesAtom);
@@ -142,11 +142,8 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
   const updateProgress = useCallback(
     (progress: string) => {
       setInterviewProgress(progress);
-      const params = new URLSearchParams(searchParams.toString());
-      params.set("progress", progress);
-      router.push(`?${params.toString()}`, { scroll: false });
     },
-    [searchParams, router],
+    [setInterviewProgress],
   );
 
   // Interview Phases

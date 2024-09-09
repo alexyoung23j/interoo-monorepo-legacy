@@ -9,10 +9,12 @@ import {
   interviewSessionAtom,
   responsesAtom,
   currentResponseAndUploadUrlAtom,
+  interviewProgressAtom,
 } from "../app/state/atoms";
 import { useAtom } from "jotai";
 import type { FollowUpQuestion, Question } from "@shared/generated/client";
 import { showWarningToast } from "@/app/utils/toastUtils";
+import { useRouter, useSearchParams } from "next/navigation";
 
 interface AudioRecorderHook {
   isRecording: boolean;
@@ -45,7 +47,7 @@ export function useTranscriptionRecorder({
   );
   const [noAnswerDetected, setNoAnswerDetected] = useState(false);
   const [interviewSession, setInterviewSession] = useAtom(interviewSessionAtom);
-
+  const [_, setInterviewProgress] = useAtom(interviewProgressAtom);
   const mediaRecorder = useRef<MediaRecorder | null>(null);
   const audioChunks = useRef<Blob[]>([]);
   const recordingTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -182,6 +184,7 @@ export function useTranscriptionRecorder({
             ...interviewSession!,
             status: "COMPLETED",
           });
+          setInterviewProgress("completed");
         }
 
         setResponses(
