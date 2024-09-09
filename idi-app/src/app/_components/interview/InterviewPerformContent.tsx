@@ -203,15 +203,19 @@ export const InterviewPerformContent: React.FC<
   }, [currentQuestion, setCurrentResponseAndUploadUrl]);
 
   return (
-    <>
-      <DisplayQuestion
-        organization={organization}
-        multipleChoiceOptionSelectionId={multipleChoiceOptionSelectionId}
-        setMultipleChoiceOptionSelectionId={setMultipleChoiceOptionSelectionId}
-        rangeSelectionValue={rangeSelectionValue}
-        setRangeSelectionValue={setRangeSelectionValue}
-        ttsAudioDuration={ttsAudioDuration}
-      />
+    <div className="flex h-full flex-col">
+      <div className="flex-1 overflow-y-auto">
+        <DisplayQuestion
+          key={currentQuestion?.id}
+          organization={organization}
+          multipleChoiceOptionSelectionId={multipleChoiceOptionSelectionId}
+          setMultipleChoiceOptionSelectionId={
+            setMultipleChoiceOptionSelectionId
+          }
+          rangeSelectionValue={rangeSelectionValue}
+          setRangeSelectionValue={setRangeSelectionValue}
+        />
+      </div>
       <InterviewBottomBarWithVideo
         organization={organization}
         study={study}
@@ -224,6 +228,6 @@ export const InterviewPerformContent: React.FC<
         playTtsAudio={playTtsAudio}
         stopTtsAudio={stopTtsAudio}
       />
-    </>
+    </div>
   );
 };

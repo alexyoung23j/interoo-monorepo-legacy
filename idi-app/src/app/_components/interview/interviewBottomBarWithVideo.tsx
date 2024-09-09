@@ -193,7 +193,7 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
   };
 
   const renderOpenEndedButton = () => (
-    <>
+    <div className="flex flex-col items-center">
       <Button
         variant="unstyled"
         className={cx(
@@ -242,10 +242,10 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
           <Microphone className="size-8 text-neutral-600" />
         )}
       </Button>
-      <div className="mt-3 text-sm text-neutral-500 md:absolute md:-bottom-[1.75rem]">
+      <div className="mt-2 text-sm leading-4 text-neutral-500">
         {getButtonText()}
       </div>
-    </>
+    </div>
   );
 
   const renderMultipleChoiceButton = () => (
@@ -335,10 +335,20 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
   const showWebcamPreview = study.videoEnabled && isOpenEndedQuestion;
 
   return (
-    <div className="mb-2 flex w-full flex-col items-center justify-between bg-off-white p-4 md:flex-row md:p-8">
+    <div className="mb-2 flex w-full flex-col items-center justify-between bg-theme-off-white p-4 md:flex-row md:p-8">
       {/* Mobile layout */}
       <div className="flex w-full flex-col items-center md:hidden">
-        <div className="mb-4 flex w-full items-center justify-center">
+        <div className="mb-10 flex w-full items-center justify-center space-x-9">
+          <div className="flex flex-col items-center">
+            {renderOpenEndedButton()}
+          </div>
+          {showWebcamPreview && (
+            <div>
+              <WebcamPreview />
+            </div>
+          )}
+        </div>
+        <div className="flex items-center justify-center">
           <Switch
             className="data-[state=checked]:bg-org-secondary"
             checked={audioOn}
@@ -350,15 +360,9 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
             }}
           />
           <div className="ml-2 text-sm text-theme-600">
-            {audioOn ? "Sound on" : "Sound off"}
+            {audioOn ? "Sound On" : "Sound Off"}
           </div>
         </div>
-        {showWebcamPreview && (
-          <div className="mb-4">
-            <WebcamPreview />
-          </div>
-        )}
-        {renderQuestionTypeButton()}
       </div>
 
       {/* Desktop layout */}
@@ -375,11 +379,11 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
             }}
           />
           <div className="text-sm text-theme-600">
-            {audioOn ? "Sound on" : "Sound off"}
+            {audioOn ? "Sound On" : "Sound Off"}
           </div>
         </div>
 
-        <div className="relative flex flex-col items-center md:w-1/3">
+        <div className="flex items-stretch justify-center md:w-1/3">
           {renderQuestionTypeButton()}
         </div>
 

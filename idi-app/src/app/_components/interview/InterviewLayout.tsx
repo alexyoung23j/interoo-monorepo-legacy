@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   FollowUpQuestion,
   InterviewSession,
@@ -85,10 +85,17 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
       if (fetchedInterviewSession) {
         const { interviewSession: fetchedSession, calculatedCurrentQuestion } =
           fetchedInterviewSession;
-        setInterviewSession(fetchedSession);
+
+        // Batch state updates
+        setInterviewSession((prev) => ({
+          ...prev,
+          ...fetchedSession,
+          responses: fetchedSession.responses ?? [],
+          FollowUpQuestions: fetchedSession.FollowUpQuestions ?? [],
+        }));
         setCurrentQuestion(calculatedCurrentQuestion ?? null);
-        setResponses(fetchedSession.responses ?? []);
-        setFollowUpQuestions(fetchedSession.FollowUpQuestions ?? []);
+
+        console.log("Fetched interview session status:", fetchedSession.status);
 
         // Update the progress based on the fetched session
         if (fetchedSession.status === InterviewSessionStatus.IN_PROGRESS) {
@@ -132,12 +139,15 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
     setMediaAccess,
   ]);
 
-  const updateProgress = (progress: string) => {
-    setInterviewProgress(progress);
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("progress", progress);
-    router.push(`?${params.toString()}`, { scroll: false });
-  };
+  const updateProgress = useCallback(
+    (progress: string) => {
+      setInterviewProgress(progress);
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("progress", progress);
+      router.push(`?${params.toString()}`, { scroll: false });
+    },
+    [searchParams, router],
+  );
 
   // Interview Phases
   const hasCurrentQuestion = currentQuestion !== null;
@@ -187,8 +197,8 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
       backgroundLight={backgroundLight}
       isLoading={isLoading}
     >
-      <>
-        <div className="flex w-full md:p-8">
+      <div className="flex h-full w-full flex-col">
+        <div className="w-full p-4 md:p-8">
           <InterviewProgressBar
             interviewSession={
               interviewSession as InterviewSession & {
@@ -196,11 +206,11 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
               }
             }
             study={study}
-            calculatedCurrentQuestion={currentQuestion!}
+            calculatedCurrentQuestion={currentQuestion}
           />
         </div>
-        {renderInterviewContent()}
-      </>
+        <div className="flex-1 overflow-y-auto">{renderInterviewContent()}</div>
+      </div>
     </InterviewScreenLayout>
   );
 };

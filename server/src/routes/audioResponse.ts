@@ -60,7 +60,7 @@ const extractRequestData = (req: Request): Promise<{ audioBuffer: Buffer, reques
           break;
         case 'boostedKeywords':
           try {
-            const boostedKeywords = JSON.parse(val) as BoostedKeyword[];
+            const boostedKeywords = val ? JSON.parse(val) as BoostedKeyword[] : [];
             requestDataBuilder.setBoostedKeywords(boostedKeywords);
           } catch (error) {
             console.warn('Failed to parse boostedKeywords, setting as empty array', error);

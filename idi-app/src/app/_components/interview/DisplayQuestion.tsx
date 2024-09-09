@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import type {
   Question,
   VideoStimulusType,
@@ -21,7 +21,6 @@ interface DisplayQuestionProps {
   setMultipleChoiceOptionSelectionId: (id: string | null) => void;
   rangeSelectionValue: number | null;
   setRangeSelectionValue: (value: number | null) => void;
-  ttsAudioDuration: number | null;
 }
 
 export const DisplayQuestion: React.FC<DisplayQuestionProps> = ({
@@ -30,42 +29,14 @@ export const DisplayQuestion: React.FC<DisplayQuestionProps> = ({
   setMultipleChoiceOptionSelectionId,
   rangeSelectionValue,
   setRangeSelectionValue,
-  ttsAudioDuration,
 }) => {
   const isBackgroundLight = isColorLight(organization.secondaryColor ?? "");
   const [currentQuestion] = useAtom(currentQuestionAtom);
 
-  const words = useMemo(
-    () => currentQuestion?.title?.split(" ") || [],
-    [currentQuestion?.title],
-  );
-
-  // Calculate delay for each word based on ttsAudioDuration
-  const getDelay = (index: number) => {
-    if (ttsAudioDuration === null) return "0ms";
-    const totalWords = words.length;
-    return `${(index / totalWords) * ttsAudioDuration}ms`;
-  };
-
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center gap-4 p-4 md:w-[70%] md:py-0">
-      <div className="text-center text-lg md:text-2xl">
-        {ttsAudioDuration === null ? (
-          <span className="animate-fade-in">{currentQuestion?.title}</span>
-        ) : (
-          words.map((word, index) => (
-            <span
-              key={index}
-              className="animate-fade-in inline-block opacity-0"
-              style={{
-                animationDelay: getDelay(index),
-                animationFillMode: "forwards",
-              }}
-            >
-              {word}{" "}
-            </span>
-          ))
-        )}
+    <div className="mx-auto flex h-full w-full flex-col items-center justify-center gap-4 p-4 md:py-0">
+      <div className="animate-fade-in text-center text-lg md:text-2xl">
+        {currentQuestion?.title}
       </div>
       {currentQuestion?.questionType === "RANGE" && (
         <RangeChoiceSelect
@@ -78,32 +49,40 @@ export const DisplayQuestion: React.FC<DisplayQuestionProps> = ({
           setRangeSelectionValue={setRangeSelectionValue}
         />
       )}
-      <div className="flex flex-col items-center justify-center gap-8 md:flex-row md:items-center md:justify-center">
-        <ImageStimuli
-          imageStimuli={(currentQuestion as BaseQuestionExtended)?.imageStimuli}
-        />
-        <VideoStimuli
-          videoStimuli={(currentQuestion as BaseQuestionExtended)?.videoStimuli}
-        />
-        <WebsiteStimuli
-          websiteStimuli={
-            (currentQuestion as BaseQuestionExtended).websiteStimuli
-          }
-          isBackgroundLight={isBackgroundLight}
-        />
-        {currentQuestion?.questionType === "MULTIPLE_CHOICE" && (
-          <MultipleChoiceSelect
-            question={currentQuestion as BaseQuestionExtended}
-            organization={organization}
-            isBackgroundLight={isBackgroundLight}
-            multipleChoiceOptionSelectionId={
-              multipleChoiceOptionSelectionId ?? ""
-            }
-            setMultipleChoiceOptionSelectionId={
-              setMultipleChoiceOptionSelectionId
+      <div className="w-full max-w-md">
+        {" "}
+        {/* Add this wrapper */}
+        <div className="flex flex-col items-center justify-center gap-8">
+          <ImageStimuli
+            imageStimuli={
+              (currentQuestion as BaseQuestionExtended)?.imageStimuli
             }
           />
-        )}
+          <VideoStimuli
+            videoStimuli={
+              (currentQuestion as BaseQuestionExtended)?.videoStimuli
+            }
+          />
+          <WebsiteStimuli
+            websiteStimuli={
+              (currentQuestion as BaseQuestionExtended).websiteStimuli
+            }
+            isBackgroundLight={isBackgroundLight}
+          />
+          {currentQuestion?.questionType === "MULTIPLE_CHOICE" && (
+            <MultipleChoiceSelect
+              question={currentQuestion as BaseQuestionExtended}
+              organization={organization}
+              isBackgroundLight={isBackgroundLight}
+              multipleChoiceOptionSelectionId={
+                multipleChoiceOptionSelectionId ?? ""
+              }
+              setMultipleChoiceOptionSelectionId={
+                setMultipleChoiceOptionSelectionId
+              }
+            />
+          )}
+        </div>
       </div>
     </div>
   );

@@ -1,11 +1,10 @@
-import React, { useCallback, useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Study,
   InterviewSession,
   Question,
   FollowUpQuestion,
   InterviewSessionStatus,
-  FollowUpLevel,
 } from "@shared/generated/client";
 import { CurrentQuestionType } from "@shared/types";
 
@@ -14,7 +13,7 @@ interface InterviewProgressBarProps {
   interviewSession: InterviewSession & {
     FollowUpQuestions: FollowUpQuestion[];
   };
-  calculatedCurrentQuestion: CurrentQuestionType;
+  calculatedCurrentQuestion: CurrentQuestionType | null;
 }
 
 export function InterviewProgressBar({
@@ -22,88 +21,73 @@ export function InterviewProgressBar({
   interviewSession,
   calculatedCurrentQuestion,
 }: InterviewProgressBarProps) {
-  const estimateFollowUpsForQuestion = (question: Question): number => {
-    switch (question.followUpLevel) {
-      case FollowUpLevel.AUTOMATIC:
-        return 3;
-      case FollowUpLevel.SURFACE:
-        return 2;
-      case FollowUpLevel.LIGHT:
-        return 3;
-      case FollowUpLevel.DEEP:
-        return 5;
-      default:
-        return 3;
-    }
-  };
+  const [progress, setProgress] = useState(0);
 
-  const calculateProgress = useCallback(() => {
-    const totalBaseQuestions = study.questions.length;
-    const completedFollowUps = interviewSession.FollowUpQuestions.length;
+  useEffect(() => {
+    const calculateProgress = () => {
+      if (!calculatedCurrentQuestion) return 0;
 
-    let currentBaseQuestionIndex = 0;
-    let completedQuestionsCount = 0;
+      const totalBaseQuestions = study.questions.length;
+      const assumedFollowUpsPerQuestion = 3;
+      const totalSteps = totalBaseQuestions * (1 + assumedFollowUpsPerQuestion);
 
-    if ("parentQuestionId" in calculatedCurrentQuestion) {
-      // It's a follow-up question
-      const parentQuestion = study.questions.find(
-        (q) => q.id === calculatedCurrentQuestion.parentQuestionId,
-      );
-      if (parentQuestion) {
-        currentBaseQuestionIndex = parentQuestion.questionOrder;
-        completedQuestionsCount = currentBaseQuestionIndex + 1; // Include the current base question
+      let completedSteps = 0;
 
-        // Add completed follow-ups for the current base question
-        const currentFollowUps = interviewSession.FollowUpQuestions.filter(
-          (fq) => fq.parentQuestionId === parentQuestion.id,
-        );
-        const currentFollowUpIndex = currentFollowUps.findIndex(
-          (fq) => fq.id === calculatedCurrentQuestion.id,
-        );
-        completedQuestionsCount += currentFollowUpIndex + 1; // Include the current follow-up
+      const currentBaseQuestionIndex =
+        "parentQuestionId" in calculatedCurrentQuestion
+          ? study.questions.findIndex(
+              (q) => q.id === calculatedCurrentQuestion.parentQuestionId,
+            )
+          : study.questions.findIndex(
+              (q) => q.id === calculatedCurrentQuestion.id,
+            );
+
+      if (currentBaseQuestionIndex !== -1) {
+        // Count completed base questions
+        completedSteps =
+          currentBaseQuestionIndex * (1 + assumedFollowUpsPerQuestion);
+
+        if ("parentQuestionId" in calculatedCurrentQuestion) {
+          // It's a follow-up question
+          const followUpsForCurrentBase =
+            interviewSession.FollowUpQuestions.filter(
+              (fq) =>
+                fq.parentQuestionId ===
+                calculatedCurrentQuestion.parentQuestionId,
+            );
+          const currentFollowUpIndex = followUpsForCurrentBase.findIndex(
+            (fq) => fq.id === calculatedCurrentQuestion.id,
+          );
+
+          // Calculate progress for follow-ups
+          const baseQuestionProgress = 1 / (1 + assumedFollowUpsPerQuestion);
+          const followUpProgress =
+            (1 - baseQuestionProgress) / (assumedFollowUpsPerQuestion + 1);
+
+          completedSteps += 1; // Count the base question
+          completedSteps += (currentFollowUpIndex + 1) * followUpProgress;
+        } else {
+          // It's a base question
+          completedSteps += 1; // Count the base question itself
+        }
       }
-    } else {
-      // It's a base question
-      const currentQuestion = study.questions.find(
-        (q) => q.id === calculatedCurrentQuestion.id,
-      );
-      if (currentQuestion) {
-        currentBaseQuestionIndex = currentQuestion.questionOrder;
-        completedQuestionsCount = currentBaseQuestionIndex; // Don't include the current question yet
-      }
-    }
 
-    // Estimate total questions including follow-ups
-    const estimatedRemainingFollowUps = study.questions
-      .slice(currentBaseQuestionIndex)
-      .reduce(
-        (sum, question) => sum + estimateFollowUpsForQuestion(question),
-        0,
-      );
+      const calculatedProgress = (completedSteps / totalSteps) * 100;
+      return Math.min(Math.max(calculatedProgress, 0), 99.9); // Ensure progress is between 0 and 99.9
+    };
 
-    const totalEstimatedQuestions =
-      totalBaseQuestions + completedFollowUps + estimatedRemainingFollowUps;
-
-    return Math.min(
-      (completedQuestionsCount / totalEstimatedQuestions) * 100,
-      100,
-    );
+    const newProgress = calculateProgress();
+    setProgress(newProgress);
   }, [
     study.questions,
     calculatedCurrentQuestion,
     interviewSession.FollowUpQuestions,
   ]);
 
-  const [progress, setProgress] = useState(0);
-
-  useEffect(() => {
-    setProgress(calculateProgress());
-  }, [calculateProgress]);
-
   const getProgressWidth = () => {
     switch (interviewSession.status) {
       case InterviewSessionStatus.NOT_STARTED:
-        return "5%";
+        return "0%";
       case InterviewSessionStatus.IN_PROGRESS:
         return `${progress}%`;
       case InterviewSessionStatus.COMPLETED:
@@ -112,6 +96,8 @@ export function InterviewProgressBar({
         return "0%";
     }
   };
+
+  console.log("Progress width:", getProgressWidth());
 
   return (
     <div className="flex w-full items-center justify-between gap-6">
