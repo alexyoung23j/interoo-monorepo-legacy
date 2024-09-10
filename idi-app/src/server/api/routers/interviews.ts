@@ -19,6 +19,11 @@ export const interviewsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { shortenedStudyId, testMode } = input;
 
+      console.log("Creating interview session:", {
+        shortenedStudyId,
+        testMode,
+      });
+
       const study = await ctx.db.study.findUnique({
         where: {
           shortID: shortenedStudyId,
@@ -44,7 +49,8 @@ export const interviewsRouter = createTRPCRouter({
         });
       }
 
-      console.log();
+      console.log("Study interview count:", study._count.interviews);
+      console.log("Study max responses:", study.maxResponses);
 
       if (study.maxResponses && study._count.interviews >= study.maxResponses) {
         throw new TRPCError({
