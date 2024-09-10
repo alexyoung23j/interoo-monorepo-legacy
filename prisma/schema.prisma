@@ -216,6 +216,7 @@ model InterviewSession {
   lastUpdatedTime   DateTime?
   status            InterviewSessionStatus @default(NOT_STARTED)
   currentQuestionId String?
+  testMode          Boolean                @default(false)
   study             Study                  @relation(fields: [studyId], references: [id])
   CurrentQuestion   Question?              @relation(fields: [currentQuestionId], references: [id])
   responses         Response[]
