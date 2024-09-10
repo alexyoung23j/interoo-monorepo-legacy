@@ -29,40 +29,35 @@ export function useChunkedMediaUploader() {
     async (isLastChunk = false) => {
       const uploadUrl = currentResponseAndUploadUrl.uploadSessionUrl;
 
-      console.log("uploadNextChunk called", {
-        uploadSessionUrl: uploadUrl,
-        bufferSize: buffer.current.size,
-        isUploading: isUploading.current,
-        uploadComplete: uploadComplete.current,
-      });
-
       if (
         !uploadUrl ||
         buffer.current.size === 0 ||
         isUploading.current ||
         uploadComplete.current
       ) {
-        console.log("uploadNextChunk returning early", {
-          reason: !uploadUrl
-            ? "No upload URL"
-            : buffer.current.size === 0
-              ? "Empty buffer"
-              : isUploading.current
-                ? "Already uploading"
-                : "Upload complete",
-        });
+        const reason = !uploadUrl
+          ? "No upload URL"
+          : buffer.current.size === 0
+            ? "Empty buffer"
+            : uploadComplete.current
+              ? "Upload complete"
+              : null; // This corresponds to "Already uploading"
+
+        if (reason) {
+          console.log("uploadNextChunk returning early", { reason });
+        }
         return;
       }
 
-      isUploading.current = true;
-      const chunkSize = Math.min(CHUNK_SIZE, buffer.current.size);
-      const chunk = buffer.current.slice(0, chunkSize);
-
-      const start = uploadedSize.current;
-      const end = start + chunk.size - 1;
-      const total = isLastChunk ? totalSize.current.toString() : "*";
-
       try {
+        isUploading.current = true;
+        const chunkSize = Math.min(CHUNK_SIZE, buffer.current.size);
+        const chunk = buffer.current.slice(0, chunkSize);
+
+        const start = uploadedSize.current;
+        const end = start + chunk.size - 1;
+        const total = isLastChunk ? totalSize.current.toString() : "*";
+
         console.log(`Uploading chunk: bytes ${start}-${end}/${total}`);
         const response = await fetch(uploadUrl, {
           method: "PUT",
@@ -190,62 +185,66 @@ export function useChunkedMediaUploader() {
   );
 
   const stopRecording = useCallback(async () => {
+    console.debug("Stopping recording");
     if (recordingTimeout.current) {
       clearTimeout(recordingTimeout.current);
     }
+
     if (mediaRecorder.current && mediaRecorder.current.state !== "inactive") {
       return new Promise<void>((resolve, reject) => {
         if (mediaRecorder.current) {
           const timeoutId = setTimeout(() => {
-            console.log(
-              "Video recording timed out after 7 seconds. Recording lost.",
+            console.debug(
+              "Video recording stop process timed out after 18 seconds",
             );
-            setError("Recording timed out. Please try again.");
-            reject(new Error("Recording timed out"));
-          }, UPLOAD_TIMEOUT);
+            reject(new Error("Recording stop process timed out"));
+          }, 18000);
+
+          const poorConnectionTimeoutId = setTimeout(() => {
+            showWarningToast(
+              "Your internet connection seems slow. Consider relocating for better upload speed.",
+            );
+          }, 8000);
 
           mediaRecorder.current.onstop = async () => {
             setIsRecording(false);
-            console.log("Recording stopped, uploading final chunks...");
+            console.debug(
+              "Recording stopped, waiting for any in-progress uploads to complete...",
+            );
 
-            let retryCount = 0;
-            const maxRetries = 5;
+            // Wait for any in-progress uploads to complete
+            while (isUploading.current) {
+              await new Promise((resolve) => setTimeout(resolve, 100));
+            }
+
+            console.debug("Uploading final chunks...");
 
             try {
               while (buffer.current.size > 0 && !uploadComplete.current) {
-                try {
-                  const uploadResult = await uploadNextChunk(true);
-                  if (uploadResult) {
-                    break; // Upload is complete
-                  }
-                  // If uploadResult is false, continue uploading next chunk
-                } catch (error) {
-                  console.error("Error uploading chunk:", error);
-                  retryCount++;
-                  if (retryCount >= maxRetries) {
-                    console.error(
-                      "Max retries reached. Upload may be incomplete.",
-                    );
-                    setError("Failed to upload all chunks. Please try again.");
-                    throw error;
-                  }
-                  console.log(`Retry attempt ${retryCount} of ${maxRetries}`);
-                  await new Promise((r) => setTimeout(r, 1000)); // Wait 1 second before retrying
-                }
+                const uploadResult = await uploadNextChunk(true);
+                if (uploadResult) break;
               }
 
-              if (uploadComplete.current) {
-                console.log("All chunks uploaded successfully.");
-              }
-
-              clearTimeout(timeoutId);
-              resolve();
+              console.debug("Final upload complete");
             } catch (error) {
-              clearTimeout(timeoutId);
-              reject(new Error(String(error)));
+              console.debug("Error during final upload:", error);
+              setError("Failed to upload all chunks. Please try again.");
             }
+
+            // Reset states
+            isUploading.current = false;
+            buffer.current = new Blob([], { type: buffer.current.type });
+            uploadedSize.current = 0;
+            totalSize.current = 0;
+            uploadComplete.current = false;
+
+            clearTimeout(timeoutId);
+            clearTimeout(poorConnectionTimeoutId);
+            resolve();
           };
+
           mediaRecorder.current.stop();
+          console.debug("Requested media recorder to stop");
         } else {
           resolve();
         }
