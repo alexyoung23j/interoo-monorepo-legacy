@@ -10,9 +10,19 @@ import { FollowUpQuestion, Question } from "@shared/generated/client";
 
 export const interviewsRouter = createTRPCRouter({
   createInterviewSession: publicProcedure
-    .input(z.object({ shortenedStudyId: z.string() }))
+    .input(
+      z.object({
+        shortenedStudyId: z.string(),
+        testMode: z.boolean().optional().default(false),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
-      const { shortenedStudyId } = input;
+      const { shortenedStudyId, testMode } = input;
+
+      console.log("Creating interview session:", {
+        shortenedStudyId,
+        testMode,
+      });
 
       const study = await ctx.db.study.findUnique({
         where: {
@@ -20,7 +30,14 @@ export const interviewsRouter = createTRPCRouter({
         },
         include: {
           _count: {
-            select: { interviews: { where: { status: "COMPLETED" } } },
+            select: {
+              interviews: {
+                where: {
+                  status: "COMPLETED",
+                  testMode: false,
+                },
+              },
+            },
           },
         },
       });
@@ -32,7 +49,8 @@ export const interviewsRouter = createTRPCRouter({
         });
       }
 
-      console.log();
+      console.log("Study interview count:", study._count.interviews);
+      console.log("Study max responses:", study.maxResponses);
 
       if (study.maxResponses && study._count.interviews >= study.maxResponses) {
         throw new TRPCError({
@@ -45,6 +63,7 @@ export const interviewsRouter = createTRPCRouter({
         data: {
           studyId: study.id,
           startTime: new Date().toISOString(),
+          testMode,
         },
       });
 

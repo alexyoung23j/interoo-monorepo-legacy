@@ -8,6 +8,7 @@ export async function GET(
 ) {
   const shortenedStudyId = params.shortenedStudyId;
   const requestUrl = new URL(request.url);
+  const testMode = requestUrl.searchParams.get("testMode") === "true";
 
   // Attempt to get the host from headers
   const host = request.headers.get("host") ?? requestUrl.host;
@@ -17,6 +18,7 @@ export async function GET(
   try {
     const interviewSession = await api.interviews.createInterviewSession({
       shortenedStudyId,
+      testMode,
     });
 
     return NextResponse.redirect(

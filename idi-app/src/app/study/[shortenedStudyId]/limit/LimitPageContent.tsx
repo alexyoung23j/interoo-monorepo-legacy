@@ -21,7 +21,7 @@ export default function LimitPageContent({
       <div className="flex h-full items-center justify-center">
         <h1 className="w-[70%] text-center text-2xl text-neutral-500">
           This study has reached the maximum number of interviews. Please reach
-          out to your coordinator for resolution.
+          out to your administrator for resolution.
         </h1>
       </div>
     </InterviewScreenLayout>
