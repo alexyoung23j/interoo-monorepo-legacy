@@ -66,7 +66,7 @@ export const DisplayQuestion: React.FC<DisplayQuestionProps> = ({
           />
         )}
       </div>
-      <div className="w-full max-w-[90%] md:h-full">
+      <div className="w-full max-w-[90%]">
         <div className="flex w-full flex-col items-center justify-center gap-8 md:h-full">
           <ImageStimuli
             imageStimuli={
