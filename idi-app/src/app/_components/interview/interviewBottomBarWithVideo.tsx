@@ -202,6 +202,8 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
         variant="unstyled"
         className={cx(
           "h-14 w-14 rounded-sm border border-black border-opacity-25 md:mt-5",
+          "transition-all duration-500 ease-in-out",
+          "active:scale-85 active:bg-theme-200",
           isFullyRecording || uploadStatus !== "idle"
             ? "bg-org-secondary hover:opacity-80"
             : "bg-neutral-100 hover:bg-neutral-300",
@@ -341,11 +343,11 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
   const showWebcamPreview = study.videoEnabled;
 
   return (
-    <div className="bg-theme-off-white flex w-full flex-col items-center justify-between p-4 md:flex-row md:px-2 md:py-0">
+    <div className="flex w-full flex-col items-center justify-between bg-theme-off-white p-4 md:flex-row md:px-2 md:py-0">
       {/* Mobile layout */}
       <div className="relative flex w-full flex-row items-end md:hidden">
         <div className="mb-5 flex w-1/3 items-center justify-center gap-2 pr-2">
-          <div className="text-theme-600 text-sm">
+          <div className="text-sm text-theme-600">
             {audioOn ? (
               <SpeakerSimpleHigh
                 size={24}
@@ -392,7 +394,7 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
               setAudioOn(checked);
             }}
           />
-          <div className="text-theme-600 text-sm">
+          <div className="text-sm text-theme-600">
             {audioOn ? "Sound On" : "Sound Off"}
           </div>
         </div>
