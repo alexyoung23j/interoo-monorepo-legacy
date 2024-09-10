@@ -34,7 +34,7 @@ export const DisplayQuestion: React.FC<DisplayQuestionProps> = ({
   const [currentQuestion] = useAtom(currentQuestionAtom);
 
   return (
-    <div className="mx-auto flex h-full w-full flex-col items-center gap-4 p-4 pt-8 md:justify-center md:py-0">
+    <div className="gap flex h-full w-full flex-col items-center justify-center p-4 pt-8 md:py-0">
       <div className="animate-fade-in text-center text-lg md:px-20 md:text-2xl">
         {currentQuestion?.title}
       </div>
@@ -49,9 +49,20 @@ export const DisplayQuestion: React.FC<DisplayQuestionProps> = ({
           setRangeSelectionValue={setRangeSelectionValue}
         />
       )}
+      {currentQuestion?.questionType === "MULTIPLE_CHOICE" && (
+        <MultipleChoiceSelect
+          question={currentQuestion as BaseQuestionExtended}
+          organization={organization}
+          isBackgroundLight={isBackgroundLight}
+          multipleChoiceOptionSelectionId={
+            multipleChoiceOptionSelectionId ?? ""
+          }
+          setMultipleChoiceOptionSelectionId={
+            setMultipleChoiceOptionSelectionId
+          }
+        />
+      )}
       <div className="w-full max-w-md">
-        {" "}
-        {/* Add this wrapper */}
         <div className="flex flex-col items-center justify-center gap-8">
           <ImageStimuli
             imageStimuli={
@@ -69,19 +80,6 @@ export const DisplayQuestion: React.FC<DisplayQuestionProps> = ({
             }
             isBackgroundLight={isBackgroundLight}
           />
-          {currentQuestion?.questionType === "MULTIPLE_CHOICE" && (
-            <MultipleChoiceSelect
-              question={currentQuestion as BaseQuestionExtended}
-              organization={organization}
-              isBackgroundLight={isBackgroundLight}
-              multipleChoiceOptionSelectionId={
-                multipleChoiceOptionSelectionId ?? ""
-              }
-              setMultipleChoiceOptionSelectionId={
-                setMultipleChoiceOptionSelectionId
-              }
-            />
-          )}
         </div>
       </div>
     </div>

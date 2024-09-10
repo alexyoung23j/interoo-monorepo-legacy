@@ -322,8 +322,6 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
     </div>
   );
 
-  console.log({ currentQuestion });
-
   const renderQuestionTypeButton = () => {
     switch (currentQuestion?.questionType) {
       case QuestionType.OPEN_ENDED:
@@ -340,30 +338,17 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
   const isOpenEndedQuestion =
     currentQuestion?.questionType === QuestionType.OPEN_ENDED;
 
-  const showWebcamPreview = study.videoEnabled && isOpenEndedQuestion;
+  const showWebcamPreview = study.videoEnabled;
 
   return (
     <div className="bg-theme-off-white flex w-full flex-col items-center justify-between p-4 md:flex-row md:px-2 md:py-0">
       {/* Mobile layout */}
       <div className="relative flex w-full flex-row items-end md:hidden">
-        <div className="flex w-1/3 items-center justify-start">
-          {showWebcamPreview && (
-            <div className="">
-              <WebcamPreview />
-            </div>
-          )}
-        </div>
-
-        <div className="flex w-1/3 items-center justify-center space-x-9">
-          <div className="flex flex-col items-center gap-2">
-            {renderQuestionTypeButton()}
-          </div>
-        </div>
-        <div className="mb-4 flex w-1/3 items-center justify-center gap-2 pl-8">
+        <div className="mb-5 flex w-1/3 items-center justify-center gap-2 pr-2">
           <div className="text-theme-600 text-sm">
             {audioOn ? (
               <SpeakerSimpleHigh
-                size={26}
+                size={24}
                 className="text-theme-500"
                 onClick={() => {
                   setAudioOn(false);
@@ -372,12 +357,25 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
               />
             ) : (
               <SpeakerSimpleSlash
-                size={26}
+                size={24}
                 className="text-theme-300"
                 onClick={() => setAudioOn(true)}
               />
             )}
           </div>
+        </div>
+
+        <div className="flex w-1/3 items-center justify-center space-x-9">
+          <div className="flex flex-col items-center gap-2">
+            {renderQuestionTypeButton()}
+          </div>
+        </div>
+        <div className="flex w-1/3 items-center justify-end">
+          {showWebcamPreview && (
+            <div className="">
+              <WebcamPreview />
+            </div>
+          )}
         </div>
       </div>
 
