@@ -202,6 +202,8 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
         variant="unstyled"
         className={cx(
           "h-14 w-14 rounded-sm border border-black border-opacity-25 md:mt-5",
+          "transition-all duration-500 ease-in-out",
+          "active:scale-85 active:bg-theme-200",
           isFullyRecording || uploadStatus !== "idle"
             ? "bg-org-secondary hover:opacity-80"
             : "bg-neutral-100 hover:bg-neutral-300",
