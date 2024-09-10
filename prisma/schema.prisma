@@ -94,7 +94,7 @@ enum VideoStimulusType {
 
 model ImageStimulus {
   id         String   @id @default(uuid())
-  bucketUrl  String   @unique
+  bucketUrl  String
   title      String?
   altText    String?
   questionId String
@@ -103,7 +103,7 @@ model ImageStimulus {
 
 model VideoStimulus {
   id         String            @id @default(uuid())
-  url        String            @unique
+  url        String
   type       VideoStimulusType
   title      String?
   questionId String
@@ -112,7 +112,7 @@ model VideoStimulus {
 
 model WebsiteStimulus {
   id         String   @id @default(uuid())
-  websiteUrl String   @unique
+  websiteUrl String
   title      String?
   questionId String
   question   Question @relation(fields: [questionId], references: [id])

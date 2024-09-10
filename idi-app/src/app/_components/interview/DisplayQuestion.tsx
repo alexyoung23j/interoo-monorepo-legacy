@@ -33,54 +33,50 @@ export const DisplayQuestion: React.FC<DisplayQuestionProps> = ({
   const isBackgroundLight = isColorLight(organization.secondaryColor ?? "");
   const [currentQuestion] = useAtom(currentQuestionAtom);
 
+  console.log({ currentQuestion });
+
   return (
-    <div className="gap flex h-full w-full flex-col items-center justify-center p-4 pt-8 md:py-0">
+    <div className="flex h-full w-full flex-col items-center justify-center gap-4 p-4 pt-8 md:py-0">
       <div className="animate-fade-in text-center text-lg md:px-20 md:text-2xl">
         {currentQuestion?.title}
       </div>
-      {currentQuestion?.questionType === "RANGE" && (
-        <RangeChoiceSelect
-          question={currentQuestion as BaseQuestionExtended}
-          organization={organization}
-          isBackgroundLight={isBackgroundLight}
-          lowLabel={"least"}
-          highLabel={"most"}
-          rangeSelectionValue={rangeSelectionValue}
-          setRangeSelectionValue={setRangeSelectionValue}
-        />
-      )}
-      {currentQuestion?.questionType === "MULTIPLE_CHOICE" && (
-        <MultipleChoiceSelect
-          question={currentQuestion as BaseQuestionExtended}
-          organization={organization}
-          isBackgroundLight={isBackgroundLight}
-          multipleChoiceOptionSelectionId={
-            multipleChoiceOptionSelectionId ?? ""
-          }
-          setMultipleChoiceOptionSelectionId={
-            setMultipleChoiceOptionSelectionId
-          }
-        />
-      )}
-      <div className="w-full max-w-md">
-        <div className="flex flex-col items-center justify-center gap-8">
-          <ImageStimuli
-            imageStimuli={
-              (currentQuestion as BaseQuestionExtended)?.imageStimuli
-            }
-          />
-          <VideoStimuli
-            videoStimuli={
-              (currentQuestion as BaseQuestionExtended)?.videoStimuli
-            }
-          />
-          <WebsiteStimuli
-            websiteStimuli={
-              (currentQuestion as BaseQuestionExtended).websiteStimuli
-            }
+      <div className="scrollbar-thin flex w-full overflow-y-auto">
+        {currentQuestion?.questionType === "RANGE" && (
+          <RangeChoiceSelect
+            question={currentQuestion as BaseQuestionExtended}
+            organization={organization}
             isBackgroundLight={isBackgroundLight}
+            lowLabel={"least"}
+            highLabel={"most"}
+            rangeSelectionValue={rangeSelectionValue}
+            setRangeSelectionValue={setRangeSelectionValue}
           />
-        </div>
+        )}
+        {currentQuestion?.questionType === "MULTIPLE_CHOICE" && (
+          <MultipleChoiceSelect
+            question={currentQuestion as BaseQuestionExtended}
+            organization={organization}
+            isBackgroundLight={isBackgroundLight}
+            multipleChoiceOptionSelectionId={
+              multipleChoiceOptionSelectionId ?? ""
+            }
+            setMultipleChoiceOptionSelectionId={
+              setMultipleChoiceOptionSelectionId
+            }
+          />
+        )}
+        <ImageStimuli
+          imageStimuli={(currentQuestion as BaseQuestionExtended)?.imageStimuli}
+        />
+        <VideoStimuli
+          videoStimuli={(currentQuestion as BaseQuestionExtended)?.videoStimuli}
+        />
+        <WebsiteStimuli
+          websiteStimuli={
+            (currentQuestion as BaseQuestionExtended).websiteStimuli
+          }
+          isBackgroundLight={isBackgroundLight}
+        />
       </div>
     </div>
   );

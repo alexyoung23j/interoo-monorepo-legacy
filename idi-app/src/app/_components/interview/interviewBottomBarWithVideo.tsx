@@ -248,7 +248,7 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
           <Microphone className="size-8 text-neutral-600" />
         )}
       </Button>
-      <div className="text-sm leading-4 text-neutral-500 md:mt-2">
+      <div className="text-sm leading-4 text-neutral-500">
         {getButtonText()}
       </div>
     </div>
@@ -343,11 +343,11 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
   const showWebcamPreview = study.videoEnabled;
 
   return (
-    <div className="flex w-full flex-col items-center justify-between bg-theme-off-white p-4 md:flex-row md:px-2 md:py-0">
+    <div className="bg-theme-off-white flex w-full flex-col items-center justify-between p-4 md:flex-row md:px-2 md:py-0">
       {/* Mobile layout */}
       <div className="relative flex w-full flex-row items-end md:hidden">
-        <div className="mb-5 flex w-1/3 items-center justify-center gap-2 pr-2">
-          <div className="text-sm text-theme-600">
+        <div className="mb-5 flex w-1/3 items-center justify-center gap-2">
+          <div className="text-theme-600 text-sm">
             {audioOn ? (
               <SpeakerSimpleHigh
                 size={24}
@@ -394,7 +394,7 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
               setAudioOn(checked);
             }}
           />
-          <div className="text-sm text-theme-600">
+          <div className="text-theme-600 text-sm">
             {audioOn ? "Sound On" : "Sound Off"}
           </div>
         </div>
