@@ -1,7 +1,13 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { ArrowRight, Microphone } from "@phosphor-icons/react";
+import {
+  ArrowRight,
+  Microphone,
+  SpeakerSimpleHigh,
+  SpeakerSimpleSlash,
+  SpeakerX,
+} from "@phosphor-icons/react";
 import { SyncLoader, ClipLoader } from "react-spinners";
 import { api } from "@/trpc/react";
 import { cx } from "@/tailwind/styling";
@@ -186,18 +192,16 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
       case "failed":
         return "Upload failed. Click to retry.";
       default:
-        return isFullyRecording
-          ? "Click when finished speaking"
-          : "Click to speak";
+        return isFullyRecording ? "Click to finish" : "Click to speak";
     }
   };
 
   const renderOpenEndedButton = () => (
-    <div className="md: flex flex-col items-center py-1">
+    <div className="flex flex-col-reverse items-center gap-3 py-1 md:flex-col">
       <Button
         variant="unstyled"
         className={cx(
-          "mt-5 h-14 w-14 rounded-sm border border-black border-opacity-25",
+          "h-14 w-14 rounded-sm border border-black border-opacity-25 md:mt-5",
           isFullyRecording || uploadStatus !== "idle"
             ? "bg-org-secondary hover:opacity-80"
             : "bg-neutral-100 hover:bg-neutral-300",
@@ -242,21 +246,21 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
           <Microphone className="size-8 text-neutral-600" />
         )}
       </Button>
-      <div className="mt-2 text-sm leading-4 text-neutral-500">
+      <div className="text-sm leading-4 text-neutral-500 md:mt-2">
         {getButtonText()}
       </div>
     </div>
   );
 
   const renderMultipleChoiceButton = () => (
-    <>
+    <div className="flex flex-col-reverse items-center gap-3 py-1 md:flex-col">
       <Button
         variant="unstyled"
         className={cx(
-          "h-14 w-14 rounded-sm border border-black border-opacity-25 hover:bg-neutral-300",
+          "h-14 w-14 rounded-sm border border-black border-opacity-25 md:mt-5",
           multipleChoiceOptionSelectionId
-            ? "bg-org-secondary"
-            : "bg-neutral-100",
+            ? "bg-org-secondary hover:opacity-80"
+            : "bg-neutral-100 hover:bg-neutral-300",
         )}
         onClick={handleSubmitMultipleChoiceResponse}
       >
@@ -275,21 +279,23 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
           />
         )}
       </Button>
-      {!awaitingOptionResponse && multipleChoiceOptionSelectionId && (
-        <div className="mt-3 text-sm text-neutral-500 md:absolute md:-bottom-[1.75rem]">
-          Click to submit
-        </div>
-      )}
-    </>
+      <div className="text-sm leading-4 text-neutral-500 md:mt-2">
+        {!awaitingOptionResponse && multipleChoiceOptionSelectionId
+          ? "Click to submit"
+          : "Select an option"}
+      </div>
+    </div>
   );
 
   const renderRangeButton = () => (
-    <>
+    <div className="flex flex-col-reverse items-center gap-3 py-1 md:flex-col">
       <Button
         variant="unstyled"
         className={cx(
-          "h-14 w-14 rounded-sm border border-black border-opacity-25 hover:bg-neutral-300",
-          rangeSelectionValue !== null ? "bg-org-secondary" : "bg-neutral-100",
+          "h-14 w-14 rounded-sm border border-black border-opacity-25 md:mt-5",
+          rangeSelectionValue !== null
+            ? "bg-org-secondary hover:opacity-80"
+            : "bg-neutral-100 hover:bg-neutral-300",
         )}
         onClick={handleSubmitRangeResponse}
       >
@@ -308,13 +314,15 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
           />
         )}
       </Button>
-      {!awaitingOptionResponse && rangeSelectionValue !== null && (
-        <div className="mt-3 text-sm text-neutral-500 md:absolute md:-bottom-[1.75rem]">
-          Click to submit
-        </div>
-      )}
-    </>
+      <div className="text-sm leading-4 text-neutral-500 md:mt-2">
+        {!awaitingOptionResponse && rangeSelectionValue !== null
+          ? "Click to submit"
+          : "Select a value"}
+      </div>
+    </div>
   );
+
+  console.log({ currentQuestion });
 
   const renderQuestionTypeButton = () => {
     switch (currentQuestion?.questionType) {
@@ -337,15 +345,38 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
   return (
     <div className="bg-theme-off-white flex w-full flex-col items-center justify-between p-4 md:flex-row md:px-2 md:py-0">
       {/* Mobile layout */}
-      <div className="relative flex w-full flex-col items-center md:hidden">
-        {showWebcamPreview && (
-          <div className="absolute bottom-1 left-1">
-            <WebcamPreview />
-          </div>
-        )}
-        <div className="flex w-full items-center justify-center space-x-9">
+      <div className="relative flex w-full flex-row items-end md:hidden">
+        <div className="flex w-1/3 items-center justify-start">
+          {showWebcamPreview && (
+            <div className="">
+              <WebcamPreview />
+            </div>
+          )}
+        </div>
+
+        <div className="flex w-1/3 items-center justify-center space-x-9">
           <div className="flex flex-col items-center gap-2">
-            {renderOpenEndedButton()}
+            {renderQuestionTypeButton()}
+          </div>
+        </div>
+        <div className="mb-4 flex w-1/3 items-center justify-center gap-2 pl-8">
+          <div className="text-theme-600 text-sm">
+            {audioOn ? (
+              <SpeakerSimpleHigh
+                size={26}
+                className="text-theme-500"
+                onClick={() => {
+                  setAudioOn(false);
+                  stopTtsAudio();
+                }}
+              />
+            ) : (
+              <SpeakerSimpleSlash
+                size={26}
+                className="text-theme-300"
+                onClick={() => setAudioOn(true)}
+              />
+            )}
           </div>
         </div>
       </div>
