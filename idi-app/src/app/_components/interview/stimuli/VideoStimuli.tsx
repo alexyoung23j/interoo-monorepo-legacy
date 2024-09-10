@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { ArrowLeft, ArrowRight } from "@phosphor-icons/react";
 import { VideoStimulusType } from "@shared/generated/client";
+import { Button } from "@/components/ui/button";
 
 interface VideoStimuliProps {
   videoStimuli?: {
@@ -26,6 +27,7 @@ export const VideoStimuli: React.FC<VideoStimuliProps> = ({ videoStimuli }) => {
   const renderVideo = (
     video: NonNullable<VideoStimuliProps["videoStimuli"]>[number],
     index: number,
+    numVideos: number,
   ) => {
     const getYouTubeEmbedUrl = (url: string) => {
       const regex =
@@ -38,23 +40,17 @@ export const VideoStimuli: React.FC<VideoStimuliProps> = ({ videoStimuli }) => {
     return (
       <div
         key={index}
-        className="flex h-full w-full flex-col items-center justify-center"
+        className="flex h-full w-[60%] flex-col items-center justify-center"
       >
         {video.type === VideoStimulusType.UPLOADED ? (
-          <video
-            src={video.url}
-            className="flex h-full w-auto object-contain"
-            controls
-          />
+          <video src={video.url} className="aspect-video flex-grow" controls />
         ) : (
-          <div className="relative h-full w-auto md:min-h-[40vh]">
-            <iframe
-              src={getYouTubeEmbedUrl(video.url)}
-              className="aspect-video h-full w-auto"
-              allowFullScreen
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            />
-          </div>
+          <iframe
+            src={getYouTubeEmbedUrl(video.url)}
+            className="aspect-video flex-grow"
+            allowFullScreen
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          />
         )}
         {video.title && (
           <div className="text-theme-900 mt-1 text-center text-sm">
@@ -66,34 +62,47 @@ export const VideoStimuli: React.FC<VideoStimuliProps> = ({ videoStimuli }) => {
   };
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center gap-4 md:px-8">
+    <>
       {/* Large screen: show all videos */}
-      <div className="hidden h-full w-full items-center justify-center md:flex md:gap-4">
-        {videoStimuli.map((video, index) => renderVideo(video, index))}
+      <div className="hidden h-full min-h-[35vh] w-full items-center justify-center gap-4 md:flex">
+        {videoStimuli.length > 1 && (
+          <div onClick={handlePrev} className="cursor-pointer">
+            <ArrowLeft size={24} />
+          </div>
+        )}
+        {videoStimuli.map(
+          (video, index) =>
+            index === currentIndex &&
+            renderVideo(video, index, videoStimuli.length),
+        )}
+        {videoStimuli.length > 1 && (
+          <div onClick={handleNext} className="cursor-pointer">
+            <ArrowRight size={24} />
+          </div>
+        )}
       </div>
 
       {/* Small screen: show one video with navigation */}
-      <div className="flex w-full items-center justify-center gap-2 md:hidden">
-        {videoStimuli.length > 1 && (
-          <ArrowLeft
-            size={24}
-            onClick={handlePrev}
-            className="cursor-pointer"
-            weight="bold"
-          />
-        )}
+      <div className="flex w-full flex-col items-center justify-center gap-2 md:hidden">
         {videoStimuli.map(
-          (video, index) => index === currentIndex && renderVideo(video, index),
+          (video, index) =>
+            index === currentIndex &&
+            renderVideo(video, index, videoStimuli.length),
         )}
         {videoStimuli.length > 1 && (
-          <ArrowRight
-            size={24}
-            weight="bold"
-            onClick={handleNext}
-            className="cursor-pointer"
-          />
+          <div className="flex w-full items-center justify-center pt-10">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleNext}
+              className="flex gap-2"
+            >
+              Next Video
+              <ArrowRight size={16} />
+            </Button>
+          </div>
         )}
       </div>
-    </div>
+    </>
   );
 };

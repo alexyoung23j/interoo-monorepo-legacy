@@ -246,7 +246,7 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
           <Microphone className="size-8 text-neutral-600" />
         )}
       </Button>
-      <div className="text-sm leading-4 text-neutral-500 md:mt-2">
+      <div className="text-sm leading-4 text-neutral-500">
         {getButtonText()}
       </div>
     </div>

@@ -90,6 +90,7 @@ export const InterviewPerformContent: React.FC<
   const handleSubmitMultipleChoiceResponse = () => {
     if (!multipleChoiceOptionSelectionId || !currentQuestion) return;
     setAwaitingOptionResponse(true);
+    stopTtsAudio();
 
     const nextQuestion = getNextQuestion(currentQuestion as Question);
     const wasFinalQuestion = isLastQuestion(currentQuestion as Question);
@@ -131,6 +132,7 @@ export const InterviewPerformContent: React.FC<
   const handleSubmitRangeResponse = () => {
     if (!rangeSelectionValue || !currentQuestion) return;
     setAwaitingOptionResponse(true);
+    stopTtsAudio();
 
     const nextQuestion = getNextQuestion(currentQuestion as Question);
     const wasFinalQuestion = isLastQuestion(currentQuestion as Question);

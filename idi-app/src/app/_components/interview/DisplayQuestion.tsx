@@ -65,26 +65,18 @@ export const DisplayQuestion: React.FC<DisplayQuestionProps> = ({
             }
           />
         )}
-      </div>
-      <div className="w-full max-w-[90%]">
-        <div className="flex w-full flex-col items-center justify-center gap-8 md:h-full">
-          <ImageStimuli
-            imageStimuli={
-              (currentQuestion as BaseQuestionExtended)?.imageStimuli
-            }
-          />
-          <VideoStimuli
-            videoStimuli={
-              (currentQuestion as BaseQuestionExtended)?.videoStimuli
-            }
-          />
-          <WebsiteStimuli
-            websiteStimuli={
-              (currentQuestion as BaseQuestionExtended).websiteStimuli
-            }
-            isBackgroundLight={isBackgroundLight}
-          />
-        </div>
+        <ImageStimuli
+          imageStimuli={(currentQuestion as BaseQuestionExtended)?.imageStimuli}
+        />
+        <VideoStimuli
+          videoStimuli={(currentQuestion as BaseQuestionExtended)?.videoStimuli}
+        />
+        <WebsiteStimuli
+          websiteStimuli={
+            (currentQuestion as BaseQuestionExtended).websiteStimuli
+          }
+          isBackgroundLight={isBackgroundLight}
+        />
       </div>
     </div>
   );
