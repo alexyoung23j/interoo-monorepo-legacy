@@ -15,6 +15,7 @@ import {
   interviewSessionAtom,
   followUpQuestionsAtom,
   currentResponseAndUploadUrlAtom,
+  interviewProgressAtom,
 } from "@/app/state/atoms";
 import { useAtom, useSetAtom } from "jotai";
 import InterviewBottomBarWithVideo from "./interviewBottomBarWithVideo";
@@ -42,6 +43,7 @@ export const InterviewPerformContent: React.FC<
   const setCurrentResponseAndUploadUrl = useSetAtom(
     currentResponseAndUploadUrlAtom,
   );
+  const [_, setInterviewProgress] = useAtom(interviewProgressAtom);
 
   const [multipleChoiceOptionSelectionId, setMultipleChoiceOptionSelectionId] =
     useState<string | null>(null);
@@ -98,6 +100,8 @@ export const InterviewPerformContent: React.FC<
         ...prev!,
         status: "COMPLETED",
       }));
+      setInterviewProgress("completed");
+
       createOrUpdateMultipleChoiceResponse.mutate({
         multipleChoiceOptionSelectionId: multipleChoiceOptionSelectionId,
         interviewSessionId: interviewSession?.id ?? "",
@@ -138,6 +142,7 @@ export const InterviewPerformContent: React.FC<
         ...prev!,
         status: "COMPLETED",
       }));
+      setInterviewProgress("completed");
     }
 
     createOrUpdateRangeResponse.mutate({
@@ -204,7 +209,7 @@ export const InterviewPerformContent: React.FC<
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-hidden">
         <DisplayQuestion
           key={currentQuestion?.id}
           organization={organization}

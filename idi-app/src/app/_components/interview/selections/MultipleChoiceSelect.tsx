@@ -49,15 +49,15 @@ export const MultipleChoiceSelect: React.FC<MultipleChoiceSelectProps> = ({
   }
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-start gap-3">
+    <div className="scrollbar-thin flex h-max w-full flex-col items-center justify-center gap-3 overflow-y-auto p-1">
       <div className="text-sm text-black opacity-50">Select One</div>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:grid-rows-2">
+      <div className="flex flex-col gap-3">
         {question.multipleChoiceOptions.map((option) => (
           <Button
             key={option.id}
             variant="unstyled"
             className={cx(
-              "flex min-h-12 w-full max-w-md gap-3 rounded-[1px] border border-black border-opacity-50 text-black transition-colors",
+              "flex h-fit min-h-12 w-full max-w-md gap-3 text-wrap rounded-[1px] border border-black border-opacity-50 text-black transition-colors",
               {
                 "bg-[var(--button-bg)] hover:bg-[var(--button-hover-bg)]":
                   multipleChoiceOptionSelectionId !== option.id,
@@ -74,7 +74,9 @@ export const MultipleChoiceSelect: React.FC<MultipleChoiceSelectProps> = ({
               } as React.CSSProperties
             }
           >
-            <span className="flex-grow text-left">{option.optionText}</span>
+            <span className="flex-grow text-wrap text-left">
+              {option.optionText}
+            </span>
           </Button>
         ))}
       </div>

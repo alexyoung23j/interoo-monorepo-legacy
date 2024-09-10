@@ -159,6 +159,9 @@ export const interviewsRouter = createTRPCRouter({
           studyId: interviewSession.study.id,
           questionOrder: 0,
         },
+        include: {
+          multipleChoiceOptions: true,
+        },
       });
 
       if (!firstQuestion) {
