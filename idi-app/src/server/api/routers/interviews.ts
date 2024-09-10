@@ -10,9 +10,14 @@ import { FollowUpQuestion, Question } from "@shared/generated/client";
 
 export const interviewsRouter = createTRPCRouter({
   createInterviewSession: publicProcedure
-    .input(z.object({ shortenedStudyId: z.string() }))
+    .input(
+      z.object({
+        shortenedStudyId: z.string(),
+        testMode: z.boolean().optional().default(false),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
-      const { shortenedStudyId } = input;
+      const { shortenedStudyId, testMode } = input;
 
       const study = await ctx.db.study.findUnique({
         where: {
@@ -20,7 +25,14 @@ export const interviewsRouter = createTRPCRouter({
         },
         include: {
           _count: {
-            select: { interviews: { where: { status: "COMPLETED" } } },
+            select: {
+              interviews: {
+                where: {
+                  status: "COMPLETED",
+                  testMode: false,
+                },
+              },
+            },
           },
         },
       });
@@ -45,6 +57,7 @@ export const interviewsRouter = createTRPCRouter({
         data: {
           studyId: study.id,
           startTime: new Date().toISOString(),
+          testMode,
         },
       });
 

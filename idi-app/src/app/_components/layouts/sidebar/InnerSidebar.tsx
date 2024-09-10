@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname, useParams } from "next/navigation";
+import { usePathname, useParams, useRouter } from "next/navigation";
 import { INNER_SIDEBAR_ROUTES } from "./sidebarRoutes";
 import SidebarSection from "./SidebarSection";
 import { api } from "@/trpc/react";
@@ -24,19 +24,29 @@ const resolveCurrentRoute = (pathname: string) => {
 };
 
 function TopContent({ study }: { study: Study }) {
+  const router = useRouter();
   const pathname = usePathname();
   const currentRoute = pathname.split("/").pop() ?? "";
 
+  const handleTestStudy = () => {
+    if (study?.shortID) {
+      router.push(`/study/${study.shortID}?testMode=true`);
+    }
+  };
+
   return (
-    <div className="bg-theme-50 flex w-full items-center justify-between p-4">
-      <h2 className="text-theme-900 text-xl font-semibold">
+    <div className="flex w-full items-center justify-between bg-theme-50 p-4">
+      <h2 className="text-xl font-semibold text-theme-900">
         {study?.title}{" "}
-        <span className="text-theme-600 font-light">
+        <span className="font-light text-theme-600">
           {" "}
           - {resolveCurrentRoute(pathname)}
         </span>
       </h2>
-      <Button className="text-theme-off-white flex gap-2">
+      <Button
+        className="flex gap-2 text-theme-off-white"
+        onClick={handleTestStudy}
+      >
         <TestTube className="text-theme-off-white" />
         Test Study
       </Button>
@@ -51,8 +61,8 @@ function SideContent() {
   const studyId = params.studyId as string | undefined;
 
   return (
-    <nav className="bg-theme-50 flex w-48 flex-col items-center px-4">
-      <div className="bg-theme-200 h-[1px] w-full" />
+    <nav className="flex w-48 flex-col items-center bg-theme-50 px-4">
+      <div className="h-[1px] w-full bg-theme-200" />
       <div className="mt-7 flex w-full flex-col items-start gap-1">
         {INNER_SIDEBAR_ROUTES.map((section, index) => (
           <SidebarSection
