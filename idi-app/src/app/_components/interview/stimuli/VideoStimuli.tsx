@@ -38,7 +38,7 @@ export const VideoStimuli: React.FC<VideoStimuliProps> = ({ videoStimuli }) => {
     return (
       <div
         key={index}
-        className="flex h-full max-h-[20rem] w-full flex-col items-center justify-start"
+        className="flex h-full w-full flex-col items-center justify-center"
       >
         {video.type === VideoStimulusType.UPLOADED ? (
           <video
@@ -47,17 +47,17 @@ export const VideoStimuli: React.FC<VideoStimuliProps> = ({ videoStimuli }) => {
             controls
           />
         ) : (
-          <div className="relative aspect-video h-full w-full">
+          <div className="relative h-full w-auto md:min-h-[40vh]">
             <iframe
               src={getYouTubeEmbedUrl(video.url)}
-              className="absolute inset-0 h-full w-full"
+              className="aspect-video h-full w-auto"
               allowFullScreen
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             />
           </div>
         )}
         {video.title && (
-          <div className="mt-1 text-center text-sm text-neutral-500">
+          <div className="text-theme-900 mt-1 text-center text-sm">
             {video.title}
           </div>
         )}
@@ -66,9 +66,9 @@ export const VideoStimuli: React.FC<VideoStimuliProps> = ({ videoStimuli }) => {
   };
 
   return (
-    <div className="mt-4 flex h-full w-full items-start justify-center gap-4 px-2 md:px-8">
+    <div className="flex h-full w-full flex-col items-center justify-center gap-4 md:px-8">
       {/* Large screen: show all videos */}
-      <div className="hidden h-full w-full items-start justify-center md:flex md:gap-4">
+      <div className="hidden h-full w-full items-center justify-center md:flex md:gap-4">
         {videoStimuli.map((video, index) => renderVideo(video, index))}
       </div>
 
