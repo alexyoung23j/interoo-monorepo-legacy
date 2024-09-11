@@ -16,7 +16,7 @@ const InterviewFinishedContent: React.FC<{
 
   return (
     <div className="flex h-full flex-col items-center justify-center">
-      <div className="mb-10 flex w-full max-w-[70%] flex-col gap-4 md:max-w-[28rem]">
+      <div className="mb-20 flex w-full max-w-[70%] flex-col gap-4 md:max-w-[28rem]">
         <div className="text-lg">Thank you for completing the interview!</div>
         <div className="text-sm text-neutral-500 md:text-base">
           Your responses have been recorded. We appreciate your participation in
