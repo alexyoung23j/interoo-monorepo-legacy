@@ -68,7 +68,7 @@ export const InterviewScreenLayout: React.FC<InterviewScreenLayoutProps> = ({
         )}
       </div>
       <div
-        className={`absolute bottom-10 left-0 right-0 hidden cursor-pointer text-center text-sm font-medium opacity-30 md:block ${
+        className={`absolute bottom-8 left-0 right-0 hidden cursor-pointer text-center text-sm font-medium opacity-30 md:block ${
           backgroundLight ? "text-black" : "text-white"
         }`}
         onClick={() => {

@@ -87,7 +87,7 @@ export const InterviewPerformContent: React.FC<
     [study.questions],
   );
 
-  const handleSubmitMultipleChoiceResponse = () => {
+  const handleSubmitMultipleChoiceResponse = async () => {
     if (!multipleChoiceOptionSelectionId || !currentQuestion) return;
     setAwaitingOptionResponse(true);
     stopTtsAudio();
@@ -127,9 +127,12 @@ export const InterviewPerformContent: React.FC<
 
     setAwaitingOptionResponse(false);
     setMultipleChoiceOptionSelectionId(null);
+    if (nextQuestion?.title) {
+      await playTtsAudio(nextQuestion.title);
+    }
   };
 
-  const handleSubmitRangeResponse = () => {
+  const handleSubmitRangeResponse = async () => {
     if (!rangeSelectionValue || !currentQuestion) return;
     setAwaitingOptionResponse(true);
     stopTtsAudio();
@@ -157,6 +160,9 @@ export const InterviewPerformContent: React.FC<
 
     setAwaitingOptionResponse(false);
     setRangeSelectionValue(null);
+    if (nextQuestion?.title) {
+      await playTtsAudio(nextQuestion.title);
+    }
   };
 
   useEffect(() => {

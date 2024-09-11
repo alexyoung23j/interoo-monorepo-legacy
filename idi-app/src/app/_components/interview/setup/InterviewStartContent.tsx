@@ -13,6 +13,7 @@ import {
   mediaAccessAtom,
 } from "@/app/state/atoms";
 import { useAtom, useAtomValue } from "jotai";
+import { useTtsAudio } from "@/hooks/useTtsAudio";
 
 export enum Stage {
   Intro = "intro",
@@ -46,6 +47,8 @@ export const InterviewStartContent: React.FC<InterviewStartContentProps> = ({
   const startInterviewSession =
     api.interviews.startInterviewSessionQuestions.useMutation();
 
+  const { playAudio: playTtsAudio } = useTtsAudio();
+
   const startInterview = async () => {
     setIsInitializing(true);
     try {
@@ -58,6 +61,7 @@ export const InterviewStartContent: React.FC<InterviewStartContentProps> = ({
         status: "IN_PROGRESS",
       });
       onStartInterview();
+      await playTtsAudio(firstQuestion.title);
     } catch (error) {
       console.error("Error starting interview:", error);
       setAccessError(
