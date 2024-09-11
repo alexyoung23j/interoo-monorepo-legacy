@@ -209,6 +209,13 @@ export const InterviewPerformContent: React.FC<
     void fetchUploadUrlAndCreateResponse();
   }, [currentQuestion, setCurrentResponseAndUploadUrl]);
 
+  useEffect(() => {
+    // Initialize here to warm the cache
+    navigator.mediaDevices
+      .getUserMedia({ audio: true, video: study.videoEnabled ?? false })
+      .catch((e) => console.log(e));
+  }, []);
+
   return (
     <div className="flex h-full flex-col">
       <div className="flex-1 overflow-hidden">

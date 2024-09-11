@@ -118,8 +118,6 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
           microphone: micPermission.state === "granted",
           camera: camPermission.state === "granted",
         });
-
-        await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
       } catch (error) {
         console.error("Error checking media permissions:", error);
         setMediaAccess({ microphone: false, camera: false });
