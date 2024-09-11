@@ -27,8 +27,8 @@ export const InterviewScreenLayout: React.FC<InterviewScreenLayoutProps> = ({
       }
     >
       <div className="absolute left-4 right-4 top-4 flex items-center justify-between">
-        <div className="flex items-center">
-          {organization.logoUrl && (
+        <div className="flex items-center justify-center">
+          {organization.logoUrl ? (
             <Image
               src={organization.logoUrl}
               alt=""
@@ -37,18 +37,29 @@ export const InterviewScreenLayout: React.FC<InterviewScreenLayoutProps> = ({
               className="max-h-[100px] max-w-[100px] object-contain"
               unoptimized
             />
+          ) : (
+            <Image
+              src="/logo_v1.png"
+              alt=""
+              width={100}
+              height={100}
+              className="mt-2 max-h-[20px] max-w-[100px] object-contain md:mt-4"
+              unoptimized
+            />
           )}
         </div>
-        <div
-          className={`cursor-pointer text-center text-sm font-medium opacity-30 md:hidden ${
-            backgroundLight ? "text-black" : "text-white"
-          }`}
-          onClick={() => {
-            // TODO: redirect to home page
-          }}
-        >
-          Powered by Interoo
-        </div>
+        {organization.logoUrl && (
+          <div
+            className={`cursor-pointer text-center text-sm font-medium opacity-30 md:hidden ${
+              backgroundLight ? "text-black" : "text-white"
+            }`}
+            onClick={() => {
+              // TODO: redirect to home page
+            }}
+          >
+            Powered by Interoo
+          </div>
+        )}
       </div>
 
       <div className="flex w-full flex-1 items-center justify-center overflow-y-auto rounded-[4px] border-2 border-org-secondary bg-off-white md:px-4 md:py-4">
