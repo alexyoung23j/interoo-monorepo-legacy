@@ -19,7 +19,6 @@ export const questionsRouter = createTRPCRouter({
       const responses = await ctx.db.response.findMany({
         where: {
           questionId: input.questionId,
-          followUpQuestionId: null,
           interviewSession: {
             status: InterviewSessionStatus.COMPLETED,
           },

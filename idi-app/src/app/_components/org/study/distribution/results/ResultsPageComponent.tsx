@@ -9,7 +9,8 @@ import BasicHeaderCard from "@/app/_components/reusable/BasicHeaderCard";
 import ResultsQuestionCard from "./ResultsQuestionCard";
 import { api } from "@/trpc/react";
 import { Button } from "@/components/ui/button";
-import { ArrowSquareOut } from "@phosphor-icons/react";
+import { ArrowSquareOut, X } from "@phosphor-icons/react";
+import ResponsesPreview from "./ResponsesPreviewComponent";
 
 export type ExtendedStudy = Study & {
   completedInterviewsCount: number;
@@ -24,12 +25,12 @@ interface ResultsPageComponentProps {
 const ResultsPageComponent: React.FC<ResultsPageComponentProps> = ({
   study,
 }) => {
-  const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(
+  const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(
     null,
   );
 
-  const handleViewResponses = (questionId: string) => {
-    setSelectedQuestionId(questionId);
+  const handleViewResponses = (question: Question) => {
+    setSelectedQuestion(question);
   };
   return (
     <SplitScreenLayout
@@ -76,14 +77,30 @@ const ResultsPageComponent: React.FC<ResultsPageComponentProps> = ({
               index={index}
               onViewResponses={() => {
                 console.log("viewing responses");
-                handleViewResponses(question.id);
+                handleViewResponses(question);
               }}
             />
           ))}
         </div>
       }
-      showRightContent={selectedQuestionId !== null}
-      rightContent={<BasicCard>hi</BasicCard>}
+      showRightContent={selectedQuestion !== null}
+      rightContent={
+        <div className="text-theme-900 flex w-full flex-col gap-4">
+          <div className="flex w-full items-start justify-between gap-3">
+            <div className="text-lg font-semibold">
+              {selectedQuestion?.title}
+            </div>
+            <div
+              className="cursor-pointer"
+              onClick={() => setSelectedQuestion(null)}
+            >
+              <X size={24} className="text-theme-900" />
+            </div>
+          </div>
+          <div className="bg-theme-200 h-[1px] w-full" />
+          <ResponsesPreview question={selectedQuestion} />
+        </div>
+      }
     />
   );
 };

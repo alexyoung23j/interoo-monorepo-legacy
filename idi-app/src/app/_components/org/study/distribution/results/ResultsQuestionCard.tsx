@@ -104,13 +104,13 @@ const ResultsQuestionCard: React.FC<ResultsQuestionCardProps> = ({
       case QuestionType.MULTIPLE_CHOICE:
         return <MultipleChoiceMetadataDisplay questionId={question.id} />;
       case QuestionType.RANGE:
-        return <div>TODO</div>;
+        return <div>Coming Soon!</div>;
     }
   };
 
   return (
     <BasicCard className="shadow-standard flex flex-col gap-4 p-6">
-      <div className="flex flex-row items-center justify-between">
+      <div className="flex flex-row items-center justify-between gap-3">
         <h3 className="text-theme-900 text-lg font-semibold">
           {`Question ${index + 1}: `}
           {question.title}
