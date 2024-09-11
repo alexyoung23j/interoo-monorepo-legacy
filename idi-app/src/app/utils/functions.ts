@@ -57,10 +57,11 @@ export function calculateTranscribeAndGenerateNextQuestionRequest({
 
   // Add the base question
   currentQuestionThreadState.push({
-    questionText: currentBaseQuestion.title,
-    responseText: undefined,
-    questionId: currentBaseQuestion.id,
-    responseId: undefined,
+    threadItem: {
+      questionId: currentBaseQuestion.id,
+      questionText: currentBaseQuestion.title,
+      type: "question",
+    },
   });
 
   // Find the response to the base question
@@ -69,46 +70,48 @@ export function calculateTranscribeAndGenerateNextQuestionRequest({
   );
   if (baseResponse) {
     currentQuestionThreadState.push({
-      questionText: undefined,
-      responseText: baseResponse.fastTranscribedText,
-      questionId: currentBaseQuestion.id,
-      responseId: baseResponse.id,
+      threadItem: {
+        responseText: baseResponse.fastTranscribedText,
+        questionId: currentBaseQuestion.id,
+        responseId: baseResponse.id,
+        type: "response",
+        isJunkResponse: baseResponse.junkResponse,
+      },
     });
   }
 
-  // Function to recursively add follow-up questions and their responses
-  const addFollowUps = (parentQuestionId: string, level: number) => {
-    const followUps = followUpQuestions
-      .filter((q) => q.parentQuestionId === parentQuestionId)
-      .sort((a, b) => a.followUpQuestionOrder - b.followUpQuestionOrder);
+  // Add follow-up questions and their responses
+  console.log("flups:", followUpQuestions);
+  const followUps = followUpQuestions
+    .filter((q) => q.parentQuestionId === currentBaseQuestion.id)
+    .sort((a, b) => a.followUpQuestionOrder - b.followUpQuestionOrder);
 
-    for (const followUp of followUps) {
-      currentQuestionThreadState.push({
-        questionText: followUp.title,
-        responseText: undefined,
+  for (const followUp of followUps) {
+    currentQuestionThreadState.push({
+      threadItem: {
         questionId: followUp.id,
-        responseId: undefined,
-      });
+        questionText: followUp.title,
+        type: "question",
+      },
+    });
 
-      const followUpResponse = responses.find(
-        (r) => r.followUpQuestionId === followUp.id,
-      );
-      if (followUpResponse) {
-        currentQuestionThreadState.push({
-          questionText: undefined,
-          responseText: followUpResponse.fastTranscribedText,
+    const followUpResponse = responses.find(
+      (r) => r.followUpQuestionId === followUp.id,
+    );
+    if (followUpResponse) {
+      currentQuestionThreadState.push({
+        threadItem: {
           questionId: followUp.id,
+          responseText: followUpResponse.fastTranscribedText,
           responseId: followUpResponse.id,
-        });
-      }
-
-      // Recursively add nested follow-ups
-      addFollowUps(followUp.id, level + 1);
+          type: "response",
+          isJunkResponse: followUpResponse.junkResponse,
+        },
+      });
     }
-  };
+  }
 
-  // Start adding follow-ups from the base question
-  addFollowUps(currentBaseQuestion.id, 1);
+  console.log("currentQuestionThreadState", currentQuestionThreadState);
 
   // Calculate numTotalEstimatedInterviewQuestions for interview timing
   const estimateFollowUpsForQuestion = (question: Question): number => {

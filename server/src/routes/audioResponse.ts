@@ -99,17 +99,25 @@ const handleNoTranscription = async (
   transcribedText: string
 ): Promise<TranscribeAndGenerateNextQuestionResponse> => {
   return {
+    id: requestData.currentResponseId,
     isFollowUp: requestData.thread.length > 0,
     transcribedText: transcribedText,
     noAnswerDetected: true,
-    nextQuestionId: requestData.currentBaseQuestionId
+    isJunkResponse: true,
+    questionId: requestData.currentBaseQuestionId,
+    nextQuestionId: requestData.currentBaseQuestionId,
   };
 };
 
+// TODO(update this to call new method to update response, use exsiting response.followUpQuestionId in response, and comvine these 2 queriess)
 const handleNoFollowUp = async (
   requestData: TranscribeAndGenerateNextQuestionRequest, 
   transcribedText: string
 ): Promise<TranscribeAndGenerateNextQuestionResponse> => {
+  
+  // Update the response with the transcription
+  const updatedResponse = await updateResponseWithTranscription(requestData.currentResponseId, transcribedText, false);
+
   if (requestData.nextBaseQuestionId) {
     await prisma.interviewSession.update({
       where: { id: requestData.interviewSessionId },
@@ -118,10 +126,7 @@ const handleNoFollowUp = async (
         lastUpdatedTime: new Date().toISOString()
       }
     });
-  }
-
-  // Mark interview as completed if there are no more questions to ask
-  if (!requestData.nextBaseQuestionId) {
+  } else {
     await prisma.interviewSession.update({
       where: { id: requestData.interviewSessionId },
       data: {
@@ -131,23 +136,28 @@ const handleNoFollowUp = async (
   }
 
   return {
+    id: requestData.currentResponseId,
     isFollowUp: requestData.thread.length > 0,
     transcribedText: transcribedText,
     noAnswerDetected: false,
-    nextQuestionId: requestData.nextBaseQuestionId
+    questionId: requestData.currentBaseQuestionId,
+    nextQuestionId: requestData.nextBaseQuestionId,
+    isJunkResponse: false
   };
 };
 
 const handlePotentialFollowUp = async (
   requestData: TranscribeAndGenerateNextQuestionRequest, 
   transcribedText: string,
-  newResponse: any,
   requestLogger: ReturnType<typeof createRequestLogger>,
   minFollowUps: number,
   maxFollowUps: number,
   currentNumberOfFollowUps: number
 ): Promise<TranscribeAndGenerateNextQuestionResponse> => {
-  const { shouldFollowUp, followUpQuestion } = await decideFollowUpPromptIfNecessary(requestData, transcribedText, requestLogger, minFollowUps, maxFollowUps, currentNumberOfFollowUps);
+  const { shouldFollowUp, followUpQuestion, isJunkResponse } = await decideFollowUpPromptIfNecessary(requestData, transcribedText, requestLogger, minFollowUps, maxFollowUps, currentNumberOfFollowUps);
+
+  // Update the response with the transcription
+  const updatedResponse = await updateResponseWithTranscription(requestData.currentResponseId, transcribedText, isJunkResponse);
 
   if (shouldFollowUp && followUpQuestion) {
     const updatedSession = await prisma.interviewSession.update({
@@ -160,7 +170,7 @@ const handlePotentialFollowUp = async (
             followUpQuestionOrder: requestData.thread.length + 1,
             parentQuestionId: requestData.currentBaseQuestionId,
             Response: {
-              connect: { id: newResponse.id }
+              connect: { id: updatedResponse.id }
             }
           }
         },
@@ -175,10 +185,13 @@ const handlePotentialFollowUp = async (
     });
 
     return {
+      id: requestData.currentResponseId,
       isFollowUp: true,
       transcribedText: transcribedText,
-      followUpQuestion: updatedSession.FollowUpQuestions[0],
-      noAnswerDetected: false
+      nextFollowUpQuestion: updatedSession.FollowUpQuestions[0],
+      noAnswerDetected: false,
+      isJunkResponse: isJunkResponse,
+      questionId: requestData.currentBaseQuestionId
     };
   } else {
     return handleNoFollowUp(requestData, transcribedText);
@@ -197,7 +210,7 @@ const shouldFollowUpBasedOnTime = (requestData: TranscribeAndGenerateNextQuestio
   const elapsedTimeInMinutes = (currentTime.getTime() - startTime.getTime()) / (1000 * 60);
 
   const targetTimePerQuestion = requestData.targetInterviewLength / requestData.numTotalEstimatedInterviewQuestions;
-  const expectedElapsedTime = targetTimePerQuestion * requestData.currentQuestionNumber;
+  const expectedElapsedTime = targetTimePerQuestion * (requestData.currentQuestionNumber+1);
 
   // If we're more than 10% behind schedule, don't follow up
   if (elapsedTimeInMinutes > expectedElapsedTime * 1.1) {
@@ -216,6 +229,13 @@ const shouldFollowUpBasedOnTime = (requestData: TranscribeAndGenerateNextQuestio
   return true;
 }
 
+const updateResponseWithTranscription = async (responseId: string, transcribedText: string, isJunkResponse: boolean) => {
+  return await prisma.response.update({
+    where: { id: responseId },
+    data: { fastTranscribedText: transcribedText, junkResponse: isJunkResponse }
+  });
+};
+
 const processAudioResponse = async (
   audioBuffer: Buffer, 
   requestData: TranscribeAndGenerateNextQuestionRequest, 
@@ -228,20 +248,19 @@ const processAudioResponse = async (
     return handleNoTranscription(requestData, transcribedText);
   }
 
-  const newResponse = await prisma.response.update({
-    where: { id: requestData.currentResponseId },
-    data: { fastTranscribedText: transcribedText }
-  });
-
   const [minFollowUps, maxFollowUps] = getFollowUpLevelRange(requestData.followUpLevel);
-  const numberOfPriorFollowUps = requestData.thread.filter(t => t.responseId === undefined).length;
+  const numberOfPriorFollowUps = requestData.thread.filter(t => t.threadItem.type === "response" && t.threadItem.isJunkResponse === false).length - 1;
+
+  console.log(requestData.thread);
+  console.log(maxFollowUps);
+  console.log(requestData.shouldFollowUp);
 
   if (!requestData.shouldFollowUp || 
       numberOfPriorFollowUps > maxFollowUps || 
       !shouldFollowUpBasedOnTime(requestData)) {
     return handleNoFollowUp(requestData, transcribedText);
   } else {
-    return handlePotentialFollowUp(requestData, transcribedText, newResponse, requestLogger, minFollowUps, maxFollowUps, numberOfPriorFollowUps);
+    return handlePotentialFollowUp(requestData, transcribedText, requestLogger, minFollowUps, maxFollowUps, numberOfPriorFollowUps);
   }
 };
 
@@ -261,6 +280,7 @@ const handleAudioResponse = async (req: Request, res: Response) => {
     }
 
     const response = await processAudioResponse(audioBuffer, requestData, requestLogger);
+    console.log("is junk response?", response.isJunkResponse);
 
     const totalTime = Date.now() - startTime;
     requestLogger.info('Audio endpoint completed', { totalTime });
