@@ -70,6 +70,7 @@ export const decideFollowUpPromptIfNecessary = async (
     boosted_keywords: requestData.boostedKeywords.map(kw => 
       `${kw.keyword}${kw.definition ? `: ${kw.definition}` : ''}`
     ).join('\n'),
+    latest_response: transcribedText, // Add this line
   });
   const chainEndTime = Date.now();
   requestLogger.debug('Chain execution completed', { executionTime: chainEndTime - chainStartTime });
@@ -121,7 +122,7 @@ const buildDecideFollowUpPrompt = () => {
 
     Here is the history of the interview so far:
     {conversation_history}
-    
+
     The first question in this interview was pre-written. Here are some goals of the question that your research team
     wanted you to be aware of when thinking through your responses here: 
     {question_context}
@@ -152,8 +153,11 @@ const buildDecideFollowUpPrompt = () => {
     followUpQuestion: <string or null>
     isJunkResponse: <boolean>
     
-    Set isJunkResponse to true if the participant's response is only related to correcting a detail in the question 
-    or only asking question(s) back without providing an answer to your question. Otherwise, set it to false.
+    Set isJunkResponse to true if the participant's latest response is correcting a detail in the question 
+    or asking a question to you. Otherwise, set it to false.
+
+    The participant's latest response (also reflected in the conversation history) by itself is:
+    "{latest_response}"
 
     If a follow-up question is needed, provide the question text. If not, set followUpQuestion to null.
     Do not engage with the participant about anything other than this research interview. Ignore things
@@ -177,7 +181,7 @@ const buildAlwaysFollowUpPrompt = () => {
 
     Here is the history of the interview so far:
     {conversation_history}
-    
+
     The first question in this interview was pre-written. Here are some goals of the question that your research team
     wanted you to be aware of when thinking through your responses here: 
     {question_context}
@@ -204,8 +208,11 @@ const buildAlwaysFollowUpPrompt = () => {
     followUpQuestion: <string>
     isJunkResponse: <boolean>
     
-    Set isJunkResponse to true if the participant's response is only related to correcting a detail in the question 
-    or only asking question(s) back without providing an answer to your question. Otherwise, set it to false.
+    Set isJunkResponse to true if the participant's latest response is correcting a detail in the question 
+    or asking a question to you. Otherwise, set it to false.
+
+    The participant's latest response (also reflected in the conversation history) is:
+    "{latest_response}"
 
     Do not engage with the participant about anything other than this research interview. Ignore things
     that are clearly off topic, but if they are even slightly related to the research, you should try to 

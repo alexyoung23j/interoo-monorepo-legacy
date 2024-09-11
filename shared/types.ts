@@ -161,9 +161,11 @@ export interface UploadUrlRequest {
 }
 
 export interface TranscribeAndGenerateNextQuestionResponse {
+  id: string;
+  questionId: string;
   nextQuestionId?: string;
   isFollowUp: boolean;
-  followUpQuestion?: FollowUpQuestion,
+  nextFollowUpQuestion?: FollowUpQuestion,
   transcribedText: string
   noAnswerDetected: boolean
   isJunkResponse: boolean

@@ -58,11 +58,12 @@ export function calculateTranscribeAndGenerateNextQuestionRequest({
   // Add the base question
   currentQuestionThreadState.push({
     threadItem: {
-      questionText: currentBaseQuestion.title,
       questionId: currentBaseQuestion.id,
+      questionText: currentBaseQuestion.title,
       type: "question",
     },
   });
+
   // Find the response to the base question
   const baseResponse = responses.find(
     (r) => r.questionId === currentBaseQuestion.id,
@@ -70,44 +71,47 @@ export function calculateTranscribeAndGenerateNextQuestionRequest({
   if (baseResponse) {
     currentQuestionThreadState.push({
       threadItem: {
-        questionId: currentBaseQuestion.id,
         responseText: baseResponse.fastTranscribedText,
+        questionId: currentBaseQuestion.id,
         responseId: baseResponse.id,
-        isJunkResponse: baseResponse.junkResponse,
         type: "response",
+        isJunkResponse: baseResponse.junkResponse,
       },
     });
   }
 
   // Add follow-up questions and their responses
-  const currentFollowUpQuestions = followUpQuestions
+  console.log("flups:", followUpQuestions);
+  const followUps = followUpQuestions
     .filter((q) => q.parentQuestionId === currentBaseQuestion.id)
     .sort((a, b) => a.followUpQuestionOrder - b.followUpQuestionOrder);
 
-  for (const currentFollowUpQuestion of currentFollowUpQuestions) {
+  for (const followUp of followUps) {
     currentQuestionThreadState.push({
       threadItem: {
-        questionText: currentFollowUpQuestion.title,
-        questionId: currentFollowUpQuestion.id,
+        questionId: followUp.id,
+        questionText: followUp.title,
         type: "question",
       },
     });
 
     const followUpResponse = responses.find(
-      (r) => r.followUpQuestionId === currentFollowUpQuestion.id,
+      (r) => r.followUpQuestionId === followUp.id,
     );
     if (followUpResponse) {
       currentQuestionThreadState.push({
         threadItem: {
-          questionId: currentFollowUpQuestion.id,
+          questionId: followUp.id,
           responseText: followUpResponse.fastTranscribedText,
           responseId: followUpResponse.id,
-          isJunkResponse: followUpResponse.junkResponse,
           type: "response",
+          isJunkResponse: followUpResponse.junkResponse,
         },
       });
     }
   }
+
+  console.log("currentQuestionThreadState", currentQuestionThreadState);
 
   // Calculate numTotalEstimatedInterviewQuestions for interview timing
   const estimateFollowUpsForQuestion = (question: Question): number => {
