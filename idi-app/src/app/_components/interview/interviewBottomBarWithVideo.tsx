@@ -181,7 +181,7 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
     }
   };
 
-  const getButtonText = () => {
+  const getOpenEndedButtonText = () => {
     switch (uploadStatus) {
       case "uploading":
         return `Thinking...`;
@@ -196,17 +196,31 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
     }
   };
 
-  const renderOpenEndedButton = () => (
+  const getMultipleChoiceButtonText = () => {
+    if (!awaitingOptionResponse && multipleChoiceOptionSelectionId) {
+      return "Click to submit";
+    }
+    return "Select option";
+  };
+
+  const getRangeButtonText = () => {
+    if (!awaitingOptionResponse && rangeSelectionValue !== null) {
+      return "Click to submit";
+    }
+    return "Select value";
+  };
+
+  const renderOpenEndedButton = ({ showButtonText = true }) => (
     <div className="flex flex-col-reverse items-center gap-3 py-1 md:flex-col">
       <Button
         variant="unstyled"
         className={cx(
-          "h-14 w-14 rounded-sm border border-black border-opacity-25 md:mt-5",
+          "h-16 w-16 rounded-full border border-black border-opacity-25 md:mt-5",
           "transition-all duration-500 ease-in-out",
           "active:scale-85 active:bg-theme-200",
           isFullyRecording || uploadStatus !== "idle"
-            ? "bg-org-secondary hover:opacity-80"
-            : "bg-neutral-100 hover:bg-neutral-300",
+            ? "bg-org-secondary opacity-50 hover:opacity-90"
+            : "bg-org-secondary hover:opacity-80",
           !currentResponseAndUploadUrl.uploadSessionUrl &&
             "cursor-not-allowed opacity-50",
         )}
@@ -245,21 +259,30 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
             }
           />
         ) : (
-          <Microphone className="size-8 text-neutral-600" />
+          <Microphone
+            color={
+              isColorLight(organization.secondaryColor ?? "")
+                ? "black"
+                : "white"
+            }
+            size={24}
+          />
         )}
       </Button>
-      <div className="text-sm leading-4 text-neutral-500">
-        {getButtonText()}
-      </div>
+      {showButtonText && (
+        <div className="text-sm leading-4 text-neutral-500">
+          {getOpenEndedButtonText()}
+        </div>
+      )}
     </div>
   );
 
-  const renderMultipleChoiceButton = () => (
+  const renderMultipleChoiceButton = ({ showButtonText = true }) => (
     <div className="flex flex-col-reverse items-center gap-3 py-1 md:flex-col">
       <Button
         variant="unstyled"
         className={cx(
-          "h-14 w-14 rounded-sm border border-black border-opacity-25 md:mt-5",
+          "h-16 w-16 rounded-full border border-black border-opacity-25 md:mt-5",
           multipleChoiceOptionSelectionId
             ? "bg-org-secondary hover:opacity-80"
             : "bg-neutral-100 hover:bg-neutral-300",
@@ -281,20 +304,20 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
           />
         )}
       </Button>
-      <div className="text-sm leading-4 text-neutral-500 md:mt-2">
-        {!awaitingOptionResponse && multipleChoiceOptionSelectionId
-          ? "Click to submit"
-          : "Select an option"}
-      </div>
+      {showButtonText && (
+        <div className="text-sm leading-4 text-neutral-500">
+          {getMultipleChoiceButtonText()}
+        </div>
+      )}
     </div>
   );
 
-  const renderRangeButton = () => (
+  const renderRangeButton = ({ showButtonText = true }) => (
     <div className="flex flex-col-reverse items-center gap-3 py-1 md:flex-col">
       <Button
         variant="unstyled"
         className={cx(
-          "h-14 w-14 rounded-sm border border-black border-opacity-25 md:mt-5",
+          "h-16 w-16 rounded-full border border-black border-opacity-25 md:mt-5",
           rangeSelectionValue !== null
             ? "bg-org-secondary hover:opacity-80"
             : "bg-neutral-100 hover:bg-neutral-300",
@@ -316,29 +339,37 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
           />
         )}
       </Button>
-      <div className="text-sm leading-4 text-neutral-500 md:mt-2">
-        {!awaitingOptionResponse && rangeSelectionValue !== null
-          ? "Click to submit"
-          : "Select a value"}
-      </div>
+      {showButtonText && (
+        <div className="text-sm leading-4 text-neutral-500">
+          {getRangeButtonText()}
+        </div>
+      )}
     </div>
   );
 
-  const renderQuestionTypeButton = () => {
+  const renderQuestionTypeButton = ({ showButtonText = true }) => {
     switch (currentQuestion?.questionType) {
       case QuestionType.OPEN_ENDED:
-        return renderOpenEndedButton();
+        return renderOpenEndedButton({ showButtonText: showButtonText });
       case QuestionType.MULTIPLE_CHOICE:
-        return renderMultipleChoiceButton();
+        return renderMultipleChoiceButton({ showButtonText: showButtonText });
       case QuestionType.RANGE:
-        return renderRangeButton();
+        return renderRangeButton({ showButtonText: showButtonText });
       default:
         return <div>Unsupported question type</div>;
     }
   };
 
-  const isOpenEndedQuestion =
-    currentQuestion?.questionType === QuestionType.OPEN_ENDED;
+  const renderButtonTexts = () => {
+    switch (currentQuestion?.questionType) {
+      case QuestionType.OPEN_ENDED:
+        return getOpenEndedButtonText();
+      case QuestionType.MULTIPLE_CHOICE:
+        return getMultipleChoiceButtonText();
+      case QuestionType.RANGE:
+        return getRangeButtonText();
+    }
+  };
 
   const showWebcamPreview = study.videoEnabled;
 
@@ -346,30 +377,15 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
     <div className="bg-theme-off-white flex w-full flex-col items-center justify-between p-4 md:flex-row md:px-2 md:py-0">
       {/* Mobile layout */}
       <div className="relative flex w-full flex-row items-end md:hidden">
-        <div className="mb-5 flex w-1/3 items-center justify-center gap-2">
-          <div className="text-theme-600 text-sm">
-            {audioOn ? (
-              <SpeakerSimpleHigh
-                size={24}
-                className="text-theme-500"
-                onClick={() => {
-                  setAudioOn(false);
-                  stopTtsAudio();
-                }}
-              />
-            ) : (
-              <SpeakerSimpleSlash
-                size={24}
-                className="text-theme-300"
-                onClick={() => setAudioOn(true)}
-              />
-            )}
+        <div className="mb-6 flex w-1/3 items-center justify-center">
+          <div className="text-theme-600 text-left text-sm">
+            {renderButtonTexts()}
           </div>
         </div>
 
         <div className="flex w-1/3 items-center justify-center space-x-9">
           <div className="flex flex-col items-center gap-2">
-            {renderQuestionTypeButton()}
+            {renderQuestionTypeButton({ showButtonText: false })}
           </div>
         </div>
         <div className="flex w-1/3 items-center justify-end">
@@ -400,7 +416,7 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
         </div>
 
         <div className="flex items-stretch justify-center md:w-1/3">
-          {renderQuestionTypeButton()}
+          {renderQuestionTypeButton({ showButtonText: true })}
         </div>
 
         <div className="flex items-center justify-end md:w-1/3">
