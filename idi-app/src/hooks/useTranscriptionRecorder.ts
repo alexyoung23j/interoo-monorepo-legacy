@@ -194,6 +194,8 @@ export function useTranscriptionRecorder({
                   ...response,
                   fastTranscribedText:
                     transcribeAndGenerateNextQuestionResponse.transcribedText,
+                  junkResponse:
+                    transcribeAndGenerateNextQuestionResponse.isJunkResponse,
                 }
               : response,
           ),

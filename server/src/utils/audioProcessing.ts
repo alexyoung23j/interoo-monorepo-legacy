@@ -9,14 +9,14 @@ import { ConversationState, TranscribeAndGenerateNextQuestionRequest } from "../
 import { createRequestLogger } from "./logger";
 
 
-function parseYamlLikeResponse(response: string): { shouldFollowUp?: boolean | string, followUpQuestion?: string } {
+function parseYamlLikeResponse(response: string): { shouldFollowUp?: boolean | string, followUpQuestion?: string, isJunkResponse?: boolean } {
   const lines = response.split('\n').map(line => line.trim());
   const result: { [key: string]: any } = {};
 
   for (const line of lines) {
     const [key, value] = line.split(':').map(part => part.trim());
     if (key && value) {
-      if (key === 'shouldFollowUp') {
+      if (key === 'shouldFollowUp' || key === 'isJunkResponse') {
         result[key] = value.toLowerCase() === 'true';
       } else if (key === 'followUpQuestion') {
         result[key] = value === 'null' ? null : value.replace(/^["']|["']$/g, '');
@@ -46,7 +46,7 @@ export const decideFollowUpPromptIfNecessary = async (
   minFollowUps: number,
   maxFollowUps: number,
   currentNumberOfFollowUps: number,
-): Promise<{ shouldFollowUp: boolean; followUpQuestion?: string }> => {
+): Promise<{ shouldFollowUp: boolean; followUpQuestion?: string, isJunkResponse: boolean }> => {
   const startTime = Date.now();
   requestLogger.info('Starting follow-up decision process');
 
@@ -78,14 +78,15 @@ export const decideFollowUpPromptIfNecessary = async (
   try {
     const parsedResponse = parseYamlLikeResponse(response.content as string);
     result = shouldAlwaysFollowUp
-      ? { shouldFollowUp: true, followUpQuestion: parsedResponse.followUpQuestion }
+      ? { shouldFollowUp: true, followUpQuestion: parsedResponse.followUpQuestion, isJunkResponse: parsedResponse.isJunkResponse === true }
       : {
           shouldFollowUp: parsedResponse.shouldFollowUp === true || parsedResponse.shouldFollowUp === 'true',
-          followUpQuestion: parsedResponse.followUpQuestion !== null ? parsedResponse.followUpQuestion : undefined
+          followUpQuestion: parsedResponse.followUpQuestion !== null ? parsedResponse.followUpQuestion : undefined,
+          isJunkResponse: parsedResponse.isJunkResponse === true
         };
   } catch (error) {
     console.error('Error parsing LLM response:', error);
-    result = { shouldFollowUp: false };
+    result = { shouldFollowUp: false, isJunkResponse: false };
   }
 
   const endTime = Date.now();
@@ -97,10 +98,10 @@ export const decideFollowUpPromptIfNecessary = async (
 const buildConversationHistory = (thread: ConversationState, transcribedText: string): string => {
   let history = '';
   for (const item of thread) {
-    if (item.responseText) {
-      history += `Participant: "${item.responseText}"\n`;
-    } else if (item.questionText) {
-      history += `Interviewer: "${item.questionText}"\n`;
+    if (item.threadItem.type === 'response') {
+      history += `Participant: "${item.threadItem.responseText}"\n`;
+    } else if (item.threadItem.type === 'question') {
+      history += `Interviewer: "${item.threadItem.questionText}"\n`;
     }
   }
   // Add the latest transcribed response
@@ -149,7 +150,11 @@ const buildDecideFollowUpPrompt = () => {
     Your response should be in YAML format with the following structure:
     shouldFollowUp: <boolean>
     followUpQuestion: <string or null>
+    isJunkResponse: <boolean>
     
+    Set isJunkResponse to true if the participant's response is only related to correcting a detail in the question 
+    or only asking question(s) back without providing an answer to your question. Otherwise, set it to false.
+
     If a follow-up question is needed, provide the question text. If not, set followUpQuestion to null.
     Do not engage with the participant about anything other than this research interview. Ignore things
     that are clearly off topic, but if they are even slightly related to the research, you should try to 
@@ -197,7 +202,11 @@ const buildAlwaysFollowUpPrompt = () => {
     
     Your response should be in YAML format with the following structure:
     followUpQuestion: <string>
+    isJunkResponse: <boolean>
     
+    Set isJunkResponse to true if the participant's response is only related to correcting a detail in the question 
+    or only asking question(s) back without providing an answer to your question. Otherwise, set it to false.
+
     Do not engage with the participant about anything other than this research interview. Ignore things
     that are clearly off topic, but if they are even slightly related to the research, you should try to 
     incorporate them into your response. Use your best judgement- do what a great qualitative researcher would do.

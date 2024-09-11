@@ -8,11 +8,22 @@ export interface CurrentResponseAndUploadUrl {
 }
 
 export type ConversationState = Array<{ 
-  questionText?: string;
-  responseText?: string;
-  questionId: string;
-  responseId?: string;
+  threadItem: QuestionInThread | ResponseInThread
 }>
+
+export type QuestionInThread = {
+  questionText: string;
+  questionId: string;
+  type: "question";
+}
+
+export type ResponseInThread = {
+  questionId: string;
+  responseText: string;
+  responseId: string;
+  isJunkResponse: boolean;
+  type: "response";
+}
 
 export interface TranscribeAndGenerateNextQuestionRequest {
   nextBaseQuestionId: string;
@@ -155,6 +166,7 @@ export interface TranscribeAndGenerateNextQuestionResponse {
   followUpQuestion?: FollowUpQuestion,
   transcribedText: string
   noAnswerDetected: boolean
+  isJunkResponse: boolean
 }
 
 // Need to keep up to date with Prisma schema
