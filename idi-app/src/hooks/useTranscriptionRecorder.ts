@@ -160,16 +160,16 @@ export function useTranscriptionRecorder({
 
         if (
           transcribeAndGenerateNextQuestionResponse.isFollowUp &&
-          transcribeAndGenerateNextQuestionResponse.followUpQuestion
+          transcribeAndGenerateNextQuestionResponse.nextFollowUpQuestion
         ) {
           setCurrentQuestion(
-            transcribeAndGenerateNextQuestionResponse.followUpQuestion,
+            transcribeAndGenerateNextQuestionResponse.nextFollowUpQuestion,
           );
           nextCurrentQuestion =
-            transcribeAndGenerateNextQuestionResponse.followUpQuestion;
+            transcribeAndGenerateNextQuestionResponse.nextFollowUpQuestion;
           setFollowUpQuestions([
             ...followUpQuestions,
-            transcribeAndGenerateNextQuestionResponse.followUpQuestion,
+            transcribeAndGenerateNextQuestionResponse.nextFollowUpQuestion,
           ]);
         } else if (transcribeAndGenerateNextQuestionResponse.nextQuestionId) {
           const nextQuestionId =
@@ -187,17 +187,29 @@ export function useTranscriptionRecorder({
           setInterviewProgress("completed");
         }
 
-        setResponses(
-          responses.map((response) =>
-            response.id === currentResponseAndUploadUrl.response?.id
-              ? {
-                  ...response,
-                  fastTranscribedText:
-                    transcribeAndGenerateNextQuestionResponse.transcribedText,
-                }
-              : response,
-          ),
+        console.log(
+          "transcribeAndGenerateNextQuestionResponse",
+          transcribeAndGenerateNextQuestionResponse,
         );
+
+        setResponses([
+          ...responses,
+          {
+            id: transcribeAndGenerateNextQuestionResponse.id,
+            questionId: transcribeAndGenerateNextQuestionResponse.questionId,
+            fastTranscribedText:
+              transcribeAndGenerateNextQuestionResponse.transcribedText,
+            junkResponse:
+              transcribeAndGenerateNextQuestionResponse.isJunkResponse,
+            interviewSessionId: interviewSession!.id,
+            followUpQuestionId:
+              currentResponseAndUploadUrl.response?.followUpQuestionId!,
+            rangeSelection: null,
+            multipleChoiceOptionId: null,
+          },
+        ]);
+        console.log("followUpQuestions", followUpQuestions);
+        console.log("responses", responses);
 
         return { textToPlay: nextCurrentQuestion?.title };
       } catch (error) {
