@@ -99,7 +99,7 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
     if (uploadStartTime === null) return;
 
     const elapsedTime = Date.now() - uploadStartTime;
-    if (elapsedTime > 5000 && uploadProgress < 90) {
+    if (elapsedTime > 10000 && uploadProgress < 90) {
       setUploadStatus("verySlow");
     } else if (elapsedTime > 30000 && uploadProgress < 50) {
       setUploadStatus("slow");
@@ -186,7 +186,7 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
       case "uploading":
         return `Thinking...`;
       case "slow":
-        return "Hang on - almost there!";
+        return "Almost there...";
       case "verySlow":
         return "Your network is a bit slow- your video may be getting dropped";
       case "failed":
