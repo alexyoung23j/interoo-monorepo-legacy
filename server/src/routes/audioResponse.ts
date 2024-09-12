@@ -229,7 +229,7 @@ const shouldFollowUpBasedOnTime = (requestData: TranscribeAndGenerateNextQuestio
 const updateResponseWithTranscription = async (responseId: string, transcribedText: string, isJunkResponse: boolean) => {
   return await prisma.response.update({
     where: { id: responseId },
-    data: { fastTranscribedText: transcribedText, junkResponse: isJunkResponse }
+    data: { fastTranscribedText: transcribedText, junkResponse: isJunkResponse, updatedAt: new Date().toISOString() }
   });
 };
 
