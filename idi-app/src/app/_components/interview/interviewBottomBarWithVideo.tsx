@@ -130,9 +130,6 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
       stopTtsAudio();
       await transcriptionRecorder.startRecording();
 
-      if (transcriptionRecorder.noAnswerDetected) {
-        return;
-      }
       await startChunkedMediaUploader(study.videoEnabled ?? false);
       console.log("Chunked media uploader started");
       setIsFullyRecording(true);
@@ -374,11 +371,11 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
   const showWebcamPreview = study.videoEnabled;
 
   return (
-    <div className="bg-theme-off-white flex w-full flex-col items-center justify-between p-4 md:flex-row md:px-2 md:py-0">
+    <div className="flex w-full flex-col items-center justify-between bg-theme-off-white p-4 md:flex-row md:px-2 md:py-0">
       {/* Mobile layout */}
       <div className="relative flex w-full flex-row items-end md:hidden">
         <div className="mb-6 flex w-1/3 items-center justify-center">
-          <div className="text-theme-600 text-left text-sm">
+          <div className="text-left text-sm text-theme-600">
             {renderButtonTexts()}
           </div>
         </div>
@@ -410,7 +407,7 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
               setAudioOn(checked);
             }}
           />
-          <div className="text-theme-600 text-sm">
+          <div className="text-sm text-theme-600">
             {audioOn ? "Sound On" : "Sound Off"}
           </div>
         </div>
