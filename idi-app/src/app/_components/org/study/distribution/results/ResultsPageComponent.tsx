@@ -56,7 +56,7 @@ const ResultsPageComponent: React.FC<ResultsPageComponentProps> = ({
           selectedQuestion !== null
         }
         onClose={() => setQuestionModalOpen(false)}
-        question={selectedQuestion as Question}
+        question={selectedQuestion!}
         interviewSessionId={selectedInterviewSessionId ?? ""}
       />
       <SplitScreenLayout

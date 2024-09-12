@@ -206,6 +206,8 @@ export function useTranscriptionRecorder({
               currentResponseAndUploadUrl.response?.followUpQuestionId ?? null,
             rangeSelection: null,
             multipleChoiceOptionId: null,
+            createdAt: new Date(), // Created and updatedAt is not used for anything during the interview itself
+            updatedAt: new Date(),
           },
         ]);
         console.log("followUpQuestions", followUpQuestions);

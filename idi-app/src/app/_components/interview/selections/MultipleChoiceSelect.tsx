@@ -49,9 +49,9 @@ export const MultipleChoiceSelect: React.FC<MultipleChoiceSelectProps> = ({
   }
 
   return (
-    <div className="scrollbar-thin flex h-max w-full flex-col items-center justify-center gap-3 overflow-y-auto p-1">
+    <div className="flex h-max w-full flex-col items-center justify-center gap-3 overflow-y-auto p-1 scrollbar-thin">
       <div className="text-sm text-black opacity-50">Select One</div>
-      <div className="flex flex-col gap-3">
+      <div className="flex w-full flex-col items-center gap-3">
         {question.multipleChoiceOptions.map((option) => (
           <Button
             key={option.id}

@@ -71,7 +71,9 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
       rightContent={
         <QuestionModalRightContent
           responses={responsesWithTranscripts ?? null}
-          onResponseClicked={() => {}}
+          onResponseClicked={() => {
+            console.log("clicked");
+          }}
         />
       }
     />
