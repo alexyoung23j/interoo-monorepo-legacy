@@ -12,7 +12,6 @@ import { createClient as createDeepgramClient } from "@deepgram/sdk";
 import { protectedRoute } from "./routes/test/protected";
 import { audioResponseRoute } from "./routes/audioResponse";
 import { testFollowUpRoute } from "./routes/test/testFollowUp";
-import { testTranscribeRoute } from "./routes/test/testTranscribe";
 import { getTtsAudioRoute } from "./routes/getTtsAudio";
 import { TextToSpeechClient } from "@google-cloud/text-to-speech";
 import { getCurrentQuestionMetadataRoute } from "./routes/getCurrentQuestionMetadata";
@@ -60,7 +59,6 @@ app.use("/protected", protectedRoute);
 app.use("/api/audio-response", audioResponseRoute);
 app.use("/api/get-tts-audio", getTtsAudioRoute);
 app.use("/test-follow-up", testFollowUpRoute);
-app.use("/test-transcribe", testTranscribeRoute);
 app.use("/api/get-current-question-metadata", getCurrentQuestionMetadataRoute);
 
 // Server Startup

@@ -238,7 +238,7 @@ const processAudioResponse = async (
   requestData: TranscribeAndGenerateNextQuestionRequest, 
   requestLogger: ReturnType<typeof createRequestLogger>
 ): Promise<TranscribeAndGenerateNextQuestionResponse> => {
-  const transcribedText = await transcribeAudio(audioBuffer, requestLogger);
+  const transcribedText = await transcribeAudio(audioBuffer, requestLogger, requestData.boostedKeywords);
 
   if (transcribedText.length < 2) {
     // Handle no transcription, likely bad audio
