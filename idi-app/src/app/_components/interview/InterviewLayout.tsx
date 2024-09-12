@@ -30,6 +30,7 @@ import { useAtom } from "jotai";
 import { CurrentQuestionType } from "@shared/types";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Stage } from "./setup/InterviewStartContent";
+import { useTtsAudio } from "@/hooks/useTtsAudio";
 
 interface InterviewLayoutProps {
   study: Study & {
@@ -79,6 +80,15 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
   const [mediaAccess, setMediaAccess] = useAtom(mediaAccessAtom);
 
   const [isLoading, setIsLoading] = useState(true);
+
+  const {
+    isLoading: ttsAudioLoading,
+    isPlaying: ttsAudioPlaying,
+    error: ttsAudioError,
+    playAudio: playTtsAudio,
+    stopAudio: stopTtsAudio,
+    audioDuration: ttsAudioDuration,
+  } = useTtsAudio();
 
   useEffect(() => {
     const initializeInterview = async () => {
@@ -160,6 +170,8 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
           organization={organization}
           study={study}
           interviewSessionRefetching={isLoading}
+          playTtsAudio={playTtsAudio}
+          stopTtsAudio={stopTtsAudio}
         />
       ) : null;
     }
@@ -184,6 +196,8 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
         stage={localStage}
         setStage={setLocalStage}
         onStartInterview={() => updateProgress("in-progress")}
+        playTtsAudio={playTtsAudio}
+        stopTtsAudio={stopTtsAudio}
       />
     );
   };
