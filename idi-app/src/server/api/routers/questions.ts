@@ -5,6 +5,7 @@ import {
   privateProcedure,
   publicProcedure,
 } from "@/server/api/trpc";
+import { InterviewSessionStatus } from "@shared/generated/client";
 
 export const questionsRouter = createTRPCRouter({
   getEnrichedStudyQuestions: privateProcedure
@@ -18,10 +19,27 @@ export const questionsRouter = createTRPCRouter({
       const responses = await ctx.db.response.findMany({
         where: {
           questionId: input.questionId,
-          followUpQuestionId: null,
+          interviewSession: {
+            status: InterviewSessionStatus.COMPLETED,
+          },
+        },
+        orderBy: {
+          interviewSession: {
+            startTime: "asc",
+          },
+        },
+      });
+      return responses;
+    }),
+  getMultipleChoiceOptions: privateProcedure
+    .input(z.object({ questionId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const options = await ctx.db.multipleChoiceOption.findMany({
+        where: {
+          questionId: input.questionId,
         },
       });
 
-      return responses;
+      return options;
     }),
 });

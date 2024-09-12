@@ -23,8 +23,8 @@ const SplitScreenLayout: React.FC<SplitScreenLayoutProps> = ({
         {showRightContent && (
           <>
             <PanelResizeHandle className="bg-theme-200 hover:bg-theme-300 w-[1px] cursor-col-resize hover:w-[2px]" />
-            <Panel defaultSize={30} minSize={20}>
-              <div className="flex h-full w-full flex-col p-9">
+            <Panel defaultSize={40} minSize={20}>
+              <div className="scrollbar-thin flex h-full w-full flex-col overflow-y-auto p-9">
                 {rightContent}
               </div>
             </Panel>
