@@ -2,7 +2,7 @@ import { deepgram } from "../index";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { ChatOpenAI } from "@langchain/openai";
 import { MessageContent, MessageContentText } from "@langchain/core/messages";
-import { FollowUpLevel } from "@shared/generated/client";
+import { BoostedKeyword, FollowUpLevel } from "@shared/generated/client";
 import { RunnableSequence } from "@langchain/core/runnables";
 import { StructuredOutputParser } from "@langchain/core/output_parsers";
 import { ConversationState, TranscribeAndGenerateNextQuestionRequest } from "../../../shared/types";
@@ -27,10 +27,19 @@ function parseYamlLikeResponse(response: string): { shouldFollowUp?: boolean | s
   return result;
 }
 
-export const transcribeAudio = async (audioBuffer: Buffer, requestLogger: ReturnType<typeof createRequestLogger>): Promise<string> => {
+export const transcribeAudio = async (audioBuffer: Buffer, requestLogger: ReturnType<typeof createRequestLogger>, boosted_keywords: BoostedKeyword[]): Promise<string> => {
   try {
     requestLogger.info('Starting audio transcription');
-    const { result } = await deepgram.listen.prerecorded.transcribeFile(audioBuffer, { model: "nova-2" });
+    
+    // Map boosted_keywords to a string array
+    const keywords = boosted_keywords.map(kw => kw.keyword);
+    
+    const { result } = await deepgram.listen.prerecorded.transcribeFile(audioBuffer, { 
+      model: "nova-2", 
+      profanity_filter: true, 
+      keywords: keywords
+    });
+    
     requestLogger.info('Audio transcription completed');
     return result?.results.channels[0].alternatives[0].transcript ?? '';
   } catch (error) {
