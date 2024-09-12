@@ -24,32 +24,49 @@ const ResponsesPreview: React.FC<ResponsesPreviewProps> = ({ question }) => {
       questionId: question?.id ?? "",
     });
 
+  console.log({ responsesData });
+
+  const filteredResponsesData =
+    question?.questionType === QuestionType.OPEN_ENDED
+      ? responsesData?.filter((response) => response.fastTranscribedText != "")
+      : responsesData;
+
   const processedResponses = useMemo(() => {
-    if (!responsesData) return [];
+    if (!filteredResponsesData) return [];
 
-    const responseMap = new Map<string, ProcessedResponse>();
+    // Step 1: Find all responses without follow-ups
+    const mainResponses = filteredResponsesData.filter(
+      (response) => !response.followUpQuestionId,
+    );
 
-    responsesData.forEach((response) => {
-      if (!response.followUpQuestionId) {
-        responseMap.set(response.interviewSessionId, {
+    // Step 2: Create a map of these responses
+    const responseMap = new Map<string, ProcessedResponse>(
+      mainResponses.map((response) => [
+        response.interviewSessionId,
+        {
           id: response.id,
           interviewSessionId: response.interviewSessionId,
           fastTranscribedText: response.fastTranscribedText,
           numFollowUps: 0,
           multipleChoiceOptionId: response.multipleChoiceOptionId,
           rangeSelection: response.rangeSelection,
-        });
-      } else {
-        const originalResponse = responseMap.get(response.interviewSessionId);
-        if (originalResponse) {
-          originalResponse.numFollowUps++;
+        },
+      ]),
+    );
+
+    // Step 3: Count follow-ups
+    filteredResponsesData.forEach((response) => {
+      if (response.followUpQuestionId) {
+        const mainResponse = responseMap.get(response.interviewSessionId);
+
+        if (mainResponse) {
+          mainResponse.numFollowUps++;
         }
       }
     });
 
     return Array.from(responseMap.values());
-  }, [responsesData]);
-
+  }, [filteredResponsesData]);
   if (isLoading)
     return (
       <div className="mt-10 flex h-full w-full justify-center">
@@ -71,17 +88,17 @@ const ResponsesPreview: React.FC<ResponsesPreviewProps> = ({ question }) => {
       default:
         return (
           <BasicCard
-            className="shadow-standard flex cursor-pointer flex-col gap-1"
+            className="flex cursor-pointer flex-col gap-1 shadow-standard"
             key={key}
           >
             <div className="flex justify-between">
-              <div className="text-theme-900 text-sm">Response {index + 1}</div>
+              <div className="text-sm text-theme-900">Response {index + 1}</div>
               <ArrowSquareOut size={16} className="text-theme-900" />
             </div>
-            <div className="text-theme-300 text-xs">
+            <div className="text-xs text-theme-300">
               {processedResponse.numFollowUps} Follow Ups
             </div>
-            <div className="text-theme-900 text-xs">
+            <div className="text-xs text-theme-900">
               "{processedResponse.fastTranscribedText}"
             </div>
           </BasicCard>
@@ -90,7 +107,7 @@ const ResponsesPreview: React.FC<ResponsesPreviewProps> = ({ question }) => {
   };
 
   return (
-    <div className="scrollbar-thin flex flex-col gap-2 overflow-y-auto">
+    <div className="flex flex-col gap-2 overflow-y-auto scrollbar-thin">
       {processedResponses.map((processedResponse, index) =>
         renderResponsesPreview(
           processedResponse,

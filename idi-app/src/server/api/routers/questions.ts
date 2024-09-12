@@ -23,6 +23,11 @@ export const questionsRouter = createTRPCRouter({
             status: InterviewSessionStatus.COMPLETED,
           },
         },
+        orderBy: {
+          interviewSession: {
+            startTime: "asc",
+          },
+        },
       });
       return responses;
     }),

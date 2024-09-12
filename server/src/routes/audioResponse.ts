@@ -157,7 +157,7 @@ const handlePotentialFollowUp = async (
   const { shouldFollowUp, followUpQuestion, isJunkResponse } = await decideFollowUpPromptIfNecessary(requestData, transcribedText, requestLogger, minFollowUps, maxFollowUps, currentNumberOfFollowUps);
 
   // Update the response with the transcription
-  const updatedResponse = await updateResponseWithTranscription(requestData.currentResponseId, transcribedText, isJunkResponse);
+  await updateResponseWithTranscription(requestData.currentResponseId, transcribedText, isJunkResponse);
 
   if (shouldFollowUp && followUpQuestion) {
     const updatedSession = await prisma.interviewSession.update({
@@ -167,11 +167,8 @@ const handlePotentialFollowUp = async (
           create: {
             title: followUpQuestion,
             body: "",
-            followUpQuestionOrder: requestData.thread.length + 1,
+            followUpQuestionOrder: requestData.thread.filter(item => item.threadItem.type === 'question').length,
             parentQuestionId: requestData.currentBaseQuestionId,
-            Response: {
-              connect: { id: updatedResponse.id }
-            }
           }
         },
         lastUpdatedTime: new Date().toISOString()

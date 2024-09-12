@@ -32,12 +32,13 @@ const ResultsPageComponent: React.FC<ResultsPageComponentProps> = ({
   const handleViewResponses = (question: Question) => {
     setSelectedQuestion(question);
   };
+
   return (
     <SplitScreenLayout
       mainContent={
         <div className="flex flex-col gap-4">
           <div className="flex w-full flex-row items-center justify-between">
-            <div className="text-theme-900 text-lg font-medium">
+            <div className="text-lg font-medium text-theme-900">
               Study Statistics
             </div>
             <Button
@@ -67,25 +68,26 @@ const ResultsPageComponent: React.FC<ResultsPageComponentProps> = ({
               },
             ]}
           />
-          <div className="text-theme-900 mt-8 text-lg font-medium">
+          <div className="mt-8 text-lg font-medium text-theme-900">
             Interview Results
           </div>
-          {study.questions?.map((question, index) => (
-            <ResultsQuestionCard
-              key={question.id}
-              question={question}
-              index={index}
-              onViewResponses={() => {
-                console.log("viewing responses");
-                handleViewResponses(question);
-              }}
-            />
-          ))}
+          {study.questions
+            ?.sort((a, b) => a.questionOrder - b.questionOrder)
+            .map((question, index) => (
+              <ResultsQuestionCard
+                key={question.id}
+                question={question}
+                index={index}
+                onViewResponses={() => {
+                  handleViewResponses(question);
+                }}
+              />
+            ))}
         </div>
       }
       showRightContent={selectedQuestion !== null}
       rightContent={
-        <div className="text-theme-900 flex w-full flex-col gap-4">
+        <div className="flex w-full flex-col gap-4 text-theme-900">
           <div className="flex w-full items-start justify-between gap-3">
             <div className="text-lg font-semibold">
               {selectedQuestion?.title}
@@ -97,7 +99,7 @@ const ResultsPageComponent: React.FC<ResultsPageComponentProps> = ({
               <X size={24} className="text-theme-900" />
             </div>
           </div>
-          <div className="bg-theme-200 h-[1px] w-full" />
+          <div className="h-[1px] w-full bg-theme-200" />
           <ResponsesPreview question={selectedQuestion} />
         </div>
       }
