@@ -13,7 +13,6 @@ import {
   mediaAccessAtom,
 } from "@/app/state/atoms";
 import { useAtom, useAtomValue } from "jotai";
-import { useTtsAudio } from "@/hooks/useTtsAudio";
 
 export enum Stage {
   Intro = "intro",
@@ -27,6 +26,8 @@ interface InterviewStartContentProps {
   stage: Stage;
   setStage: (stage: Stage) => void;
   onStartInterview: () => void;
+  playTtsAudio: (text: string) => Promise<void>;
+  stopTtsAudio: () => void;
 }
 
 export const InterviewStartContent: React.FC<InterviewStartContentProps> = ({
@@ -35,6 +36,8 @@ export const InterviewStartContent: React.FC<InterviewStartContentProps> = ({
   stage,
   setStage,
   onStartInterview,
+  playTtsAudio,
+  stopTtsAudio,
 }) => {
   const [isInitializing, setIsInitializing] = useState(false);
   const [, setInterviewSession] = useAtom(interviewSessionAtom);
@@ -47,8 +50,6 @@ export const InterviewStartContent: React.FC<InterviewStartContentProps> = ({
   const startInterviewSession =
     api.interviews.startInterviewSessionQuestions.useMutation();
 
-  const { playAudio: playTtsAudio } = useTtsAudio();
-
   const startInterview = async () => {
     setIsInitializing(true);
     try {
@@ -60,8 +61,12 @@ export const InterviewStartContent: React.FC<InterviewStartContentProps> = ({
         ...interviewSession!,
         status: "IN_PROGRESS",
       });
-      onStartInterview();
-      await playTtsAudio(firstQuestion.title);
+      onStartInterview(); //simply updates progress state
+
+      // plays audio after a slight delay on purpose
+      setTimeout(() => {
+        void playTtsAudio(firstQuestion.title);
+      }, 150);
     } catch (error) {
       console.error("Error starting interview:", error);
       setAccessError(

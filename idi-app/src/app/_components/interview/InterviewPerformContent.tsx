@@ -19,7 +19,6 @@ import {
 } from "@/app/state/atoms";
 import { useAtom, useSetAtom } from "jotai";
 import InterviewBottomBarWithVideo from "./interviewBottomBarWithVideo";
-import { useTtsAudio } from "@/hooks/useTtsAudio";
 
 interface InterviewPerformContentProps {
   study: Study & {
@@ -33,11 +32,19 @@ interface InterviewPerformContentProps {
   };
   organization: Organization;
   interviewSessionRefetching: boolean;
+  playTtsAudio: (text: string) => Promise<void>;
+  stopTtsAudio: () => void;
 }
 
 export const InterviewPerformContent: React.FC<
   InterviewPerformContentProps
-> = ({ organization, study, interviewSessionRefetching }) => {
+> = ({
+  organization,
+  study,
+  interviewSessionRefetching,
+  playTtsAudio,
+  stopTtsAudio,
+}) => {
   const [currentQuestion, setCurrentQuestion] = useAtom(currentQuestionAtom);
   const [interviewSession, setInterviewSession] = useAtom(interviewSessionAtom);
   const setCurrentResponseAndUploadUrl = useSetAtom(
@@ -51,15 +58,6 @@ export const InterviewPerformContent: React.FC<
     null,
   );
   const [awaitingOptionResponse, setAwaitingOptionResponse] = useState(false);
-
-  const {
-    isLoading: ttsAudioLoading,
-    isPlaying: ttsAudioPlaying,
-    error: ttsAudioError,
-    playAudio: playTtsAudio,
-    stopAudio: stopTtsAudio,
-    audioDuration: ttsAudioDuration,
-  } = useTtsAudio();
 
   // Update the response to include the user's selection- or create in case user answers
   // before we get a chance to get the signed url and create the response on the backend
