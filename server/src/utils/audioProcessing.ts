@@ -9,14 +9,14 @@ import { ConversationState, TranscribeAndGenerateNextQuestionRequest } from "../
 import { createRequestLogger } from "./logger";
 
 
-function parseYamlLikeResponse(response: string): { shouldFollowUp?: boolean | string, followUpQuestion?: string, isJunkResponse?: boolean } {
+function parseYamlLikeResponse(response: string): { shouldFollowUp?: boolean | string, followUpQuestion?: string, isOnlyCorrectingOrAskingQuestionBack?: boolean } {
   const lines = response.split('\n').map(line => line.trim());
   const result: { [key: string]: any } = {};
 
   for (const line of lines) {
     const [key, value] = line.split(':').map(part => part.trim());
     if (key && value) {
-      if (key === 'shouldFollowUp' || key === 'isJunkResponse') {
+      if (key === 'shouldFollowUp' || key === 'isOnlyCorrectingOrAskingQuestionBack') {
         result[key] = value.toLowerCase() === 'true';
       } else if (key === 'followUpQuestion') {
         result[key] = value === 'null' ? null : value.replace(/^["']|["']$/g, '');
@@ -79,11 +79,11 @@ export const decideFollowUpPromptIfNecessary = async (
   try {
     const parsedResponse = parseYamlLikeResponse(response.content as string);
     result = shouldAlwaysFollowUp
-      ? { shouldFollowUp: true, followUpQuestion: parsedResponse.followUpQuestion, isJunkResponse: parsedResponse.isJunkResponse === true }
+      ? { shouldFollowUp: true, followUpQuestion: parsedResponse.followUpQuestion, isJunkResponse: parsedResponse.isOnlyCorrectingOrAskingQuestionBack === true }
       : {
           shouldFollowUp: parsedResponse.shouldFollowUp === true || parsedResponse.shouldFollowUp === 'true',
           followUpQuestion: parsedResponse.followUpQuestion !== null ? parsedResponse.followUpQuestion : undefined,
-          isJunkResponse: parsedResponse.isJunkResponse === true
+          isJunkResponse: parsedResponse.isOnlyCorrectingOrAskingQuestionBack === true
         };
   } catch (error) {
     console.error('Error parsing LLM response:', error);
@@ -151,10 +151,17 @@ const buildDecideFollowUpPrompt = () => {
     Your response should be in YAML format with the following structure:
     shouldFollowUp: <boolean>
     followUpQuestion: <string or null>
-    isJunkResponse: <boolean>
+    isOnlyCorrectingOrAskingQuestionBack: <boolean>
     
-    Set isJunkResponse to true if the participant's latest response is correcting a detail in the question 
-    or asking a question to you. Otherwise, set it to false.
+    Set isOnlyCorrectingOrAskingQuestionBack to true if the participant's latest response is only correcting a detail in the question 
+    or asking a question back to you. Otherwise, set it to false.
+
+    Examples:
+    - "I think you meant to ask about my job, not my hobbies." (isOnlyCorrectingOrAskingQuestionBack: true)
+    - "Can you repeat the question?" (isOnlyCorrectingOrAskingQuestionBack: true)
+    - "I'm not sure I understand. What do you mean by 'work-life balance'?" (isOnlyCorrectingOrAskingQuestionBack: true)
+    - "My work-life balance is pretty good. I usually finish work by 5 PM and have evenings free." (isOnlyCorrectingOrAskingQuestionBack: false)
+    - "I don't really have a work-life balance, it's all work for me." (isOnlyCorrectingOrAskingQuestionBack: false)
 
     The participant's latest response (also reflected in the conversation history) by itself is:
     "{latest_response}"
@@ -206,10 +213,17 @@ const buildAlwaysFollowUpPrompt = () => {
     
     Your response should be in YAML format with the following structure:
     followUpQuestion: <string>
-    isJunkResponse: <boolean>
+    isOnlyCorrectingOrAskingQuestionBack: <boolean>
     
-    Set isJunkResponse to true if the participant's latest response is correcting a detail in the question 
-    or asking a question to you. Otherwise, set it to false.
+    Set isOnlyCorrectingOrAskingQuestionBack to true if the participant's latest response is only correcting a detail in the question 
+    or asking a question back to you. Otherwise, set it to false.
+
+    Examples:
+    - "Did you mean to ask about my current job or my previous one?" (isOnlyCorrectingOrAskingQuestionBack: true)
+    - "Sorry, I didn't catch that. Could you rephrase?" (isOnlyCorrectingOrAskingQuestionBack: true)
+    - "What exactly do you mean by 'company culture'?" (isOnlyCorrectingOrAskingQuestionBack: true)
+    - "The company culture here is very collaborative. We have regular team-building activities." (isOnlyCorrectingOrAskingQuestionBack: false)
+    - "I don't really pay attention to the company culture, I just focus on my work." (isOnlyCorrectingOrAskingQuestionBack: false)
 
     The participant's latest response (also reflected in the conversation history) is:
     "{latest_response}"
