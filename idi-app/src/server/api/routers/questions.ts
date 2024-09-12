@@ -14,14 +14,27 @@ export const questionsRouter = createTRPCRouter({
       // Maybe need maybe dont
     }),
   getResponses: privateProcedure
-    .input(z.object({ questionId: z.string() }))
+    .input(
+      z.object({
+        questionId: z.string(),
+        includeQuestions: z.boolean().optional(),
+        interviewSessionId: z.string().optional(),
+      }),
+    )
     .query(async ({ ctx, input }) => {
       const responses = await ctx.db.response.findMany({
         where: {
           questionId: input.questionId,
           interviewSession: {
             status: InterviewSessionStatus.COMPLETED,
+            ...(input.interviewSessionId
+              ? { id: input.interviewSessionId }
+              : {}),
           },
+        },
+        include: {
+          question: input.includeQuestions,
+          followUpQuestion: input.includeQuestions,
         },
         orderBy: {
           interviewSession: {

@@ -5,6 +5,7 @@ interface BasicTagProps {
   borderColor?: string;
   fixedWidth?: boolean;
   children: React.ReactNode;
+  className?: string;
 }
 
 const BasicTag: React.FC<BasicTagProps> = ({
@@ -12,12 +13,13 @@ const BasicTag: React.FC<BasicTagProps> = ({
   borderColor = "border-theme-400",
   fixedWidth = true,
   children,
+  className,
 }) => {
   return (
     <div
-      className={`text-theme-900 inline-flex items-center justify-center rounded-md px-3 py-1 text-xs font-medium ${color} border ${borderColor} ${
+      className={`${className} inline-flex items-center justify-center rounded-md px-3 py-1 text-xs font-medium text-theme-900 ${color} border ${borderColor} ${
         fixedWidth ? "min-w-20" : ""
-      }`}
+      } `}
     >
       {children}
     </div>

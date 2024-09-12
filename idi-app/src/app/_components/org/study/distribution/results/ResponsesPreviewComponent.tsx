@@ -1,12 +1,13 @@
 import BasicCard from "@/app/_components/reusable/BasicCard";
 import { api } from "@/trpc/react";
 import { ArrowSquareOut } from "@phosphor-icons/react";
-import { Question, QuestionType } from "@shared/generated/client";
+import { Question, QuestionType, Response } from "@shared/generated/client";
 import React, { useMemo } from "react";
 import { ClipLoader } from "react-spinners";
 
 interface ResponsesPreviewProps {
   question: Question | null;
+  onResponseClick: (response: Response | null) => void;
 }
 
 interface ProcessedResponse {
@@ -18,13 +19,20 @@ interface ProcessedResponse {
   rangeSelection: number | null;
 }
 
-const ResponsesPreview: React.FC<ResponsesPreviewProps> = ({ question }) => {
+const ResponsesPreview: React.FC<ResponsesPreviewProps> = ({
+  question,
+  onResponseClick,
+}) => {
   const { data: responsesData, isLoading } =
     api.questions.getResponses.useQuery({
       questionId: question?.id ?? "",
+      includeQuestions: false,
     });
 
-  console.log({ responsesData });
+  const { data: mcOptions, isLoading: mcOptionsLoading } =
+    api.questions.getMultipleChoiceOptions.useQuery({
+      questionId: question?.id ?? "",
+    });
 
   const filteredResponsesData =
     question?.questionType === QuestionType.OPEN_ENDED
@@ -82,14 +90,51 @@ const ResponsesPreview: React.FC<ResponsesPreviewProps> = ({ question }) => {
   ) => {
     switch (questionType) {
       case QuestionType.MULTIPLE_CHOICE:
-        return <div></div>;
+        return (
+          <BasicCard
+            className="flex cursor-pointer flex-col gap-1 shadow-standard"
+            shouldHover
+            key={key}
+            onClick={() =>
+              onResponseClick(
+                responsesData?.find(
+                  (response) => response.id === processedResponse.id,
+                ) ?? null,
+              )
+            }
+          >
+            <div className="flex justify-between">
+              <div className="text-sm text-theme-900">Response {index + 1}</div>
+              <ArrowSquareOut size={16} className="text-theme-900" />
+            </div>
+            <div className="text-xs text-theme-300">
+              Selection:{" "}
+              <span className="font-bold text-theme-900">
+                {
+                  mcOptions?.find(
+                    (option) =>
+                      option.id === processedResponse.multipleChoiceOptionId,
+                  )?.optionText
+                }
+              </span>
+            </div>
+          </BasicCard>
+        );
       case QuestionType.RANGE:
         return <div></div>;
       default:
         return (
           <BasicCard
             className="flex cursor-pointer flex-col gap-1 shadow-standard"
+            shouldHover
             key={key}
+            onClick={() =>
+              onResponseClick(
+                responsesData?.find(
+                  (response) => response.id === processedResponse.id,
+                ) ?? null,
+              )
+            }
           >
             <div className="flex justify-between">
               <div className="text-sm text-theme-900">Response {index + 1}</div>

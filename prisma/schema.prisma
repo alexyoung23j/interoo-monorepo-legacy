@@ -176,6 +176,9 @@ model Response {
   // if follow-up response
   followUpQuestionId String?
   followUpQuestion   FollowUpQuestion? @relation(fields: [followUpQuestionId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
 }
 
 model ResponseMedia {
