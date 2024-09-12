@@ -182,7 +182,7 @@ const IntroContent: React.FC<{
           } as React.CSSProperties
         }
       >
-        Let's go!
+        {`Let's go!`}
       </Button>
     </div>
   );

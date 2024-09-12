@@ -99,7 +99,7 @@ const ResponsesPreview: React.FC<ResponsesPreviewProps> = ({ question }) => {
               {processedResponse.numFollowUps} Follow Ups
             </div>
             <div className="text-xs text-theme-900">
-              "{processedResponse.fastTranscribedText}"
+              {`"${processedResponse.fastTranscribedText}"`}
             </div>
           </BasicCard>
         );
@@ -111,7 +111,7 @@ const ResponsesPreview: React.FC<ResponsesPreviewProps> = ({ question }) => {
       {processedResponses.map((processedResponse, index) =>
         renderResponsesPreview(
           processedResponse,
-          question?.questionType as QuestionType,
+          question?.questionType ?? QuestionType.OPEN_ENDED,
           index,
           processedResponse.id,
         ),

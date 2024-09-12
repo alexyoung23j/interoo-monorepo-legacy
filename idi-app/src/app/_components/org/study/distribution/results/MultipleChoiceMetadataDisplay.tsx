@@ -41,8 +41,9 @@ const MultipleChoiceMetadataDisplay: React.FC<
   );
 
   mcData.forEach((response) => {
-    if (response.multipleChoiceOptionId) {
-      optionCounts[response.multipleChoiceOptionId]++;
+    const optionId = response.multipleChoiceOptionId;
+    if (optionId) {
+      optionCounts[optionId] = (optionCounts[optionId] ?? -1) + 1;
     }
   });
 
@@ -55,14 +56,14 @@ const MultipleChoiceMetadataDisplay: React.FC<
   return (
     <div className="flex flex-col items-start">
       <div className="flex flex-col gap-2">
-        <div className="text-theme-900 flex flex-row items-center gap-2 text-base font-medium">
+        <div className="flex flex-row items-center gap-2 text-base font-medium text-theme-900">
           Multiple Choice Responses{" "}
           <ListChecks size={16} className="text-theme-900" weight="bold" />
         </div>
-        <div className="text-theme-600 mb-4 text-sm">
-          <span className="text-theme-900 font-semibold">
+        <div className="mb-4 text-sm text-theme-600">
+          <span className="font-semibold text-theme-900">
             {responsesWithOption.length}{" "}
-            <span className="text-theme-500 font-normal">Responses</span>
+            <span className="font-normal text-theme-500">Responses</span>
           </span>
         </div>
       </div>

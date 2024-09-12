@@ -203,7 +203,7 @@ export function useTranscriptionRecorder({
               transcribeAndGenerateNextQuestionResponse.isJunkResponse,
             interviewSessionId: interviewSession!.id,
             followUpQuestionId:
-              currentResponseAndUploadUrl.response?.followUpQuestionId!,
+              currentResponseAndUploadUrl.response?.followUpQuestionId ?? null,
             rangeSelection: null,
             multipleChoiceOptionId: null,
           },
