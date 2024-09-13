@@ -139,7 +139,9 @@ export function calculateTranscribeAndGenerateNextQuestionRequest({
     totalBaseQuestions + completedFollowUps + estimatedRemainingFollowUps;
 
   const interviewStartTime =
-    interviewSession?.startTime?.toISOString() ?? new Date().toISOString();
+    responses.length > 0 && responses[0]?.createdAt
+      ? responses[0].createdAt.toISOString()
+      : new Date().toISOString();
   const currentTime = new Date().toISOString();
 
   // Use the builder to create the request
