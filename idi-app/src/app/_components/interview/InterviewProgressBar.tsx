@@ -45,7 +45,7 @@ export function InterviewProgressBar({
 
       if (currentBaseQuestionIndex === -1) return 0;
 
-      let baseProgress =
+      const baseProgress =
         ((currentBaseQuestionIndex + 1) / totalBaseQuestions) *
         baseQuestionWeight;
       let followUpProgress = 0;
