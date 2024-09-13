@@ -30,11 +30,11 @@ const getFollowUpLevelAverage = (level: FollowUpLevel): number => {
     case FollowUpLevel.AUTOMATIC:
       return 3;
     case FollowUpLevel.SURFACE:
-      return 2;
+      return 1;
     case FollowUpLevel.LIGHT:
-      return 3;
+      return 2;
     case FollowUpLevel.DEEP:
-      return 5;
+      return 4;
     default:
       return 3;
   }
