@@ -7,6 +7,8 @@ import {
   InterviewSessionStatus,
 } from "@shared/generated/client";
 import { CurrentQuestionType } from "@shared/types";
+import { followUpQuestionsAtom } from "@/app/state/atoms";
+import { useAtom } from "jotai";
 
 interface InterviewProgressBarProps {
   study: Study & { questions: Question[] };
@@ -22,16 +24,15 @@ export function InterviewProgressBar({
   calculatedCurrentQuestion,
 }: InterviewProgressBarProps) {
   const [progress, setProgress] = useState(0);
+  const [followUpQuestions] = useAtom(followUpQuestionsAtom);
 
   useEffect(() => {
     const calculateProgress = () => {
       if (!calculatedCurrentQuestion) return 0;
 
       const totalBaseQuestions = study.questions.length;
-      const assumedFollowUpsPerQuestion = 3;
-      const totalSteps = totalBaseQuestions * (1 + assumedFollowUpsPerQuestion);
-
-      let completedSteps = 0;
+      const baseQuestionWeight = 0.8; // 80% of progress from base questions
+      const followUpWeight = 1 - baseQuestionWeight;
 
       const currentBaseQuestionIndex =
         "parentQuestionId" in calculatedCurrentQuestion
@@ -42,42 +43,35 @@ export function InterviewProgressBar({
               (q) => q.id === calculatedCurrentQuestion.id,
             );
 
-      if (currentBaseQuestionIndex !== -1) {
-        // Count completed base questions
-        completedSteps =
-          currentBaseQuestionIndex * (1 + assumedFollowUpsPerQuestion);
+      if (currentBaseQuestionIndex === -1) return 0;
 
-        if ("parentQuestionId" in calculatedCurrentQuestion) {
-          // It's a follow-up question
-          const followUpsForCurrentBase =
-            interviewSession.FollowUpQuestions.filter(
-              (fq) =>
-                fq.parentQuestionId ===
-                calculatedCurrentQuestion.parentQuestionId,
-            );
-          const currentFollowUpIndex = followUpsForCurrentBase.findIndex(
-            (fq) => fq.id === calculatedCurrentQuestion.id,
-          );
+      let baseProgress =
+        ((currentBaseQuestionIndex + 1) / totalBaseQuestions) *
+        baseQuestionWeight;
+      let followUpProgress = 0;
 
-          // Calculate progress for follow-ups
-          const baseQuestionProgress = 1 / (1 + assumedFollowUpsPerQuestion);
-          const followUpProgress =
-            (1 - baseQuestionProgress) / (assumedFollowUpsPerQuestion + 1);
+      console.log("calculated current q: ", calculatedCurrentQuestion);
+      console.log("flup questions:", followUpQuestions);
 
-          completedSteps += 1; // Count the base question
-          completedSteps += (currentFollowUpIndex + 1) * followUpProgress;
-        } else {
-          // It's a base question
-          completedSteps += 1; // Count the base question itself
-        }
+      if ("parentQuestionId" in calculatedCurrentQuestion) {
+        const followUpsForCurrentBase = followUpQuestions.filter(
+          (fq) =>
+            fq.parentQuestionId === calculatedCurrentQuestion.parentQuestionId,
+        );
+        const currentFollowUpIndex = followUpsForCurrentBase.findIndex(
+          (fq) => fq.id === calculatedCurrentQuestion.id,
+        );
+
+        followUpProgress =
+          ((currentFollowUpIndex + 1) / (followUpsForCurrentBase.length + 1)) *
+          (followUpWeight / totalBaseQuestions);
       }
 
-      const calculatedProgress = (completedSteps / totalSteps) * 100;
-      return Math.min(Math.max(calculatedProgress, 0), 99.9); // Ensure progress is between 0 and 99.9
+      const totalProgress = (baseProgress + followUpProgress) * 100;
+      return Math.min(Math.max(totalProgress, 0), 99.9);
     };
 
-    const newProgress = calculateProgress();
-    setProgress(newProgress);
+    setProgress(calculateProgress());
   }, [
     study.questions,
     calculatedCurrentQuestion,
@@ -101,9 +95,9 @@ export function InterviewProgressBar({
 
   return (
     <div className="flex w-full items-center justify-between gap-6 md:mb-12">
-      <div className="bg-theme-100 relative h-2 w-full rounded-[1px] md:rounded-[2px]">
+      <div className="relative h-2 w-full rounded-[1px] bg-theme-100 md:rounded-[2px]">
         <div
-          className="absolute h-full rounded-[1px] bg-org-secondary transition-all duration-500 ease-in-out md:rounded-[2px]"
+          className="absolute h-full rounded-[1px] bg-theme-500 transition-all duration-500 ease-in-out md:rounded-[2px]"
           style={{ width: getProgressWidth() }}
         ></div>
       </div>
