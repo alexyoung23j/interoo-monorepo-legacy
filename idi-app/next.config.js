@@ -33,7 +33,11 @@ const config = {
     return config;
   },
   images: {
-    domains: ["placehold.co", "www.taxmann.com"],
+    domains: [
+      "placehold.co",
+      "www.taxmann.com",
+      "https://kpgpsbovjhjvnskyaydv.supabase.co",
+    ],
   },
 };
 

@@ -23,7 +23,7 @@ export const StimulusModal: React.FC<StimulusModalProps> = ({
         <img
           src={stimulus.url}
           alt={stimulus.altText ?? "Image"}
-          className="w-auto object-contain"
+          className="max-h-[80vh] w-auto max-w-full object-contain"
         />
       );
     } else if (stimulus.type === "video") {
@@ -50,7 +50,7 @@ export const StimulusModal: React.FC<StimulusModalProps> = ({
         <div className="flex flex-col items-center justify-center">
           {renderContent()}
           {stimulus.title && (
-            <div className="mt-2 text-center text-lg text-white">
+            <div className="mt-2 p-4 text-center text-lg text-white">
               {stimulus.title}
             </div>
           )}
