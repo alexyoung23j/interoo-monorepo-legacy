@@ -255,11 +255,11 @@ export const getFollowUpLevelRange = (level: string): [number, number] => {
     case FollowUpLevel.AUTOMATIC:
       return [2, 4];
     case FollowUpLevel.SURFACE:
-      return [1, 3];
+      return [1, 2];
     case FollowUpLevel.LIGHT:
-      return [2, 4];
+      return [2, 3];
     case FollowUpLevel.DEEP:
-      return [4, 6];
+      return [3, 5];
     default:
       return [2, 5];
   }
