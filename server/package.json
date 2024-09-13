@@ -17,6 +17,7 @@
     "busboy": "^1.6.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
+    "elevenlabs": "^0.16.0",
     "express": "^4.19.2",
     "get-audio-duration": "^4.0.1",
     "js-yaml": "^4.1.0",
