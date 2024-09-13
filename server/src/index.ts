@@ -6,6 +6,7 @@ import path from "path";
 import cors from "cors";
 import { Storage } from "@google-cloud/storage";
 import { createClient as createDeepgramClient } from "@deepgram/sdk";
+import { ElevenLabsClient } from "elevenlabs";
 
 
 // Import routes
@@ -43,8 +44,15 @@ export const ttsClient = new TextToSpeechClient({
     private_key: (process.env.GOOGLE_STORAGE_PRIVATE_KEY as string).replace(/\\n/gm, "\n")
   }
 });
+
+// Initialize ElevenLabs client
+export const elevenLabsClient = new ElevenLabsClient({
+  apiKey: process.env.ELEVENLABS_API_KEY
+});
 export const bucketName = process.env.GCS_BUCKET_NAME || 'idi-assets';
 export const bucket = storage.bucket(bucketName);
+
+
 
 // Middleware to add API key to requests
 app.use((req, res, next) => {

@@ -97,7 +97,7 @@ export function InterviewProgressBar({
     <div className="flex w-full items-center justify-between gap-6 md:mb-12">
       <div className="relative h-2 w-full rounded-[1px] bg-theme-100 md:rounded-[2px]">
         <div
-          className="absolute h-full rounded-[1px] bg-theme-500 transition-all duration-500 ease-in-out md:rounded-[2px]"
+          className="absolute h-full rounded-[1px] bg-org-secondary transition-all duration-500 ease-in-out md:rounded-[2px]"
           style={{ width: getProgressWidth() }}
         ></div>
       </div>
