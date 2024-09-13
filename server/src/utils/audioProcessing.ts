@@ -54,12 +54,12 @@ export const decideFollowUpPromptIfNecessary = async (
   requestLogger: ReturnType<typeof createRequestLogger>,
   minFollowUps: number,
   maxFollowUps: number,
-  currentNumberOfFollowUps: number,
+  wouldBeNextFollowUpNumber: number,
 ): Promise<{ shouldFollowUp: boolean; followUpQuestion?: string, isJunkResponse: boolean }> => {
   const startTime = Date.now();
   requestLogger.info('Starting follow-up decision process');
 
-  const shouldAlwaysFollowUp = currentNumberOfFollowUps < minFollowUps;
+  const shouldAlwaysFollowUp = wouldBeNextFollowUpNumber <= minFollowUps;
 
   const conversationHistory = buildConversationHistory(requestData.thread, transcribedText);
   

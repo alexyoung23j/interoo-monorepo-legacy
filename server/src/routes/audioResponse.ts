@@ -152,9 +152,9 @@ const handlePotentialFollowUp = async (
   requestLogger: ReturnType<typeof createRequestLogger>,
   minFollowUps: number,
   maxFollowUps: number,
-  currentNumberOfFollowUps: number
+  wouldBeNextFollowUpNumber: number
 ): Promise<TranscribeAndGenerateNextQuestionResponse> => {
-  const { shouldFollowUp, followUpQuestion, isJunkResponse } = await decideFollowUpPromptIfNecessary(requestData, transcribedText, requestLogger, minFollowUps, maxFollowUps, currentNumberOfFollowUps);
+  const { shouldFollowUp, followUpQuestion, isJunkResponse } = await decideFollowUpPromptIfNecessary(requestData, transcribedText, requestLogger, minFollowUps, maxFollowUps, wouldBeNextFollowUpNumber);
 
   // Update the response with the transcription
   await updateResponseWithTranscription(requestData.currentResponseId, transcribedText, isJunkResponse);
@@ -238,18 +238,18 @@ const processAudioResponse = async (
   }
 
   const [minFollowUps, maxFollowUps] = getFollowUpLevelRange(requestData.followUpLevel);
-  const numberOfPriorFollowUps = requestData.thread.filter(t => t.threadItem.type === "response" && t.threadItem.isJunkResponse === false).length - 1;
+  const wouldBeNextFollowUpNumber = requestData.thread.filter(t => t.threadItem.type === "response" && t.threadItem.isJunkResponse === false).length + 1;
 
   console.log(requestData.thread);
   console.log(maxFollowUps);
   console.log(requestData.shouldFollowUp);
 
   if (!requestData.shouldFollowUp || 
-      numberOfPriorFollowUps > maxFollowUps || 
+    wouldBeNextFollowUpNumber > maxFollowUps || 
       !shouldFollowUpBasedOnTime(requestData)) {
     return handleNoFollowUp(requestData, transcribedText);
   } else {
-    return handlePotentialFollowUp(requestData, transcribedText, requestLogger, minFollowUps, maxFollowUps, numberOfPriorFollowUps);
+    return handlePotentialFollowUp(requestData, transcribedText, requestLogger, minFollowUps, maxFollowUps, wouldBeNextFollowUpNumber);
   }
 };
 
