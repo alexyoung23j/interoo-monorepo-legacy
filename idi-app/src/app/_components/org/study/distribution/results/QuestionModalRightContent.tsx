@@ -73,9 +73,14 @@ const QuestionModalRightContent: React.FC<QuestionModalRightContentProps> = ({
 
     const formattedResponse = `${questionType}: "${questionTitle}"\nAnswer: "${response.fastTranscribedText}"`;
 
-    navigator.clipboard.writeText(formattedResponse).then(() => {
-      showSuccessToast("Response copied to clipboard");
-    });
+    navigator.clipboard
+      .writeText(formattedResponse)
+      .then(() => {
+        showSuccessToast("Response copied to clipboard");
+      })
+      .catch((err) => {
+        console.error("Failed to copy response: ", err);
+      });
   };
 
   return (
