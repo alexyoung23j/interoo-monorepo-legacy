@@ -5,12 +5,15 @@ import { Question } from "@shared/generated/client";
 import BasicHeaderCard from "@/app/_components/reusable/BasicHeaderCard";
 import { api } from "@/trpc/react";
 import QuestionModalRightContent from "./QuestionModalRightContent";
+import { ExtendedStudy } from "./ResultsPageComponent";
+import { formatDuration } from "@/app/utils/functions";
 
 interface QuestionModalProps {
   isOpen: boolean;
   onClose: () => void;
   question: Question;
   interviewSessionId: string;
+  study: ExtendedStudy;
 }
 
 const QuestionModal: React.FC<QuestionModalProps> = ({
@@ -18,6 +21,7 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
   onClose,
   question,
   interviewSessionId,
+  study,
 }) => {
   const { data: responsesData, isLoading } =
     api.questions.getResponses.useQuery({
@@ -32,7 +36,16 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
       return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     });
 
-  console.log({ responsesWithTranscripts });
+  const totalTime =
+    responsesWithTranscripts && responsesWithTranscripts.length > 0
+      ? formatDuration(
+          new Date(responsesWithTranscripts[0]?.createdAt ?? ""),
+          new Date(
+            responsesWithTranscripts[responsesWithTranscripts.length - 1]
+              ?.updatedAt ?? "",
+          ),
+        )
+      : "0:00";
 
   const topContent = (
     <div className="flex w-full items-start justify-between gap-3">
@@ -43,7 +56,6 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
   );
 
   const leftContent = <div>left</div>;
-  const rightContent = <div>right</div>;
 
   return (
     <SplitScreenModal
@@ -53,16 +65,20 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
         <BasicHeaderCard
           items={[
             {
-              title: "Test",
-              subtitle: "Completed Interviews",
+              title: study.title,
+              subtitle: "Study",
             },
             {
-              title: "Test",
-              subtitle: "Incomplete Interviews",
+              title: `#${question?.questionOrder + 1}`,
+              subtitle: "Question number",
             },
             {
-              title: "todo",
-              subtitle: "Average Completion Time",
+              title: `${(responsesWithTranscripts?.length ?? 0) - 1}`,
+              subtitle: "# Follow Ups",
+            },
+            {
+              title: totalTime,
+              subtitle: "Total time",
             },
           ]}
         />

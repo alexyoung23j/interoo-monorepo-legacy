@@ -1,5 +1,6 @@
 import { Router, Request, Response } from "express";
 import { prisma, bucket, bucketName } from "../index";
+import { authMiddleware } from "src/middleware/auth";
 
 const router = Router();
 
@@ -31,6 +32,6 @@ const getMediaSignedUrl = async (req: Request, res: Response) => {
   }
 };
 
-router.get('/:responseId', getMediaSignedUrl);
+router.get('/:responseId', authMiddleware, getMediaSignedUrl);
 
 export const getMediaSignedUrlRoute = router;

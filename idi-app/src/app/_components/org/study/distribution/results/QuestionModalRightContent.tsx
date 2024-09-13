@@ -7,6 +7,7 @@ import { Sparkle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDuration } from "@/app/utils/functions";
 import BasicTag from "@/app/_components/reusable/BasicTag";
+import { showSuccessToast } from "@/app/utils/toastUtils";
 
 interface QuestionModalRightContentProps {
   responses:
@@ -30,16 +31,67 @@ const QuestionModalRightContent: React.FC<QuestionModalRightContentProps> = ({
     );
   }
 
+  const copyThread = () => {
+    if (!responses) return;
+
+    const formattedThread = responses
+      .map((response) => {
+        const questionTitle = !response.followUpQuestion
+          ? response.question?.title
+          : response.followUpQuestion?.title;
+        const questionType = response.followUpQuestion
+          ? "Follow Up"
+          : "Original Question";
+
+        return `${questionType}: "${questionTitle}"\nAnswer: "${response.fastTranscribedText}"\n`;
+      })
+      .join("\n");
+
+    navigator.clipboard
+      .writeText(formattedThread)
+      .then(() => {
+        console.log("Thread copied to clipboard");
+        showSuccessToast("Thread copied to clipboard");
+      })
+      .catch((err) => {
+        console.error("Failed to copy thread: ", err);
+      });
+  };
+
+  const copyIndividualResponse = (
+    response: Response & {
+      question: Question | null;
+      followUpQuestion: FollowUpQuestion | null;
+    },
+  ) => {
+    const questionTitle = !response.followUpQuestion
+      ? response.question?.title
+      : response.followUpQuestion?.title;
+    const questionType = response.followUpQuestion
+      ? "Follow Up"
+      : "Original Question";
+
+    const formattedResponse = `${questionType}: "${questionTitle}"\nAnswer: "${response.fastTranscribedText}"`;
+
+    navigator.clipboard.writeText(formattedResponse).then(() => {
+      showSuccessToast("Response copied to clipboard");
+    });
+  };
+
   return (
     <div className="flex h-fit w-full flex-col gap-4">
       <div className="flex w-full items-center justify-between gap-3">
-        <div className="text-lg font-semibold">Transcripts</div>
+        <div className="text-lg font-semibold">
+          {`Transcript${responses.length > 1 ? "s" : ""}`}
+        </div>
         <Button
           className="flex items-center gap-1"
           variant="secondary"
           size="sm"
+          onClick={copyThread}
         >
-          Copy Thread <CopySimple size={16} className="text-theme-900" />
+          {`Copy${responses.length > 1 ? " Thread" : ""}`}{" "}
+          <CopySimple size={16} className="text-theme-900" />
         </Button>
       </div>
       <div className="h-[1px] w-full bg-theme-200 text-theme-900"></div>
@@ -57,7 +109,11 @@ const QuestionModalRightContent: React.FC<QuestionModalRightContentProps> = ({
                   ? response.question?.title
                   : response.followUpQuestion?.title}
               </div>
-              <CopySimple size={16} className="flex-shrink-0 text-theme-900" />
+              <CopySimple
+                size={16}
+                className="flex-shrink-0 text-theme-900"
+                onClick={() => copyIndividualResponse(response)}
+              />
             </div>
             <div className="flex items-center gap-2 text-sm text-theme-500">
               {response.followUpQuestion && (
