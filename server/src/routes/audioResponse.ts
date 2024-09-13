@@ -209,17 +209,9 @@ const shouldFollowUpBasedOnTime = (requestData: TranscribeAndGenerateNextQuestio
   const targetTimePerQuestion = requestData.targetInterviewLength / requestData.numTotalEstimatedInterviewQuestions;
   const expectedElapsedTime = targetTimePerQuestion * (requestData.currentQuestionNumber+1);
 
-  // If we're more than 10% behind schedule, don't follow up
-  if (elapsedTimeInMinutes > expectedElapsedTime * 1.1) {
-    requestLogger.info('Not following up because we\'re more than 10% behind schedule', { elapsedTimeInMinutes, expectedElapsedTime });
-    return false;
-  }
-
-  // If we have less than 80% of the target time remaining for the rest of the questions, don't follow up
-  const remainingQuestions = requestData.numTotalEstimatedInterviewQuestions - requestData.currentQuestionNumber;
-  const remainingTime = requestData.targetInterviewLength - elapsedTimeInMinutes;
-  if (remainingTime / remainingQuestions < targetTimePerQuestion * 0.8) {
-    requestLogger.info('Not following up because we\'re less than 80% of the target time remaining for the rest of the questions', { remainingTime, remainingQuestions, targetTimePerQuestion });
+  // If we're more than 30% behind schedule, don't follow up
+  if (elapsedTimeInMinutes > expectedElapsedTime * 1.3) {
+    requestLogger.info('Not following up because we\'re more than 30% behind schedule', { elapsedTimeInMinutes, expectedElapsedTime });
     return false;
   }
 
