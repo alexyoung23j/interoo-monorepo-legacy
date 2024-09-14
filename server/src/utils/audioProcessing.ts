@@ -37,7 +37,8 @@ export const transcribeAudio = async (audioBuffer: Buffer, requestLogger: Return
     const { result } = await deepgram.listen.prerecorded.transcribeFile(audioBuffer, { 
       model: "nova-2", 
       profanity_filter: true, 
-      keywords: keywords
+      keywords: keywords,
+      smart_format: true,
     });
     
     requestLogger.info('Audio transcription completed');

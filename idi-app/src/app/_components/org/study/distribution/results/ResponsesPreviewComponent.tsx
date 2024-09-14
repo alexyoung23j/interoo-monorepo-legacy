@@ -140,9 +140,11 @@ const ResponsesPreview: React.FC<ResponsesPreviewProps> = ({
               <div className="text-sm text-theme-900">Response {index + 1}</div>
               <ArrowSquareOut size={16} className="text-theme-900" />
             </div>
-            <div className="text-xs text-theme-300">
-              {processedResponse.numFollowUps} Follow Ups
-            </div>
+            {question?.shouldFollowUp && (
+              <div className="text-xs text-theme-300">
+                {processedResponse.numFollowUps} Follow Ups
+              </div>
+            )}
             <div className="text-xs text-theme-900">
               {`"${processedResponse.fastTranscribedText}"`}
             </div>

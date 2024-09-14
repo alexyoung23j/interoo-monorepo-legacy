@@ -28,12 +28,12 @@ const SplitScreenModal: React.FC<SplitScreenModalProps> = ({
         <div className="flex w-full flex-col">{topContent}</div>
         <div className="flex-1 overflow-hidden">
           <PanelGroup direction="horizontal">
-            <Panel defaultSize={50} minSize={30} className="overflow-hidden">
-              <div className="h-full overflow-y-auto scrollbar-thin">
+            <Panel defaultSize={55} minSize={30} className="overflow-hidden">
+              <div className="h-full overflow-y-auto pl-1 pr-2 scrollbar-thin">
                 {leftContent}
               </div>
             </Panel>
-            <PanelResizeHandle className="group relative flex w-6 cursor-col-resize items-center justify-center">
+            <PanelResizeHandle className="group relative flex w-6 cursor-col-resize items-center justify-center outline-none">
               <div className="absolute h-full w-[1px] bg-theme-off-white transition-colors group-hover:bg-theme-100/80"></div>
               <DotsSixVertical
                 size={20}
@@ -41,8 +41,8 @@ const SplitScreenModal: React.FC<SplitScreenModalProps> = ({
                 className="relative z-10 text-theme-400 transition-colors group-hover:text-theme-600"
               />
             </PanelResizeHandle>
-            <Panel defaultSize={50} minSize={30} className="overflow-hidden">
-              <div className="h-full overflow-y-auto px-2 scrollbar-thin">
+            <Panel defaultSize={45} minSize={30} className="overflow-hidden">
+              <div className="h-full overflow-y-auto pl-2 pr-1 scrollbar-thin">
                 {rightContent}
               </div>
             </Panel>

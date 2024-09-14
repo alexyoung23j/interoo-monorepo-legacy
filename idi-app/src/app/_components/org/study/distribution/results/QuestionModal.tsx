@@ -1,12 +1,13 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { X } from "@phosphor-icons/react";
 import SplitScreenModal from "@/app/_components/layouts/org/SplitScreenModal";
-import { Question } from "@shared/generated/client";
+import { FollowUpQuestion, Question } from "@shared/generated/client";
 import BasicHeaderCard from "@/app/_components/reusable/BasicHeaderCard";
 import { api } from "@/trpc/react";
 import QuestionModalRightContent from "./QuestionModalRightContent";
 import { ExtendedStudy } from "./ResultsPageComponent";
 import { formatDuration } from "@/app/utils/functions";
+import QuestionModalLeftContent from "./QuestionModalLeftContent";
 
 interface QuestionModalProps {
   isOpen: boolean;
@@ -16,6 +17,11 @@ interface QuestionModalProps {
   study: ExtendedStudy;
 }
 
+type ExtendedResponse = Response & {
+  question: Question | null;
+  followUpQuestion: FollowUpQuestion | null;
+};
+
 const QuestionModal: React.FC<QuestionModalProps> = ({
   isOpen,
   onClose,
@@ -23,6 +29,10 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
   interviewSessionId,
   study,
 }) => {
+  const [selectedResponseId, setSelectedResponseId] = useState<string | null>(
+    null,
+  );
+
   const { data: responsesData, isLoading } =
     api.questions.getResponses.useQuery({
       questionId: question?.id ?? "",
@@ -47,20 +57,33 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
         )
       : "0:00";
 
-  const topContent = (
-    <div className="flex w-full items-start justify-between gap-3">
-      <div className="text-lg font-semibold text-theme-900">
-        {question?.title}
-      </div>
-    </div>
-  );
+  console.log({ selectedResponseId });
 
-  const leftContent = <div>left</div>;
+  useEffect(() => {
+    if (
+      isOpen &&
+      responsesWithTranscripts &&
+      responsesWithTranscripts.length > 0 &&
+      !selectedResponseId
+    ) {
+      console.log("setting initial response id");
+      setSelectedResponseId(responsesWithTranscripts[0]?.id ?? null);
+    }
+  }, [isOpen, responsesWithTranscripts, selectedResponseId]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setSelectedResponseId(null);
+    }
+  }, [isOpen]);
 
   return (
     <SplitScreenModal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={() => {
+        onClose();
+        setSelectedResponseId(null);
+      }}
       topContent={
         <BasicHeaderCard
           items={[
@@ -73,7 +96,7 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
               subtitle: "Question number",
             },
             {
-              title: `${(responsesWithTranscripts?.length ?? 0) - 1}`,
+              title: `${responsesWithTranscripts ? responsesWithTranscripts.length - 1 : "-"}`,
               subtitle: "# Follow Ups",
             },
             {
@@ -83,13 +106,21 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
           ]}
         />
       }
-      leftContent={leftContent}
+      leftContent={
+        <QuestionModalLeftContent
+          currentResponseId={selectedResponseId}
+          responses={responsesWithTranscripts ?? null}
+          question={question}
+          study={study}
+        />
+      }
       rightContent={
         <QuestionModalRightContent
           responses={responsesWithTranscripts ?? null}
-          onResponseClicked={() => {
-            console.log("clicked");
+          onResponseClicked={(response) => {
+            setSelectedResponseId(response.id);
           }}
+          currentResponseId={selectedResponseId ?? ""}
         />
       }
     />

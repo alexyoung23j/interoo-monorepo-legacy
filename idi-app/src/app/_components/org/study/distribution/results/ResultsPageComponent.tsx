@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Question,
   Study,
@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowSquareOut, X } from "@phosphor-icons/react";
 import ResponsesPreview from "./ResponsesPreviewComponent";
 import QuestionModal from "./QuestionModal";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 export type ExtendedStudy = Study & {
   completedInterviewsCount: number;
@@ -31,6 +32,10 @@ interface ResultsPageComponentProps {
 const ResultsPageComponent: React.FC<ResultsPageComponentProps> = ({
   study,
 }) => {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(
     null,
   );
@@ -39,11 +44,32 @@ const ResultsPageComponent: React.FC<ResultsPageComponentProps> = ({
   >(null);
   const [questionModalOpen, setQuestionModalOpen] = useState(false);
 
+  useEffect(() => {
+    const questionId = searchParams.get("questionId");
+    const responseId = searchParams.get("responseId");
+    const modalOpen = searchParams.get("modalOpen");
+
+    if (questionId) {
+      const question = study.questions.find((q) => q.id === questionId) ?? null;
+      setSelectedQuestion(question);
+    }
+
+    if (responseId) {
+      setSelectedInterviewSessionId(responseId);
+    }
+
+    if (modalOpen === "true") {
+      setQuestionModalOpen(true);
+    }
+  }, [searchParams, study.questions]);
+
   const handleViewResponses = (question: Question) => {
     if (selectedQuestion?.id === question.id) {
       setSelectedQuestion(null);
+      router.push(pathname);
     } else {
       setSelectedQuestion(question);
+      router.push(`${pathname}?questionId=${question.id}`);
     }
   };
 
@@ -55,7 +81,13 @@ const ResultsPageComponent: React.FC<ResultsPageComponentProps> = ({
           selectedInterviewSessionId !== null &&
           selectedQuestion !== null
         }
-        onClose={() => setQuestionModalOpen(false)}
+        onClose={() => {
+          setQuestionModalOpen(false);
+          const newSearchParams = new URLSearchParams(searchParams);
+          newSearchParams.delete("modalOpen");
+          newSearchParams.set("questionId", selectedQuestion!.id);
+          router.push(`${pathname}?${newSearchParams.toString()}`);
+        }}
         question={selectedQuestion!}
         interviewSessionId={selectedInterviewSessionId ?? ""}
         study={study}
@@ -133,6 +165,9 @@ const ResultsPageComponent: React.FC<ResultsPageComponentProps> = ({
                 setQuestionModalOpen(true);
                 setSelectedInterviewSessionId(
                   response?.interviewSessionId ?? null,
+                );
+                router.push(
+                  `${pathname}?questionId=${selectedQuestion?.id}&responseId=${response?.interviewSessionId}&modalOpen=true`,
                 );
               }}
             />
