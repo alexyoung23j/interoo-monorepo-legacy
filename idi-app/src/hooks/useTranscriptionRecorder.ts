@@ -134,7 +134,7 @@ export function useTranscriptionRecorder({
 
       // Update otherData with the correct times as ISO strings
       otherData.currentResponseStartTime = new Date(
-        recordingStartTime || Date.now(),
+        recordingStartTime ?? Date.now(),
       ).toISOString();
       otherData.currentResponseEndTime = new Date(currentEndTime).toISOString();
 
@@ -221,7 +221,7 @@ export function useTranscriptionRecorder({
               currentResponseAndUploadUrl.response?.followUpQuestionId ?? null,
             rangeSelection: null,
             multipleChoiceOptionId: null,
-            createdAt: new Date(recordingStartTime || Date.now()),
+            createdAt: new Date(recordingStartTime ?? Date.now()),
             updatedAt: new Date(currentEndTime),
           },
         ]);
