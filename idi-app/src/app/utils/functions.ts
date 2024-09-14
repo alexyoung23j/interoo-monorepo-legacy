@@ -174,3 +174,22 @@ export function formatDuration(startDate: Date, endDate: Date): string {
   const seconds = Math.floor((duration % 60000) / 1000);
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
+
+export const getSupportedMimeType = (isVideoEnabled: boolean) => {
+  const videoTypes = ["video/webm;codecs=vp8,opus", "video/webm", "video/mp4"];
+  const audioTypes = [
+    "audio/webm;codecs=opus",
+    "audio/webm",
+    "audio/mp4",
+    "audio/ogg",
+  ];
+  const types = isVideoEnabled ? videoTypes : audioTypes;
+
+  for (const type of types) {
+    if (MediaRecorder.isTypeSupported(type)) {
+      return type;
+    }
+  }
+  console.warn("No preferred mime types supported, falling back to default");
+  return undefined;
+};

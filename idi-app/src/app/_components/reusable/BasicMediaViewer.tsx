@@ -4,7 +4,7 @@ import WaveSurfer from "wavesurfer.js";
 
 interface BasicMediaViewerProps {
   mediaUrl: string;
-  mediaType?: "video/webm" | "audio/webm";
+  mediaType?: "video" | "audio";
 }
 
 const PlayPauseButton: React.FC<{
@@ -127,9 +127,9 @@ const AudioViewer: React.FC<{ mediaUrl: string }> = ({ mediaUrl }) => {
 
 const BasicMediaViewer: React.FC<BasicMediaViewerProps> = ({
   mediaUrl,
-  mediaType = "video/webm",
+  mediaType = "video",
 }) => {
-  const isVideo = mediaType === "video/webm";
+  const isVideo = mediaType === "video";
 
   return (
     <div

@@ -15,7 +15,7 @@ interface MediaUrlData {
     string,
     {
       signedUrl: string;
-      contentType: "video/webm" | "audio/webm";
+      contentType: "video" | "audio";
     }
   >;
 }

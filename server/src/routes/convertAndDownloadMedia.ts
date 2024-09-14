@@ -15,8 +15,14 @@ const convertAndDownloadMedia = async (req: Request, res: Response) => {
 
   try {
     // Fetch the file from Google Cloud Storage
-    const filePath = `${orgId}/${studyId}/${questionId}/${responseId}/recording.webm`;
+    const filePath = `${orgId}/${studyId}/${questionId}/${responseId}/recording`;
     const file = bucket.file(filePath);
+    const [metadata] = await file.getMetadata();
+    const contentType = metadata.contentType;
+
+    // Need to pull out the format from the longer contentType name, see getSupportedMimeType()
+    const fileFormat = contentType?.split('/')[1].split(';')[0] ?? 'webm';
+
     const [fileContent] = await file.download();
 
     // Set up the response headers
@@ -28,7 +34,7 @@ const convertAndDownloadMedia = async (req: Request, res: Response) => {
 
     // Use ffmpeg to convert the file
     ffmpeg(inputStream)
-      .inputFormat('webm')
+      .inputFormat(fileFormat)
       .videoCodec('libx264')
       .audioCodec('aac')
       .toFormat('mp4')

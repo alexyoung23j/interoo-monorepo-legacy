@@ -14,7 +14,6 @@ const getCurrentQuestionMetadata = async (req: Request, res: Response) => {
       questionId, 
       interviewSessionId,
       followUpQuestionId,
-      fileExtension,
       contentType
     }: CurrentQuestionMetadataRequest = req.body;
 
@@ -30,7 +29,7 @@ const getCurrentQuestionMetadata = async (req: Request, res: Response) => {
 
     const responseId = newResponse.id;
     const basePath = path.join(organizationId, studyId, questionId, responseId);
-    const fileName = `recording.${fileExtension}`;
+    const fileName = 'recording';
     const filePath = path.join(basePath, fileName);
 
     const [signedUrl] = await bucket.file(filePath).getSignedUrl({

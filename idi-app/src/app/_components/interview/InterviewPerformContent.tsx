@@ -19,6 +19,7 @@ import {
 } from "@/app/state/atoms";
 import { useAtom, useSetAtom } from "jotai";
 import InterviewBottomBarWithVideo from "./interviewBottomBarWithVideo";
+import { getSupportedMimeType } from "@/app/utils/functions";
 
 interface InterviewPerformContentProps {
   study: Study & {
@@ -186,8 +187,7 @@ export const InterviewPerformContent: React.FC<
               followUpQuestionId: isFollowUpQuestion
                 ? currentQuestion.id
                 : null,
-              fileExtension: "webm",
-              contentType: study.videoEnabled ? "video/webm" : "audio/webm",
+              contentType: getSupportedMimeType(study.videoEnabled ?? false),
             }),
             credentials: "include",
           },

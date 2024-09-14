@@ -15,7 +15,6 @@ const BasicCard: React.FC<BasicCardProps> = ({
   isSelected = false,
   className = "",
 }) => {
-  console.log("isSelected", isSelected);
   return (
     <div
       onClick={onClick}

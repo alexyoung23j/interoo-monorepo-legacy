@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { useAtomValue } from "jotai";
 import { currentResponseAndUploadUrlAtom } from "@/app/state/atoms";
 import { showWarningToast } from "@/app/utils/toastUtils";
+import { getSupportedMimeType } from "@/app/utils/functions";
 
 const CHUNK_SIZE = 2 * 1024 * 1024; // 2 MiB
 const UPLOAD_TIMEOUT = 7000; // 7 seconds in milliseconds
@@ -137,19 +138,15 @@ export function useChunkedMediaUploader() {
       }
 
       try {
+        const mimeType = getSupportedMimeType(isVideoEnabled);
         uploadedSize.current = 0;
         totalSize.current = 0;
         buffer.current = new Blob([], {
-          type: isVideoEnabled
-            ? "video/webm;codecs=vp8,opus"
-            : "audio/webm;codecs=opus",
+          type: mimeType,
         });
         isUploading.current = false;
         uploadComplete.current = false;
 
-        const mimeType = isVideoEnabled
-          ? "video/webm;codecs=vp8,opus"
-          : "audio/webm;codecs=opus";
         buffer.current = new Blob([], { type: mimeType });
 
         const stream = await navigator.mediaDevices.getUserMedia({

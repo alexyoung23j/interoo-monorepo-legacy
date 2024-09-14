@@ -30,7 +30,7 @@ export const useMediaDownload = ({
 
     setIsDownloading(true);
     try {
-      const isAudio = currentResponseContentType === "audio/webm";
+      const isAudio = currentResponseContentType === "audio";
       const targetFormat = isAudio ? "mp3" : "mp4";
 
       const supabase = createClient();

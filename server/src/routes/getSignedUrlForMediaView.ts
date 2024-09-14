@@ -19,7 +19,7 @@ const getMediaSignedUrls = async (req: Request, res: Response) => {
     const signedUrlMap: Record<string, { signedUrl: string; contentType: string }> = {};
 
     for (const media of responseMedias) {
-      const filePath = `${orgId}/${studyId}/${questionId}/${media.responseId}/recording.webm`;
+      const filePath = `${orgId}/${studyId}/${questionId}/${media.responseId}/recording`;
       const file = bucket.file(filePath);
       const [signedUrl] = await file.getSignedUrl({
         version: 'v4',

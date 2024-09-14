@@ -87,7 +87,7 @@ const QuestionModalLeftContent: React.FC<QuestionModalLeftContentProps> = ({
           ) : (
             <Download size={16} className="text-theme-900" />
           )}
-          {`Download ${currentResponseContentType == "audio/webm" ? "audio" : "video"}`}
+          {`Download ${currentResponseContentType?.startsWith("audio") ? "audio" : "video"}`}
         </Button>
       </div>
       <div className="h-[1px] w-full bg-theme-200 text-theme-900"></div>
@@ -95,7 +95,9 @@ const QuestionModalLeftContent: React.FC<QuestionModalLeftContentProps> = ({
       <div className="min-h-[80%] w-full flex-grow">
         <BasicMediaViewer
           mediaUrl={currentResponseMediaUrl ?? ""}
-          mediaType={currentResponseContentType}
+          mediaType={
+            currentResponseContentType?.split("/")[0] as "video" | "audio"
+          }
         />
       </div>
 
