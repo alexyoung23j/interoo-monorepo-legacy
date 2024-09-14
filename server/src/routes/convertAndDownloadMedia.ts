@@ -34,10 +34,10 @@ const convertAndDownloadMedia = async (req: Request, res: Response) => {
       .toFormat('mp4')
       .outputOptions('-movflags frag_keyframe+empty_moov')
       .on('start', (commandLine) => {
-        console.log('FFmpeg process started:', commandLine);
+        // console.log('FFmpeg process started:', commandLine);
       })
       .on('progress', (progress) => {
-        console.log('Processing: ' + progress.percent + '% done');
+        // console.log('Processing: ' + progress.percent + '% done');
       })
       .on('error', (err, stdout, stderr) => {
         console.error('FFmpeg error:', err.message);

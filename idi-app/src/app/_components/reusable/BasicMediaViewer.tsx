@@ -4,7 +4,7 @@ import WaveSurfer from "wavesurfer.js";
 
 interface BasicMediaViewerProps {
   mediaUrl: string;
-  mediaType: "video/webm" | "audio/webm";
+  mediaType?: "video/webm" | "audio/webm";
 }
 
 const PlayPauseButton: React.FC<{
@@ -38,7 +38,9 @@ const VideoViewer: React.FC<{ mediaUrl: string }> = ({ mediaUrl }) => {
       if (isPlaying) {
         videoRef.current.pause();
       } else {
-        videoRef.current.play();
+        videoRef.current.play().catch((error) => {
+          console.error("Error playing video:", error);
+        });
       }
       setIsPlaying(!isPlaying);
     }
@@ -87,7 +89,7 @@ const AudioViewer: React.FC<{ mediaUrl: string }> = ({ mediaUrl }) => {
         container: waveformRef.current,
         waveColor: "#D5DDE1",
         progressColor: "#426473",
-        cursorColor: "#426473",
+        cursorColor: "#F5F7F7",
         barWidth: 3,
         barRadius: 1,
         height: 60,
@@ -104,7 +106,9 @@ const AudioViewer: React.FC<{ mediaUrl: string }> = ({ mediaUrl }) => {
 
   const togglePlayPause = () => {
     if (wavesurfer.current) {
-      wavesurfer.current.playPause();
+      wavesurfer.current.playPause().catch((error) => {
+        console.error("Error playing audio:", error);
+      });
       setIsPlaying(wavesurfer.current.isPlaying());
     }
   };
@@ -123,7 +127,7 @@ const AudioViewer: React.FC<{ mediaUrl: string }> = ({ mediaUrl }) => {
 
 const BasicMediaViewer: React.FC<BasicMediaViewerProps> = ({
   mediaUrl,
-  mediaType,
+  mediaType = "video/webm",
 }) => {
   const isVideo = mediaType === "video/webm";
 

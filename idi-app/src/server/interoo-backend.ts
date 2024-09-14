@@ -13,7 +13,7 @@ export const fetchResponses = async ({
   orgId: string;
   token: string;
 }) => {
-  const { data } = await axios.post(
+  const res = await axios.post(
     `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/get-signed-urls-for-media-view/batch`,
     { responseIds, studyId, questionId, orgId },
     {
@@ -22,7 +22,8 @@ export const fetchResponses = async ({
       },
     },
   );
-  return data;
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+  return res.data;
 };
 
 export const downloadMedia = async ({
@@ -60,5 +61,6 @@ export const downloadMedia = async ({
       responseType: "blob",
     },
   );
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
   return response.data;
 };

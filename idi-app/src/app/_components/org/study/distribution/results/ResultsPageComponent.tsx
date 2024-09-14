@@ -50,7 +50,7 @@ const ResultsPageComponent: React.FC<ResultsPageComponentProps> = ({
     const modalOpen = searchParams.get("modalOpen");
 
     if (questionId) {
-      const question = study.questions.find((q) => q.id === questionId) || null;
+      const question = study.questions.find((q) => q.id === questionId) ?? null;
       setSelectedQuestion(question);
     }
 

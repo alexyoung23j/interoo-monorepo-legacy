@@ -39,6 +39,7 @@ export const useMediaDownload = ({
       } = await supabase.auth.getSession();
       if (!session) throw new Error("No active session");
 
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const blobData = await downloadMedia({
         url: currentResponseMediaUrl,
         targetFormat,

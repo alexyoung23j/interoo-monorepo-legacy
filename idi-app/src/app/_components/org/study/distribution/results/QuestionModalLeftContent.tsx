@@ -45,7 +45,7 @@ const QuestionModalLeftContent: React.FC<QuestionModalLeftContentProps> = ({
       questionId: question.id,
     });
 
-  if (!responses || !mediaUrlData) {
+  if (!responses || !mediaUrlData || isLoading) {
     return (
       <div className="flex h-full w-full items-center justify-center">
         <ClipLoader color="grey" />
@@ -99,7 +99,7 @@ const QuestionModalLeftContent: React.FC<QuestionModalLeftContentProps> = ({
         />
       </div>
 
-      <div className="px-20 text-center text-sm text-theme-600">{`"${currentResponse?.fastTranscribedText}"`}</div>
+      {/* <div className="px-20 text-center text-sm text-theme-600">{`"${currentResponse?.fastTranscribedText}"`}</div> */}
     </div>
   );
 };

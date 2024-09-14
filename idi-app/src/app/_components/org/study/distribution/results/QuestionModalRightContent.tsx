@@ -107,9 +107,10 @@ const QuestionModalRightContent: React.FC<QuestionModalRightContentProps> = ({
         {responses.map((response) => (
           <BasicCard
             className={`flex cursor-pointer flex-col gap-2 shadow-standard ${
-              response.id === currentResponseId ? "bg-theme-100" : ""
+              response.id === currentResponseId ? "shadow-sm" : ""
             }`}
             shouldHover
+            isSelected={response.id === currentResponseId}
             key={response.id}
             onClick={() => onResponseClicked(response)}
           >

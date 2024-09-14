@@ -28,7 +28,7 @@ const SplitScreenModal: React.FC<SplitScreenModalProps> = ({
         <div className="flex w-full flex-col">{topContent}</div>
         <div className="flex-1 overflow-hidden">
           <PanelGroup direction="horizontal">
-            <Panel defaultSize={50} minSize={30} className="overflow-hidden">
+            <Panel defaultSize={55} minSize={30} className="overflow-hidden">
               <div className="h-full overflow-y-auto pl-1 pr-2 scrollbar-thin">
                 {leftContent}
               </div>
@@ -41,7 +41,7 @@ const SplitScreenModal: React.FC<SplitScreenModalProps> = ({
                 className="relative z-10 text-theme-400 transition-colors group-hover:text-theme-600"
               />
             </PanelResizeHandle>
-            <Panel defaultSize={50} minSize={30} className="overflow-hidden">
+            <Panel defaultSize={45} minSize={30} className="overflow-hidden">
               <div className="h-full overflow-y-auto pl-2 pr-1 scrollbar-thin">
                 {rightContent}
               </div>
