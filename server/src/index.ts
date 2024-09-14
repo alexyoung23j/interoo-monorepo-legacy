@@ -17,6 +17,7 @@ import { getTtsAudioRoute } from "./routes/getTtsAudio";
 import { TextToSpeechClient } from "@google-cloud/text-to-speech";
 import { getCurrentQuestionMetadataRoute } from "./routes/getCurrentQuestionMetadata";
 import { getMediaSignedUrlRoute } from "./routes/getSignedUrlForMediaView";
+import { convertAndDownloadMediaRoute } from "./routes/convertAndDownloadMedia";
 
 // Configuration and Setup
 const rootDir = path.resolve(__dirname, "../..");
@@ -70,6 +71,7 @@ app.use("/api/get-tts-audio", getTtsAudioRoute);
 app.use("/test-follow-up", testFollowUpRoute);
 app.use("/api/get-current-question-metadata", getCurrentQuestionMetadataRoute);
 app.use("/api/get-signed-urls-for-media-view", getMediaSignedUrlRoute);
+app.use("/api/convert-and-download", convertAndDownloadMediaRoute);
 
 // Server Startup
 const startServer = () => {

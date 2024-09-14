@@ -26,7 +26,7 @@ export const questionsRouter = createTRPCRouter({
         where: {
           questionId: input.questionId,
           interviewSession: {
-            status: InterviewSessionStatus.COMPLETED,
+            // status: InterviewSessionStatus.COMPLETED,
             ...(input.interviewSessionId
               ? { id: input.interviewSessionId }
               : {}),

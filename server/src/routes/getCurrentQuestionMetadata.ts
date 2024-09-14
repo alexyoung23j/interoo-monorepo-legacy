@@ -55,11 +55,14 @@ const getCurrentQuestionMetadata = async (req: Request, res: Response) => {
       throw new Error('Failed to get session URL');
     }
 
+    console.log({contentType})
+
     await prisma.responseMedia.create({
       data: {
         responseId: responseId,
         mediaUrl: `https://storage.googleapis.com/${bucketName}/${filePath}`,
-        transcribedText: "" // Initialize with empty string
+        transcribedText: "", // Initialize with empty string
+        contentType: contentType  
       }
     });
 

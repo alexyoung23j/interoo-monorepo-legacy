@@ -129,7 +129,8 @@ const BasicMediaViewer: React.FC<BasicMediaViewerProps> = ({
 
   return (
     <div
-      className={`flex h-full w-full items-center justify-center rounded-md border-2 border-theme-200 ${isVideo ? "bg-theme-900" : "bg-theme-50"}`}
+      style={{ aspectRatio: "4/3" }}
+      className={`flex h-full min-h-72 w-full items-center justify-center rounded-sm border-2 border-theme-200 ${isVideo ? "bg-theme-900" : "bg-theme-50"}`}
     >
       {isVideo ? (
         <VideoViewer mediaUrl={mediaUrl} />
