@@ -10,9 +10,7 @@ import { ElevenLabsClient } from "elevenlabs";
 
 
 // Import routes
-import { protectedRoute } from "./routes/test/protected";
 import { audioResponseRoute } from "./routes/audioResponse";
-import { testFollowUpRoute } from "./routes/test/testFollowUp";
 import { getTtsAudioRoute } from "./routes/getTtsAudio";
 import { TextToSpeechClient } from "@google-cloud/text-to-speech";
 import { getCurrentQuestionMetadataRoute } from "./routes/getCurrentQuestionMetadata";
@@ -65,10 +63,8 @@ app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
 app.use(express.json());
 
 // Routes
-app.use("/protected", protectedRoute);
 app.use("/api/audio-response", audioResponseRoute);
 app.use("/api/get-tts-audio", getTtsAudioRoute);
-app.use("/test-follow-up", testFollowUpRoute);
 app.use("/api/get-current-question-metadata", getCurrentQuestionMetadataRoute);
 app.use("/api/get-signed-urls-for-media-view", getMediaSignedUrlRoute);
 app.use("/api/convert-and-download", convertAndDownloadMediaRoute);
