@@ -36,8 +36,9 @@ export interface TranscribeAndGenerateNextQuestionRequest {
   currentResponseId: string;
   thread: ConversationState
   numTotalEstimatedInterviewQuestions: number;
-  interviewStartTime: string;
-  currentTime: string;
+  elapsedInterviewTime: number;
+  currentResponseStartTime: string; // Change to string (ISO date string)
+  currentResponseEndTime: string; // Change to string (ISO date string)
   currentQuestionNumber: number;
   targetInterviewLength?: number; // in minutes
   boostedKeywords: BoostedKeyword[];
@@ -55,8 +56,9 @@ export class TranscribeAndGenerateNextQuestionRequestBuilder {
     currentResponseId: "",
     thread: [],
     numTotalEstimatedInterviewQuestions: 0,
-    interviewStartTime: "",
-    currentTime: "",
+    elapsedInterviewTime: 0,
+    currentResponseStartTime: '',
+    currentResponseEndTime: '',
     currentQuestionNumber: 0,
     targetInterviewLength: undefined,
     boostedKeywords: [],
@@ -120,13 +122,18 @@ export class TranscribeAndGenerateNextQuestionRequestBuilder {
     return this;
   }
 
-  setInterviewStartTime(val: string): this {
-    this.data.interviewStartTime = val;
+  setElapsedInterviewTime(val: number): this {
+    this.data.elapsedInterviewTime = val;
     return this;
   }
 
-  setCurrentTime(val: string): this {
-    this.data.currentTime = val;
+  setCurrentResponseStartTime(val: string): this {
+    this.data.currentResponseStartTime = val;
+    return this;
+  }
+
+  setCurrentResponseEndTime(val: string): this {
+    this.data.currentResponseEndTime = val;
     return this;
   }
 

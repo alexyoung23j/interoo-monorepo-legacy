@@ -1,4 +1,4 @@
-import { Router } from "express";
+import e, { Router } from "express";
 import { Request, Response } from "express";
 import Busboy from 'busboy';
 import { transcribeAudio, decideFollowUpPromptIfNecessary, getFollowUpLevelRange } from "../utils/audioProcessing";
@@ -28,6 +28,7 @@ const extractRequestData = (req: Request): Promise<{ audioBuffer: Buffer, reques
     });
 
     busboy.on('field', (fieldname, val) => {
+      console.log(`Received field: ${fieldname}, value: ${val}`); // Debug log
       switch(fieldname) {
         case 'nextBaseQuestionId':
         case 'currentBaseQuestionId':
@@ -36,13 +37,9 @@ const extractRequestData = (req: Request): Promise<{ audioBuffer: Buffer, reques
         case 'followUpLevel':
         case 'studyBackground':
         case 'currentResponseId':
-        case 'interviewStartTime':
-        case 'currentTime':
+        case 'currentResponseStartTime':
+        case 'currentResponseEndTime':
           requestDataBuilder.set(fieldname as keyof TranscribeAndGenerateNextQuestionRequest, val);
-          break;
-        case 'numTotalEstimatedInterviewQuestions':
-        case 'currentQuestionNumber':
-          requestDataBuilder.set(fieldname as keyof TranscribeAndGenerateNextQuestionRequest, parseInt(val, 10));
           break;
         case 'shouldFollowUp':
           requestDataBuilder.setShouldFollowUp(val === 'true');
@@ -56,8 +53,15 @@ const extractRequestData = (req: Request): Promise<{ audioBuffer: Buffer, reques
             requestDataBuilder.setThread([]);
           }
           break;
+        case 'currentQuestionNumber':
+        case 'elapsedInterviewTime':
+        case 'numTotalEstimatedInterviewQuestions':
         case 'targetInterviewLength':
-          requestDataBuilder.setTargetInterviewLength(val ? parseInt(val, 10) : undefined);
+          requestDataBuilder.set(
+            fieldname as keyof TranscribeAndGenerateNextQuestionRequest, 
+            val ? parseInt(val, 10) : undefined
+          );
+          console.log(`Set ${fieldname}: ${val ? parseInt(val, 10) : undefined}`);
           break;
         case 'boostedKeywords':
           try {
@@ -109,14 +113,12 @@ const handleNoTranscription = async (
   };
 };
 
-// TODO(update this to call new method to update response, use exsiting response.followUpQuestionId in response, and comvine these 2 queriess)
 const handleNoFollowUp = async (
   requestData: TranscribeAndGenerateNextQuestionRequest, 
   transcribedText: string
 ): Promise<TranscribeAndGenerateNextQuestionResponse> => {
-  
   // Update the response with the transcription
-  const updatedResponse = await updateResponseWithTranscription(requestData.currentResponseId, transcribedText, false);
+  const updatedResponse = await updateResponseWithTranscription(requestData.currentResponseId, transcribedText, false, requestData);
 
   if (requestData.nextBaseQuestionId) {
     await prisma.interviewSession.update({
@@ -157,7 +159,7 @@ const handlePotentialFollowUp = async (
   const { shouldFollowUp, followUpQuestion, isJunkResponse } = await decideFollowUpPromptIfNecessary(requestData, transcribedText, requestLogger, minFollowUps, maxFollowUps, wouldBeNextFollowUpNumber);
 
   // Update the response with the transcription
-  await updateResponseWithTranscription(requestData.currentResponseId, transcribedText, isJunkResponse);
+  await updateResponseWithTranscription(requestData.currentResponseId, transcribedText, isJunkResponse, requestData);
 
   if (shouldFollowUp && followUpQuestion) {
     const updatedSession = await prisma.interviewSession.update({
@@ -202,12 +204,13 @@ const shouldFollowUpBasedOnTime = (requestData: TranscribeAndGenerateNextQuestio
     return true; // If no target length is set, always allow follow-ups
   }
 
-  const startTime = new Date(requestData.interviewStartTime);
-  const currentTime = new Date(requestData.currentTime);
-  const elapsedTimeInMinutes = (currentTime.getTime() - startTime.getTime()) / (1000 * 60);
+  // Include the current response time in the elapsed time calculation
+  const currentResponseTime = new Date(requestData.currentResponseEndTime).getTime() - new Date(requestData.currentResponseStartTime).getTime();
+  const totalElapsedTime = requestData.elapsedInterviewTime + currentResponseTime;
+  const elapsedTimeInMinutes = totalElapsedTime / (1000 * 60);
 
   const targetTimePerQuestion = requestData.targetInterviewLength / requestData.numTotalEstimatedInterviewQuestions;
-  const expectedElapsedTime = targetTimePerQuestion * (requestData.currentQuestionNumber+1);
+  const expectedElapsedTime = targetTimePerQuestion * (requestData.currentQuestionNumber + 1);
 
   // If we're more than 30% behind schedule, don't follow up
   if (elapsedTimeInMinutes > expectedElapsedTime * 1.3) {
@@ -218,10 +221,21 @@ const shouldFollowUpBasedOnTime = (requestData: TranscribeAndGenerateNextQuestio
   return true;
 }
 
-const updateResponseWithTranscription = async (responseId: string, transcribedText: string, isJunkResponse: boolean) => {
+const updateResponseWithTranscription = async (responseId: string, transcribedText: string, isJunkResponse: boolean, requestData: TranscribeAndGenerateNextQuestionRequest) => {
+  console.log('Updating response with transcription:', {
+    responseId,
+    createdAt: new Date(requestData.currentResponseStartTime).toISOString(),
+    updatedAt: new Date(requestData.currentResponseEndTime).toISOString(),
+  });
+
   return await prisma.response.update({
     where: { id: responseId },
-    data: { fastTranscribedText: transcribedText, junkResponse: isJunkResponse, updatedAt: new Date().toISOString() }
+    data: { 
+      fastTranscribedText: transcribedText, 
+      junkResponse: isJunkResponse, 
+      createdAt: new Date(requestData.currentResponseStartTime),
+      updatedAt: new Date(requestData.currentResponseEndTime)
+    }
   });
 };
 

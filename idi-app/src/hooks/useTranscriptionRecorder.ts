@@ -51,6 +51,9 @@ export function useTranscriptionRecorder({
   const mediaRecorder = useRef<MediaRecorder | null>(null);
   const audioChunks = useRef<Blob[]>([]);
   const recordingTimeout = useRef<NodeJS.Timeout | null>(null);
+  const [recordingStartTime, setRecordingStartTime] = useState<number | null>(
+    null,
+  );
 
   const stopRecording = useCallback(() => {
     if (mediaRecorder.current && mediaRecorder.current.state !== "inactive") {
@@ -68,6 +71,7 @@ export function useTranscriptionRecorder({
   const startRecording = useCallback(async () => {
     try {
       setIsRecording(true);
+      setRecordingStartTime(Date.now());
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
@@ -112,6 +116,8 @@ export function useTranscriptionRecorder({
     async (additionalData: TranscribeAndGenerateNextQuestionRequest) => {
       if (audioChunks.current.length === 0) return null;
 
+      const currentEndTime = Date.now();
+
       const mimeType =
         mediaRecorder.current?.mimeType ?? "audio/webm;codecs=opus";
       const audioBlob = new Blob(audioChunks.current, { type: mimeType });
@@ -126,9 +132,18 @@ export function useTranscriptionRecorder({
 
       formData.append("thread", JSON.stringify(thread));
 
+      // Update otherData with the correct times as ISO strings
+      otherData.currentResponseStartTime = new Date(
+        recordingStartTime || Date.now(),
+      ).toISOString();
+      otherData.currentResponseEndTime = new Date(currentEndTime).toISOString();
+
       Object.entries(otherData).forEach(([key, value]) => {
         formData.append(key, String(value));
       });
+
+      console.log("Data being sent to server:", Object.fromEntries(formData));
+
       try {
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/audio-response`,
@@ -206,8 +221,8 @@ export function useTranscriptionRecorder({
               currentResponseAndUploadUrl.response?.followUpQuestionId ?? null,
             rangeSelection: null,
             multipleChoiceOptionId: null,
-            createdAt: new Date(), // Created and updatedAt is not used for anything during the interview itself
-            updatedAt: new Date(),
+            createdAt: new Date(recordingStartTime || Date.now()),
+            updatedAt: new Date(currentEndTime),
           },
         ]);
         console.log("followUpQuestions", followUpQuestions);
@@ -231,6 +246,8 @@ export function useTranscriptionRecorder({
       setInterviewSession,
       setResponses,
       setCurrentResponseAndUploadUrl,
+      recordingStartTime,
+      setRecordingStartTime,
     ],
   );
 
