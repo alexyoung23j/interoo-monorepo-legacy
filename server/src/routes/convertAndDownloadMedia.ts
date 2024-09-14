@@ -1,8 +1,11 @@
 import { Router, Request, Response } from "express";
 import { prisma, bucket, bucketName } from "../index";
 import { authMiddleware } from "../middleware/auth";
-import ffmpeg from 'fluent-ffmpeg';
 import { Readable } from 'stream';
+const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
+const ffmpeg = require('fluent-ffmpeg');
+ffmpeg.setFfmpegPath(ffmpegPath);
+
 
 const router = Router();
 
