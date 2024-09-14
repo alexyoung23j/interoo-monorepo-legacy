@@ -8,6 +8,10 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchResponses } from "@/server/interoo-backend";
 import { createClient } from "@/utils/supabase/client";
 import { ExtendedStudy } from "./ResultsPageComponent";
+import BasicMediaViewer from "@/app/_components/reusable/BasicMediaViewer";
+import { useMediaSessionUrls } from "@/hooks/useMediaSessionUrls";
+import { Button } from "@/components/ui/button";
+import { Download } from "@phosphor-icons/react";
 
 interface QuestionModalLeftContentProps {
   responses:
@@ -31,26 +35,7 @@ const QuestionModalLeftContent: React.FC<QuestionModalLeftContentProps> = ({
     data: mediaUrlData,
     isLoading,
     error,
-  } = useQuery({
-    queryKey: ["responses", responses?.map((r) => r.id)],
-    queryFn: async () => {
-      const supabase = createClient();
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session) throw new Error("No active session");
-      return fetchResponses({
-        responseIds: responses?.map((r) => r.id) ?? [],
-        token: session.access_token,
-        studyId: study.id,
-        questionId: question.id,
-        orgId: study.organizationId,
-      });
-    },
-    enabled: !!responses?.length,
-  });
-
-  console.log({ mediaUrlData });
+  } = useMediaSessionUrls({ responses, study, questionId: question.id });
 
   if (!responses || !mediaUrlData) {
     return (
@@ -65,21 +50,31 @@ const QuestionModalLeftContent: React.FC<QuestionModalLeftContentProps> = ({
   const currentResponseContentType =
     mediaUrlData.signedUrls[currentResponseId ?? ""]?.contentType;
 
-  console.log({ currentResponseMediaUrl, currentResponseContentType });
+  const currentResponse = responses.find(
+    (response) => response.id === currentResponseId,
+  );
+
   return (
-    <div className="flex h-full w-full flex-col">
-      <div className="mb-4 text-lg font-semibold text-theme-900">
-        Response Details
+    <div className="flex h-full w-full flex-col justify-start gap-4 pb-20">
+      <div className="flex w-full items-center justify-between gap-3">
+        <div className="text-lg font-semibold text-theme-900">
+          Response Details
+        </div>
+        <Button variant="secondary" className="gap-2" size="sm">
+          <Download size={16} className="text-theme-900" />
+          {`Download ${currentResponseContentType == "audio/webm" ? "audio" : "video"}`}
+        </Button>
       </div>
-      <div className="w-full flex-grow bg-theme-200">
-        <video
-          src={currentResponseMediaUrl}
-          controls
-          className="h-full w-full object-contain"
+      <div className="h-[1px] w-full bg-theme-200 text-theme-900"></div>
+
+      <div className="w-full flex-grow">
+        <BasicMediaViewer
+          mediaUrl={currentResponseMediaUrl ?? ""}
+          mediaType={"audio/webm"}
         />
       </div>
 
-      {/* Add more content here as needed */}
+      <div className="px-20 text-sm text-theme-600">{`"${currentResponse?.fastTranscribedText}"`}</div>
     </div>
   );
 };

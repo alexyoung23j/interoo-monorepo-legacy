@@ -81,7 +81,13 @@ const ResultsPageComponent: React.FC<ResultsPageComponentProps> = ({
           selectedInterviewSessionId !== null &&
           selectedQuestion !== null
         }
-        onClose={() => setQuestionModalOpen(false)}
+        onClose={() => {
+          setQuestionModalOpen(false);
+          const newSearchParams = new URLSearchParams(searchParams);
+          newSearchParams.delete("modalOpen");
+          newSearchParams.set("questionId", selectedQuestion!.id);
+          router.push(`${pathname}?${newSearchParams.toString()}`);
+        }}
         question={selectedQuestion!}
         interviewSessionId={selectedInterviewSessionId ?? ""}
         study={study}

@@ -17,11 +17,13 @@ interface QuestionModalRightContentProps {
       })[]
     | null;
   onResponseClicked: (response: Response) => void;
+  currentResponseId: string;
 }
 
 const QuestionModalRightContent: React.FC<QuestionModalRightContentProps> = ({
   responses,
   onResponseClicked,
+  currentResponseId,
 }) => {
   if (!responses) {
     return (
@@ -104,9 +106,12 @@ const QuestionModalRightContent: React.FC<QuestionModalRightContentProps> = ({
       <div className="flex w-full flex-col gap-3">
         {responses.map((response) => (
           <BasicCard
-            className="flex cursor-pointer flex-col gap-2 shadow-standard"
+            className={`flex cursor-pointer flex-col gap-2 shadow-standard ${
+              response.id === currentResponseId ? "bg-theme-100" : ""
+            }`}
             shouldHover
             key={response.id}
+            onClick={() => onResponseClicked(response)}
           >
             <div className="flex items-start justify-between gap-4">
               <div className="flex-grow font-semibold text-theme-900">

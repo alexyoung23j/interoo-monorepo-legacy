@@ -57,16 +57,33 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
         )
       : "0:00";
 
+  console.log({ selectedResponseId });
+
   useEffect(() => {
-    if (responsesWithTranscripts && responsesWithTranscripts.length > 0) {
+    if (
+      isOpen &&
+      responsesWithTranscripts &&
+      responsesWithTranscripts.length > 0 &&
+      !selectedResponseId
+    ) {
+      console.log("setting initial response id");
       setSelectedResponseId(responsesWithTranscripts[0]?.id ?? null);
     }
-  }, [responsesWithTranscripts]);
+  }, [isOpen, responsesWithTranscripts, selectedResponseId]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setSelectedResponseId(null);
+    }
+  }, [isOpen]);
 
   return (
     <SplitScreenModal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={() => {
+        onClose();
+        setSelectedResponseId(null);
+      }}
       topContent={
         <BasicHeaderCard
           items={[
@@ -100,9 +117,10 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
       rightContent={
         <QuestionModalRightContent
           responses={responsesWithTranscripts ?? null}
-          onResponseClicked={() => {
-            console.log("clicked");
+          onResponseClicked={(response) => {
+            setSelectedResponseId(response.id);
           }}
+          currentResponseId={selectedResponseId ?? ""}
         />
       }
     />

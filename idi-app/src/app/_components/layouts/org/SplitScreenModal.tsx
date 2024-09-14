@@ -29,7 +29,7 @@ const SplitScreenModal: React.FC<SplitScreenModalProps> = ({
         <div className="flex-1 overflow-hidden">
           <PanelGroup direction="horizontal">
             <Panel defaultSize={50} minSize={30} className="overflow-hidden">
-              <div className="h-full overflow-y-auto scrollbar-thin">
+              <div className="h-full overflow-y-auto px-2 scrollbar-thin">
                 {leftContent}
               </div>
             </Panel>
