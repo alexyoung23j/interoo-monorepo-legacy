@@ -138,11 +138,12 @@ export function calculateTranscribeAndGenerateNextQuestionRequest({
   const numTotalEstimatedInterviewQuestions =
     totalBaseQuestions + completedFollowUps + estimatedRemainingFollowUps;
 
-  const interviewStartTime =
-    responses.length > 0 && responses[0]?.createdAt
-      ? responses[0].createdAt.toISOString()
-      : new Date().toISOString();
-  const currentTime = new Date().toISOString();
+  // Calculate elapsedInterviewTime
+  const elapsedInterviewTime = responses.reduce((total, response) => {
+    const start = new Date(response.createdAt).getTime();
+    const end = new Date(response.updatedAt).getTime();
+    return total + (end - start);
+  }, 0);
 
   // Use the builder to create the request
   return new TranscribeAndGenerateNextQuestionRequestBuilder()
@@ -160,8 +161,7 @@ export function calculateTranscribeAndGenerateNextQuestionRequest({
     .setCurrentResponseId(currentResponseId)
     .setThread(currentQuestionThreadState)
     .setNumTotalEstimatedInterviewQuestions(numTotalEstimatedInterviewQuestions)
-    .setInterviewStartTime(interviewStartTime)
-    .setCurrentTime(currentTime)
+    .setElapsedInterviewTime(elapsedInterviewTime)
     .setCurrentQuestionNumber(currentQuestionOrder)
     .setTargetInterviewLength(study.targetLength ?? undefined)
     .setBoostedKeywords(study.boostedKeywords ?? [])
