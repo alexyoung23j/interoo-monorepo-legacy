@@ -33,7 +33,7 @@ const SplitScreenModal: React.FC<SplitScreenModalProps> = ({
                 {leftContent}
               </div>
             </Panel>
-            <PanelResizeHandle className="group relative flex w-6 cursor-col-resize items-center justify-center">
+            <PanelResizeHandle className="group relative flex w-6 cursor-col-resize items-center justify-center outline-none">
               <div className="absolute h-full w-[1px] bg-theme-off-white transition-colors group-hover:bg-theme-100/80"></div>
               <DotsSixVertical
                 size={20}
