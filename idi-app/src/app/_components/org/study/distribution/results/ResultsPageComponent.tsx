@@ -167,7 +167,7 @@ const ResultsPageComponent: React.FC<ResultsPageComponentProps> = ({
                   response?.interviewSessionId ?? null,
                 );
                 router.push(
-                  `${pathname}?questionId=${selectedQuestion?.id}&responseId=${response?.interviewSessionId}&modalOpen=true`,
+                  `${pathname}?questionId=${selectedQuestion?.id}&responseId=${response?.id}&modalOpen=true`,
                 );
               }}
             />
