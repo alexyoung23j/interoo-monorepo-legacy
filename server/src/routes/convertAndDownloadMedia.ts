@@ -2,10 +2,8 @@ import { Router, Request, Response } from "express";
 import { prisma, bucket, bucketName } from "../index";
 import { authMiddleware } from "../middleware/auth";
 import { Readable } from 'stream';
-const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
-const ffmpeg = require('fluent-ffmpeg');
-ffmpeg.setFfmpegPath(ffmpegPath);
-
+const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path as string;
+const ffmpeg = require('fluent-ffmpeg') as any; // Type definition for fluent-ffmpeg is complex, using 'any' for simplicity
 
 const router = Router();
 
@@ -42,13 +40,13 @@ const convertAndDownloadMedia = async (req: Request, res: Response) => {
       .audioCodec('aac')
       .toFormat('mp4')
       .outputOptions('-movflags frag_keyframe+empty_moov')
-      .on('start', (commandLine) => {
+      .on('start', (commandLine: string) => {
         // console.log('FFmpeg process started:', commandLine);
       })
-      .on('progress', (progress) => {
+      .on('progress', (progress: { percent: number }) => {
         // console.log('Processing: ' + progress.percent + '% done');
       })
-      .on('error', (err, stdout, stderr) => {
+      .on('error', (err: Error, stdout: string, stderr: string) => {
         console.error('FFmpeg error:', err.message);
         console.error('FFmpeg stdout:', stdout);
         console.error('FFmpeg stderr:', stderr);
@@ -59,9 +57,9 @@ const convertAndDownloadMedia = async (req: Request, res: Response) => {
       })
       .pipe(res, { end: true });
 
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error converting and downloading media:', error);
-    res.status(500).json({ error: 'Failed to convert and download media', details: error });
+    res.status(500).json({ error: 'Failed to convert and download media', details: error instanceof Error ? error.message : String(error) });
   }
 };
 

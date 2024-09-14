@@ -16,6 +16,9 @@ RUN echo $NEXT_PUBLIC_SUPABASE_URL
 RUN echo $NEXT_PUBLIC_SUPABASE_ANON_KEY
 RUN echo $NEXT_PUBLIC_BACKEND_URL
 
+# Install FFmpeg
+RUN apt-get update && apt-get install -y ffmpeg
+
 # Copy package.json and package-lock.json
 COPY package*.json ./
 
