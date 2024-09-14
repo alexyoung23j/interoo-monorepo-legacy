@@ -12,6 +12,8 @@ const resolveCurrentRoute = (pathname: string) => {
   switch (pathname.split("/").pop()) {
     case "results":
       return "Results";
+    case "interviews":
+      return "All Interviews";
     case "codebook":
       return "Codebook";
     case "approve-codes":
