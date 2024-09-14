@@ -32,6 +32,9 @@ RUN echo $GCS_BUCKET_NAME
 RUN echo $GOOGLE_STORAGE_EMAIL
 RUN echo $GOOGLE_STORAGE_PRIVATE_KEY
 
+# Install FFmpeg
+RUN apt-get update && apt-get install -y ffmpeg
+
 # Copy package.json and package-lock.json
 COPY package*.json ./
 
