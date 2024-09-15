@@ -62,11 +62,7 @@ export const InterviewStartContent: React.FC<InterviewStartContentProps> = ({
         status: "IN_PROGRESS",
       });
       onStartInterview(); //simply updates progress state
-
-      // plays audio after a slight delay on purpose
-      setTimeout(() => {
-        void playTtsAudio(firstQuestion.title);
-      }, 150);
+      playTtsAudio(firstQuestion.title);
     } catch (error) {
       console.error("Error starting interview:", error);
       setAccessError(
