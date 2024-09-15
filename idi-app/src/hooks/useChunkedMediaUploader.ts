@@ -29,11 +29,6 @@ export function useChunkedMediaUploader() {
   const cancelUpload = useRef<boolean>(false);
   const [isUploadingFinalChunks, setIsUploadingFinalChunks] = useState(false);
 
-  // Add this useEffect for logging
-  useEffect(() => {
-    console.log("isUploadingFinalChunks changed:", isUploadingFinalChunks);
-  }, [isUploadingFinalChunks]);
-
   const uploadNextChunk = useCallback(
     async (isLastChunk = false) => {
       const uploadUrl = currentResponseAndUploadUrl.uploadSessionUrl;
