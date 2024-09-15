@@ -5,12 +5,14 @@ import { ExtendedStudy } from "@/app/_components/org/study/distribution/results/
 import { downloadMedia } from "@/server/interoo-backend";
 
 interface UseMediaDownloadProps {
-  study: ExtendedStudy;
-  questionId: string;
+  orgId: string | undefined;
+  studyId: string | undefined;
+  questionId: string | undefined;
 }
 
 export const useMediaDownload = ({
-  study,
+  orgId,
+  studyId,
   questionId,
 }: UseMediaDownloadProps) => {
   const [isDownloading, setIsDownloading] = useState(false);
@@ -24,9 +26,14 @@ export const useMediaDownload = ({
     if (
       !currentResponseMediaUrl ||
       !currentResponseContentType ||
-      !currentResponseId
-    )
+      !currentResponseId ||
+      !orgId ||
+      !studyId ||
+      !questionId
+    ) {
+      console.error("Missing required parameters for download");
       return;
+    }
 
     setIsDownloading(true);
     try {
@@ -44,9 +51,9 @@ export const useMediaDownload = ({
         url: currentResponseMediaUrl,
         targetFormat,
         responseId: currentResponseId,
-        orgId: study.organizationId,
-        studyId: study.id,
-        questionId: questionId,
+        orgId,
+        studyId,
+        questionId,
         token: session.access_token,
       });
 

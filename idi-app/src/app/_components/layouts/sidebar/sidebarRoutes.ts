@@ -9,6 +9,7 @@ export const INNER_SIDEBAR_ROUTES = [
     path: "/org/[orgId]/study/[studyId]/distribution",
   },
   { title: "Results", path: "/org/[orgId]/study/[studyId]/results" },
+  { title: "All Interviews", path: "/org/[orgId]/study/[studyId]/interviews" },
   {
     title: "Analysis",
     items: [

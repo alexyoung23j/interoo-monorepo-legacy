@@ -8,6 +8,7 @@ import {
 import { TRPCError } from "@trpc/server";
 import { FollowUpQuestion, Question } from "@shared/generated/client";
 import { CurrentQuestionType } from "@shared/types";
+import { Response } from "@shared/generated/client";
 
 export const interviewsRouter = createTRPCRouter({
   createInterviewSession: publicProcedure
@@ -215,5 +216,21 @@ export const interviewsRouter = createTRPCRouter({
       });
 
       return firstQuestion;
+    }),
+  getInterviewSessionResponses: publicProcedure
+    .input(z.object({ interviewSessionId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const { interviewSessionId } = input;
+
+      const responses = await ctx.db.response.findMany({
+        where: { interviewSessionId },
+        include: {
+          question: true,
+          followUpQuestion: true,
+        },
+        orderBy: { createdAt: "asc" },
+      });
+
+      return responses;
     }),
 });
