@@ -19,14 +19,17 @@ export default function SidebarContainer({
   const { data: study, isFetching: isFetchingStudy } =
     api.studies.getStudy.useQuery(
       { studyId: params.studyId as string },
-      { enabled: !!params.studyId },
+      {
+        enabled: !!params.studyId,
+        refetchOnWindowFocus: false,
+      },
     );
 
   return (
     <div className="flex h-screen overflow-hidden">
       <OuterSidebar />
       {isFetchingStudy ? (
-        <div className="bg-theme-off-white flex h-full w-full items-center justify-center">
+        <div className="flex h-full w-full items-center justify-center bg-theme-off-white">
           <ClipLoader size={48} color={"grey"} />
         </div>
       ) : (
@@ -40,19 +43,19 @@ export default function SidebarContainer({
               <main
                 className={`w-full ${
                   shouldShowInnerSidebar
-                    ? "border-theme-200 rounded-md border"
+                    ? "rounded-md border border-theme-200"
                     : ""
-                } scrollbar-thin overflow-auto`}
+                } overflow-auto scrollbar-thin`}
               >
                 {children}
               </main>
               {shouldShowInnerSidebar && (
-                <div className="bg-theme-50 h-full w-3 flex-shrink-0" />
+                <div className="h-full w-3 flex-shrink-0 bg-theme-50" />
               )}
             </div>
           </div>
           {shouldShowInnerSidebar && (
-            <div className="bg-theme-50 h-3 w-full flex-shrink-0" />
+            <div className="h-3 w-full flex-shrink-0 bg-theme-50" />
           )}
         </div>
       )}

@@ -8,6 +8,7 @@ import QuestionModalRightContent from "./QuestionModalRightContent";
 import { ExtendedStudy } from "./ResultsPageComponent";
 import { formatDuration } from "@/app/utils/functions";
 import QuestionModalLeftContent from "./QuestionModalLeftContent";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 interface QuestionModalProps {
   isOpen: boolean;
@@ -15,6 +16,8 @@ interface QuestionModalProps {
   question: Question;
   interviewSessionId: string;
   study: ExtendedStudy;
+  selectedResponseId: string | null;
+  setSelectedResponseId: (responseId: string | null) => void;
 }
 
 type ExtendedResponse = Response & {
@@ -28,10 +31,12 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
   question,
   interviewSessionId,
   study,
+  selectedResponseId,
+  setSelectedResponseId,
 }) => {
-  const [selectedResponseId, setSelectedResponseId] = useState<string | null>(
-    null,
-  );
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
 
   const { data: responsesData, isLoading } =
     api.questions.getResponses.useQuery({
@@ -56,8 +61,6 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
           ),
         )
       : "0:00";
-
-  console.log({ selectedResponseId });
 
   useEffect(() => {
     if (
@@ -119,6 +122,9 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
           responses={responsesWithTranscripts ?? null}
           onResponseClicked={(response) => {
             setSelectedResponseId(response.id);
+            const newSearchParams = new URLSearchParams(searchParams);
+            newSearchParams.set("responseId", response.id);
+            router.push(`${pathname}?${newSearchParams.toString()}`);
           }}
           currentResponseId={selectedResponseId ?? ""}
         />

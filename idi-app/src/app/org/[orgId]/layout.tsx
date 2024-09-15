@@ -25,7 +25,7 @@ export default async function OrgLayout({
   }
 
   return (
-    <div className="bg-theme-50 h-screen w-full">
+    <div className="h-screen w-full bg-theme-50">
       <SidebarContainer>{children}</SidebarContainer>
     </div>
   );

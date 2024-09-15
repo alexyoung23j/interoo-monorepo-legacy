@@ -30,10 +30,9 @@ function TopContent({ study }: { study: Study }) {
 
   const handleTestStudy = () => {
     if (study?.shortID) {
-      router.push(`/study/${study.shortID}?testMode=true`);
+      window.open(`/study/${study.shortID}?testMode=true`, "_blank");
     }
   };
-
   return (
     <div className="flex w-full items-center justify-between bg-theme-50 p-4">
       <h2 className="text-xl font-semibold text-theme-900">

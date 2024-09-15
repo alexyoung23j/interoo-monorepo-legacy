@@ -12,7 +12,6 @@ import SplitScreenLayout from "@/app/_components/layouts/org/SplitScreenLayout";
 import BasicCard from "@/app/_components/reusable/BasicCard";
 import BasicHeaderCard from "@/app/_components/reusable/BasicHeaderCard";
 import ResultsQuestionCard from "./ResultsQuestionCard";
-import { api } from "@/trpc/react";
 import { Button } from "@/components/ui/button";
 import { ArrowSquareOut, X } from "@phosphor-icons/react";
 import ResponsesPreview from "./ResponsesPreviewComponent";
@@ -42,20 +41,28 @@ const ResultsPageComponent: React.FC<ResultsPageComponentProps> = ({
   const [selectedInterviewSessionId, setSelectedInterviewSessionId] = useState<
     string | null
   >(null);
+  const [selectedResponseId, setSelectedResponseId] = useState<string | null>(
+    null,
+  );
   const [questionModalOpen, setQuestionModalOpen] = useState(false);
 
   useEffect(() => {
     const questionId = searchParams.get("questionId");
-    const responseId = searchParams.get("responseId");
+    const interviewSessionId = searchParams.get("interviewSessionId");
     const modalOpen = searchParams.get("modalOpen");
+    const responseId = searchParams.get("responseId");
 
     if (questionId) {
       const question = study.questions.find((q) => q.id === questionId) ?? null;
       setSelectedQuestion(question);
     }
 
+    if (interviewSessionId) {
+      setSelectedInterviewSessionId(interviewSessionId);
+    }
+
     if (responseId) {
-      setSelectedInterviewSessionId(responseId);
+      setSelectedResponseId(responseId);
     }
 
     if (modalOpen === "true") {
@@ -91,6 +98,8 @@ const ResultsPageComponent: React.FC<ResultsPageComponentProps> = ({
         question={selectedQuestion!}
         interviewSessionId={selectedInterviewSessionId ?? ""}
         study={study}
+        selectedResponseId={selectedResponseId}
+        setSelectedResponseId={setSelectedResponseId}
       />
       <SplitScreenLayout
         mainContent={
@@ -153,7 +162,10 @@ const ResultsPageComponent: React.FC<ResultsPageComponentProps> = ({
               </div>
               <div
                 className="cursor-pointer"
-                onClick={() => setSelectedQuestion(null)}
+                onClick={() => {
+                  setSelectedQuestion(null);
+                  router.push(pathname);
+                }}
               >
                 <X size={24} className="text-theme-900" />
               </div>
@@ -162,12 +174,13 @@ const ResultsPageComponent: React.FC<ResultsPageComponentProps> = ({
             <ResponsesPreview
               question={selectedQuestion}
               onResponseClick={(response) => {
+                console.log("response clicked", response);
                 setQuestionModalOpen(true);
                 setSelectedInterviewSessionId(
                   response?.interviewSessionId ?? null,
                 );
                 router.push(
-                  `${pathname}?questionId=${selectedQuestion?.id}&responseId=${response?.interviewSessionId}&modalOpen=true`,
+                  `${pathname}?questionId=${selectedQuestion?.id}&interviewSessionId=${response?.interviewSessionId}&responseId=${response?.id}&modalOpen=true`,
                 );
               }}
             />
