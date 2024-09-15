@@ -41,7 +41,8 @@ const QuestionModalLeftContent: React.FC<QuestionModalLeftContentProps> = ({
 
   const { handleDownload, isDownloading: isDownloadingMedia } =
     useMediaDownload({
-      study,
+      orgId: study.organizationId,
+      studyId: study.id,
       questionId: question.id,
     });
 

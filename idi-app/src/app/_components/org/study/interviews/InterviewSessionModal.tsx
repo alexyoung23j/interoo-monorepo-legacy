@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import SplitScreenModal from "@/app/_components/layouts/org/SplitScreenModal";
 import {
   InterviewSession,
@@ -14,6 +14,9 @@ import { ClipLoader } from "react-spinners";
 import BasicTag from "@/app/_components/reusable/BasicTag";
 import BasicMediaViewer from "@/app/_components/reusable/BasicMediaViewer";
 import { useInterviewSessionMediaUrls } from "@/hooks/useInterviewSessionMediaUrls";
+import { Button } from "@/components/ui/button";
+import { Download } from "@phosphor-icons/react";
+import { useMediaDownload } from "@/hooks/useMediaDownload";
 
 interface InterviewSessionModalProps {
   isOpen: boolean;
@@ -45,24 +48,38 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
       { enabled: isOpen },
     );
 
+  const filteredResponses = useMemo(
+    () =>
+      responsesData?.filter(
+        (response) => response.fastTranscribedText !== "",
+      ) ?? [],
+    [responsesData],
+  );
+
   const { data: mediaUrlData, isLoading: isLoadingMediaUrls } =
     useInterviewSessionMediaUrls({
-      responses: responsesData ?? null,
+      responses: filteredResponses,
       studyId,
       orgId,
+    });
+
+  const { handleDownload, isDownloading: isDownloadingMedia } =
+    useMediaDownload({
+      orgId: orgId,
+      studyId: studyId,
+      questionId: selectedResponseId ?? "",
     });
 
   useEffect(() => {
     if (!isOpen) {
       setSelectedResponseId(null);
-    } else if (
-      responsesData &&
-      responsesData.length > 0 &&
-      !selectedResponseId
-    ) {
-      setSelectedResponseId(responsesData[0].id);
+    } else if (filteredResponses.length > 0 && !selectedResponseId) {
+      const firstResponse = filteredResponses[0];
+      if (firstResponse && firstResponse.id) {
+        setSelectedResponseId(firstResponse.id);
+      }
     }
-  }, [isOpen, responsesData, selectedResponseId]);
+  }, [isOpen, filteredResponses, selectedResponseId]);
 
   const totalTime =
     interviewSession.startTime && interviewSession.lastUpdatedTime
@@ -72,14 +89,14 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
         )
       : "0:00";
 
-  const filteredResponses =
-    responsesData?.filter((response) => response.fastTranscribedText !== "") ??
-    [];
-
   const currentResponseMediaUrl =
     mediaUrlData?.signedUrls[selectedResponseId ?? ""]?.signedUrl;
   const currentResponseContentType =
     mediaUrlData?.signedUrls[selectedResponseId ?? ""]?.contentType;
+
+  if (!studyId || !orgId) {
+    return null; // or a loading indicator
+  }
 
   return (
     <SplitScreenModal
@@ -88,10 +105,6 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
       topContent={
         <BasicHeaderCard
           items={[
-            {
-              title: interviewSession.status,
-              subtitle: "Study",
-            },
             {
               title: interviewSession.id,
               subtitle: "Interview Id",
@@ -109,32 +122,52 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
       }
       leftContent={
         <div className="flex h-full w-full flex-col p-4">
-          <h2 className="mb-4 text-xl font-bold">Interview Details</h2>
-          <p>Interview ID: {interviewSession.id}</p>
-          <p>
-            Started: {new Date(interviewSession.startTime!).toLocaleString()}
-          </p>
-          {selectedResponseId && (
-            <>
-              <p className="mt-4">
-                <strong>Selected Response ID:</strong> {selectedResponseId}
-              </p>
-              <div className="mt-4 h-64 w-full">
-                {isLoadingMediaUrls ? (
-                  <div className="flex h-full w-full items-center justify-center">
-                    <ClipLoader color="grey" />
-                  </div>
-                ) : currentResponseMediaUrl ? (
-                  <BasicMediaViewer
-                    mediaUrl={currentResponseMediaUrl}
-                    mediaType={currentResponseContentType as "video" | "audio"}
-                  />
-                ) : (
-                  <p>No media available for this response.</p>
-                )}
+          <div className="mb-4 flex w-full items-center justify-between gap-3">
+            <h2 className="text-xl font-bold text-theme-900">
+              Interview Media
+            </h2>
+            <Button
+              variant="secondary"
+              className="gap-2"
+              size="sm"
+              onClick={() =>
+                handleDownload(
+                  currentResponseMediaUrl,
+                  currentResponseContentType,
+                  selectedResponseId,
+                  `response_${selectedResponseId}`,
+                )
+              }
+              disabled={
+                isDownloadingMedia ||
+                !currentResponseMediaUrl ||
+                !selectedResponseId
+              }
+            >
+              {isDownloadingMedia ? (
+                <ClipLoader color="black" size={16} />
+              ) : (
+                <Download size={16} className="text-theme-900" />
+              )}
+              {`Download ${currentResponseContentType?.startsWith("audio") ? "audio" : "video"}`}
+            </Button>
+          </div>
+          <div className="flex-grow">
+            {isLoadingMediaUrls ? (
+              <div className="flex h-full w-full items-center justify-center">
+                <ClipLoader color="grey" />
               </div>
-            </>
-          )}
+            ) : currentResponseMediaUrl && currentResponseContentType ? (
+              <BasicMediaViewer
+                mediaUrl={currentResponseMediaUrl}
+                mediaType={
+                  currentResponseContentType.split("/")[0] as "video" | "audio"
+                }
+              />
+            ) : (
+              <p>No media available for this response.</p>
+            )}
+          </div>
         </div>
       }
       rightContent={

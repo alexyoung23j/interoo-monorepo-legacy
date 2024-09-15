@@ -16,5 +16,11 @@ export default async function InterviewsPage({
     redirect("/404");
   }
 
-  return <InterviewPageComponent interviewData={interviewData} />;
+  return (
+    <InterviewPageComponent
+      interviewData={interviewData}
+      studyId={params.studyId}
+      orgId={params.orgId}
+    />
+  );
 }

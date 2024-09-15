@@ -19,6 +19,11 @@ interface MediaUrlData {
   >;
 }
 
+// Define the return type of fetchResponses
+interface FetchResponsesResult {
+  signedUrls: MediaUrlData["signedUrls"];
+}
+
 export const useInterviewSessionMediaUrls = ({
   responses,
   studyId,
@@ -36,13 +41,14 @@ export const useInterviewSessionMediaUrls = ({
       const allSignedUrls: MediaUrlData["signedUrls"] = {};
 
       for (const response of responses ?? []) {
-        const result = await fetchResponses({
+        const result = (await fetchResponses({
           responseIds: [response.id],
           token: session.access_token,
           studyId: studyId,
           questionId: response.questionId,
           orgId: orgId,
-        });
+        })) as FetchResponsesResult; // Cast the result to the expected type
+
         Object.assign(allSignedUrls, result.signedUrls);
       }
 

@@ -3,7 +3,6 @@ import { api } from "@/trpc/server";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { isColorLight } from "@/app/utils/color";
-import InterviewSessionModal from "@/app/_components/org/study/interviews/InterviewSessionModal";
 
 /**
  * @description This is the server component for the interview session page that fetches the static data needed for the interview setup.
@@ -38,22 +37,11 @@ export default async function InterviewSessionServerPage({
   const isLight = isColorLight(organization.primaryColor ?? "");
 
   return (
-    <>
-      <InterviewLayout
-        study={study}
-        organization={organization}
-        backgroundLight={isLight}
-        fetchedInterviewSession={interviewSession}
-      />
-      <InterviewSessionModal
-        isOpen={true} // You might want to control this with state
-        onClose={() => {
-          /* Handle close */
-        }}
-        interviewSession={interviewSession}
-        studyId={study.id}
-        orgId={organization.id}
-      />
-    </>
+    <InterviewLayout
+      study={study}
+      organization={organization}
+      backgroundLight={isLight}
+      fetchedInterviewSession={interviewSession}
+    />
   );
 }
