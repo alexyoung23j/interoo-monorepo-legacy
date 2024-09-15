@@ -153,4 +153,34 @@ export const studiesRouter = createTRPCRouter({
 
       return updatedStudy;
     }),
+  /**
+   * Used to fetch all interview sessions for a given study
+   */
+  getStudyInterviews: privateProcedure
+    .input(z.object({ studyId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const { studyId } = input;
+
+      const interviewSessions = await ctx.db.interviewSession.findMany({
+        where: { studyId },
+        include: {
+          participant: true,
+        },
+        orderBy: { startTime: "desc" },
+      });
+
+      const completedInterviewsCount = interviewSessions.filter(
+        (session) => session.status === InterviewSessionStatus.COMPLETED,
+      ).length;
+
+      const inProgressInterviewsCount = interviewSessions.filter(
+        (session) => session.status === InterviewSessionStatus.IN_PROGRESS,
+      ).length;
+
+      return {
+        interviewSessions,
+        completedInterviewsCount,
+        inProgressInterviewsCount,
+      };
+    }),
 });
