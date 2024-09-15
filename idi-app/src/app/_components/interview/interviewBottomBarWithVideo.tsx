@@ -144,7 +144,7 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
       console.error("Error stopping chunked media uploader:", error);
     });
 
-    await transcriptionRecorder.stopRecording();
+    transcriptionRecorder.stopRecording();
 
     const requestBody = calculateTranscribeAndGenerateNextQuestionRequest({
       currentQuestion,
