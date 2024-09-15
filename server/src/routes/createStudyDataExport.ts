@@ -2,7 +2,7 @@ import { Router, Request, Response as ExpressResponse } from "express";
 import { prisma } from "../index";
 import { authMiddleware } from "../middleware/auth";
 import * as XLSX from 'xlsx';
-import { FollowUpQuestion, InterviewParticipant, InterviewSession, Question, Study, Response } from "@shared/generated/client";
+import { FollowUpQuestion, InterviewParticipant, InterviewSession, Question, Study, Response, InterviewSessionStatus, QuestionType, MultipleChoiceOption } from "@shared/generated/client";
 
 const router = Router();
 
@@ -12,11 +12,12 @@ type QuestionWithResponses = Question & {
   FollowUpQuestion: (FollowUpQuestion & {
     Response: Response[];
   })[];
+  multipleChoiceOptions: MultipleChoiceOption[];
 };
 
 type InterviewWithResponses = InterviewSession & {
   responses: (Response & {
-    question: Question;
+    question: Question & { multipleChoiceOptions: MultipleChoiceOption[] };
     followUpQuestion: FollowUpQuestion | null;
   })[];
   participant: InterviewParticipant | null;
@@ -32,7 +33,7 @@ type QuestionData = (string | {
   response: Response;
 })[];
 
-type InterviewSessionData = {
+type ConstructedInterviewSessionData = {
   lastUpdatedTime: Date | null;
   participantName: string;
   participantEmail: string;
@@ -41,15 +42,16 @@ type InterviewSessionData = {
   responses: {
     questionId: string;
     followUpQuestionId: string | null;
-    question: Question;
+    question: Question & { multipleChoiceOptions: MultipleChoiceOption[] };
     followUpQuestion: FollowUpQuestion | null;
     responseText: string | null;
+    multipleChoiceOptionId: string | null;
   }[];
 };
 
 type FetchStudyDataReturn = {
   questionMap: Record<string, QuestionData[]>;
-  interviewSessionData: InterviewSessionData[];
+  interviewSessionData: ConstructedInterviewSessionData[];
 };
 
 const fetchStudyData = async (studyId: string): Promise<FetchStudyDataReturn> => {
@@ -63,15 +65,21 @@ const fetchStudyData = async (studyId: string): Promise<FetchStudyDataReturn> =>
             include: {
               Response: true
             }
-          }
+          },
+          multipleChoiceOptions: true
         }
       },
       interviews: {
         include: {
           responses: {
             include: {
-              question: true,
-              followUpQuestion: true
+              question: {
+                include: {
+                  multipleChoiceOptions: true
+                }
+              },
+              followUpQuestion: true,
+              multipleChoiceSelection: true
             }
           },
           participant: true
@@ -85,14 +93,14 @@ const fetchStudyData = async (studyId: string): Promise<FetchStudyDataReturn> =>
   }
 
   const questionMap = new Map<string, QuestionData[]>();
-  const interviewSessionData: InterviewSessionData[] = [];
+  const interviewSessionData: ConstructedInterviewSessionData[] = [];
 
   // Process questions and responses
   study.questions.forEach(question => {
     const questionData: QuestionData[] = [];
     study.interviews.forEach(interview => {
       const interviewData: QuestionData = [interview.id];
-      const mainResponse = interview.responses.find(r => r.question.id === question.id && r.followUpQuestion == null);
+      const mainResponse = interview.responses.find(r => r.question.id === question.id && r.followUpQuestion == null && (r.fastTranscribedText !== '' || r.multipleChoiceOptionId !== null));
       
       if (mainResponse) {
         interviewData.push({
@@ -123,7 +131,7 @@ const fetchStudyData = async (studyId: string): Promise<FetchStudyDataReturn> =>
 
   // Process interview session data
   study.interviews.forEach(interview => {
-    const interviewData: InterviewSessionData = {
+    const interviewData: ConstructedInterviewSessionData = {
       lastUpdatedTime: interview.lastUpdatedTime || null,
       participantName: interview.participant?.name || 'Anonymous',
       participantEmail: interview.participant?.email || 'N/A',
@@ -132,9 +140,13 @@ const fetchStudyData = async (studyId: string): Promise<FetchStudyDataReturn> =>
       responses: interview.responses.map(response => ({
         questionId: response.question.id,
         followUpQuestionId: response.followUpQuestion?.id || null,
-        question: response.question,
+        question: {
+            ...response.question,
+            multipleChoiceOptions: response.question.multipleChoiceOptions
+          },        
         followUpQuestion: response.followUpQuestion,
         responseText: response.fastTranscribedText,
+        multipleChoiceOptionId: response.multipleChoiceOptionId
       }))
     };
     interviewSessionData.push(interviewData);
@@ -147,7 +159,7 @@ const fetchStudyData = async (studyId: string): Promise<FetchStudyDataReturn> =>
 };
   
 
-const getFullTranscript = (interview: InterviewSessionData): string => {
+const getFullTranscript = (interview: ConstructedInterviewSessionData): string => {
     let transcript = '';
 
     // Sort responses by questionOrder, then by followUpQuestionOrder
@@ -166,25 +178,35 @@ const getFullTranscript = (interview: InterviewSessionData): string => {
         return acc;
     }, {} as Record<string, typeof sortedResponses>);
 
-    // Construct transcript
     for (const responses of Object.values(groupedResponses)) {
-        const mainResponse = responses.find(r => !r.followUpQuestionId);
+        const mainResponse = responses.find(r => !r.followUpQuestionId && (r.responseText !== '' || r.multipleChoiceOptionId !== null));
         if (!mainResponse) continue;
 
-        transcript += `Question: ${mainResponse.question.title}\n`;
-        transcript += `Response: ${mainResponse.responseText || ''}\n\n`;
+        transcript += `Question: "${mainResponse.question.title}"\n`;
+
+        // Check question type and format response accordingly
+        switch (mainResponse.question.questionType) {
+            case QuestionType.OPEN_ENDED:
+                transcript += `Response: "${mainResponse.responseText || ''}"\n\n`;
+                break;
+            case QuestionType.MULTIPLE_CHOICE:
+                transcript += `Multiple Choice Selection: [${mainResponse.question.multipleChoiceOptions.find(o => o.id === mainResponse.multipleChoiceOptionId)?.optionText ?? 'N/A'}]\n\n`;
+                break;
+            default:
+                transcript += `Response: [Response not available for this question type]\n\n`;
+        }
 
         // Add follow-up questions and responses (already sorted)
         const followUps = responses.filter(r => r.followUpQuestionId);
         for (const followUp of followUps) {
-        transcript += `Follow-up: ${followUp.followUpQuestion?.title}\n`;
-        transcript += `Response: ${followUp.responseText || ''}\n\n`;
+            transcript += `Question (Follow Up): "${followUp.followUpQuestion?.title}"\n`;
+            
+            // Assuming follow-up questions are always open-ended
+            transcript += `Response: "${followUp.responseText || ''}"\n\n`;
         }
 
         transcript += '\n'; // Extra line between question groups
     }
-
-    console.log(transcript);
 
     return transcript.trim();
 };
@@ -203,14 +225,14 @@ const createExcelFile = (studyData: any) => {
 
   // Completed Interviews
   const completedInterviews = studyData.interviewSessionData
-    .filter((interview: any) => interview[3] === 'COMPLETED')
+    .filter((interview: any) => interview.status === InterviewSessionStatus.COMPLETED)
     .sort((a: any, b: any) => new Date(a[0]).getTime() - new Date(b[0]).getTime());
 
   const completedInterviewsData = completedInterviews.map((interview: any, index: number) => [
     index + 1,
-    interview[1],
-    interview[2],
-    new Date(interview[0]).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }),
+    interview.participantName,
+    interview.participantEmail,
+    new Date(interview.lastUpdatedTime).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }),
     '', // Duration (blank for now)
     getFullTranscript(interview),
     getVideoLink(interview)
@@ -224,14 +246,14 @@ const createExcelFile = (studyData: any) => {
 
   // Incomplete Interviews
   const incompleteInterviews = studyData.interviewSessionData
-    .filter((interview: any) => interview[3] !== 'COMPLETED')
-    .sort((a: any, b: any) => new Date(a[0]).getTime() - new Date(b[0]).getTime());
+    .filter((interview: any) => interview.status == InterviewSessionStatus.IN_PROGRESS)
+    .sort((a: any, b: any) => new Date(a.lastUpdatedTime).getTime() - new Date(b.lastUpdatedTime).getTime());
 
   const incompleteInterviewsData = incompleteInterviews.map((interview: any, index: number) => [
     index + 1,
-    interview[1],
-    interview[2],
-    new Date(interview[0]).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }),
+    interview.participantName,
+    interview.participantEmail,
+    new Date(interview.lastUpdatedTime).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }),
     '', // Duration (blank for now)
     getFullTranscript(interview),
     getVideoLink(interview)
