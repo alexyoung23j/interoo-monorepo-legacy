@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -32,7 +32,12 @@ import { useAtom } from "jotai";
 import { calculateTranscribeAndGenerateNextQuestionRequest } from "@/app/utils/functions";
 import WebcamPreview from "./WebcamPreview";
 import { useTranscriptionRecorder } from "@/hooks/useTranscriptionRecorder";
-import { useTtsAudio } from "@/hooks/useTtsAudio";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface InterviewBottomBarProps {
   organization: Organization;
@@ -76,8 +81,7 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
   const [followUpQuestions] = useAtom(followUpQuestionsAtom);
   const [audioOn, setAudioOn] = useState(true);
   const [isFullyRecording, setIsFullyRecording] = useState(false);
-  const [awaitingNextQuestionGeneration, setAwaitingNextQuestionGeneration] =
-    useState(false);
+  const [isThinking, setIsThinking] = useState(false);
   const transcriptionRecorder = useTranscriptionRecorder({
     baseQuestions: study.questions,
   });
@@ -88,31 +92,24 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
     isRecording,
     uploadProgress,
     error: uploadError,
+    isUploadComplete,
+    isUploadingFinalChunks,
   } = useChunkedMediaUploader();
 
-  const [uploadStatus, setUploadStatus] = useState<
-    "idle" | "uploading" | "slow" | "verySlow" | "failed"
-  >("idle");
-  const [uploadStartTime, setUploadStartTime] = useState<number | null>(null);
-
-  const updateUploadStatus = useCallback(() => {
-    if (uploadStartTime === null) return;
-
-    const elapsedTime = Date.now() - uploadStartTime;
-    if (elapsedTime > 10000 && uploadProgress < 90) {
-      setUploadStatus("verySlow");
-    } else if (elapsedTime > 30000 && uploadProgress < 50) {
-      setUploadStatus("slow");
-    }
-  }, [uploadStartTime, uploadProgress]);
-
-  useEffect(() => {
-    let intervalId: NodeJS.Timeout;
-    if (uploadStatus === "uploading" || uploadStatus === "slow") {
-      intervalId = setInterval(updateUploadStatus, 5000);
-    }
-    return () => clearInterval(intervalId);
-  }, [uploadStatus, updateUploadStatus]);
+  const isButtonDisabled = useMemo(() => {
+    const disabled =
+      !currentResponseAndUploadUrl.uploadSessionUrl ||
+      (!isFullyRecording && !isUploadComplete) ||
+      isUploadingFinalChunks ||
+      isThinking;
+    return disabled;
+  }, [
+    currentResponseAndUploadUrl.uploadSessionUrl,
+    isFullyRecording,
+    isUploadComplete,
+    isUploadingFinalChunks,
+    isThinking,
+  ]);
 
   const startResponse = async () => {
     if (!navigator.mediaDevices?.getUserMedia) {
@@ -128,13 +125,9 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
 
     try {
       stopTtsAudio();
-      await transcriptionRecorder.startRecording();
-
-      await startChunkedMediaUploader(study.videoEnabled ?? false);
-      console.log("Chunked media uploader started");
       setIsFullyRecording(true);
-      setUploadStatus("idle");
-      setUploadStartTime(null);
+      await startChunkedMediaUploader(study.videoEnabled ?? false);
+      await transcriptionRecorder.startRecording();
     } catch (err) {
       console.error("Error starting response:", err);
       showErrorToast("Error starting response. Please try again.");
@@ -144,53 +137,40 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
 
   const stopResponse = async () => {
     setIsFullyRecording(false);
-    setAwaitingNextQuestionGeneration(true);
-    setUploadStatus("uploading");
-    setUploadStartTime(Date.now());
+    setIsThinking(true);
+
+    // Start the stopping process without waiting for it to complete
+    stopChunkedMediaUploader().catch((error) => {
+      console.error("Error stopping chunked media uploader:", error);
+    });
+
+    transcriptionRecorder.stopRecording();
+
+    const requestBody = calculateTranscribeAndGenerateNextQuestionRequest({
+      currentQuestion,
+      interviewSession,
+      study,
+      responses,
+      followUpQuestions,
+      currentResponseId: currentResponseAndUploadUrl.response?.id ?? "",
+    });
 
     try {
-      await Promise.all([
-        stopChunkedMediaUploader(),
-        transcriptionRecorder.stopRecording(),
-      ]);
-
-      const requestBody = calculateTranscribeAndGenerateNextQuestionRequest({
-        currentQuestion,
-        interviewSession,
-        study,
-        responses,
-        followUpQuestions,
-        currentResponseId: currentResponseAndUploadUrl.response?.id ?? "",
-      });
-
       const res = await transcriptionRecorder.submitAudio(requestBody);
-      setAwaitingNextQuestionGeneration(false);
-      setUploadStatus("idle");
-
+      setIsThinking(false);
       if (res?.textToPlay && audioOn) {
-        await playTtsAudio(res.textToPlay);
+        void playTtsAudio(res.textToPlay); // Use void to indicate we're not awaiting this
       }
     } catch (err) {
       console.error("Error submitting audio:", err);
-      setUploadStatus("failed");
       showErrorToast("Error uploading your answer. Please try again.");
-      setAwaitingNextQuestionGeneration(false);
+      setIsThinking(false);
     }
   };
 
   const getOpenEndedButtonText = () => {
-    switch (uploadStatus) {
-      case "uploading":
-        return `Thinking...`;
-      case "slow":
-        return "Almost there...";
-      case "verySlow":
-        return "Your network is a bit slow- your video may be getting dropped";
-      case "failed":
-        return "Upload failed. Click to retry.";
-      default:
-        return isFullyRecording ? "Click to finish" : "Click to speak";
-    }
+    if (isThinking) return "Thinking...";
+    return isFullyRecording ? "Click to finish" : "Click to speak";
   };
 
   const getMultipleChoiceButtonText = () => {
@@ -209,65 +189,64 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
 
   const renderOpenEndedButton = ({ showButtonText = true }) => (
     <div className="flex flex-col-reverse items-center gap-3 py-1 md:flex-col">
-      <Button
-        variant="unstyled"
-        className={cx(
-          "h-16 w-16 rounded-full border border-black border-opacity-25 md:mt-5",
-          "transition-all duration-500 ease-in-out",
-          "active:scale-85 active:bg-theme-200",
-          isFullyRecording || uploadStatus !== "idle"
-            ? "bg-org-secondary opacity-50 hover:opacity-90"
-            : "bg-org-secondary hover:opacity-80",
-          !currentResponseAndUploadUrl.uploadSessionUrl &&
-            "cursor-not-allowed opacity-50",
-        )}
-        onClick={
-          uploadStatus === "failed"
-            ? startResponse
-            : isFullyRecording
-              ? stopResponse
-              : startResponse
-        }
-        disabled={
-          uploadStatus === "uploading" ||
-          uploadStatus === "slow" ||
-          uploadStatus === "verySlow" ||
-          !currentResponseAndUploadUrl.uploadSessionUrl
-        }
-      >
-        {isFullyRecording ? (
-          <SyncLoader
-            size={4}
-            color={
-              isColorLight(organization.secondaryColor ?? "")
-                ? "black"
-                : "white"
-            }
-            speedMultiplier={0.5}
-            margin={3}
-          />
-        ) : uploadStatus !== "idle" ? (
-          <ClipLoader
-            size={16}
-            color={
-              isColorLight(organization.secondaryColor ?? "")
-                ? "black"
-                : "white"
-            }
-          />
-        ) : (
-          <Microphone
-            color={
-              isColorLight(organization.secondaryColor ?? "")
-                ? "black"
-                : "white"
-            }
-            size={24}
-          />
-        )}
-      </Button>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="unstyled"
+              className={cx(
+                "h-16 w-16 rounded-full border border-black border-opacity-25 md:mt-5",
+                "transition-all duration-500 ease-in-out",
+                "active:scale-85 active:bg-theme-200",
+                isFullyRecording || isThinking
+                  ? "bg-org-secondary opacity-50 hover:opacity-90"
+                  : "bg-org-secondary hover:opacity-80",
+                isButtonDisabled && "cursor-not-allowed opacity-50",
+              )}
+              onClick={isFullyRecording ? stopResponse : startResponse}
+              disabled={isButtonDisabled}
+            >
+              {isFullyRecording ? (
+                <SyncLoader
+                  size={4}
+                  color={
+                    isColorLight(organization.secondaryColor ?? "")
+                      ? "black"
+                      : "white"
+                  }
+                  speedMultiplier={0.5}
+                  margin={3}
+                />
+              ) : isThinking ? (
+                <ClipLoader
+                  size={16}
+                  color={
+                    isColorLight(organization.secondaryColor ?? "")
+                      ? "black"
+                      : "white"
+                  }
+                />
+              ) : (
+                <Microphone
+                  color={
+                    isColorLight(organization.secondaryColor ?? "")
+                      ? "black"
+                      : "white"
+                  }
+                  size={24}
+                />
+              )}
+            </Button>
+          </TooltipTrigger>
+          {isUploadingFinalChunks && (
+            <TooltipContent>
+              Please wait until last upload completes!
+            </TooltipContent>
+          )}
+        </Tooltip>
+      </TooltipProvider>
       {showButtonText && (
-        <div className="text-sm leading-4 text-neutral-500">
+        <div className="text-sm leading-4 text-theme-900">
           {getOpenEndedButtonText()}
         </div>
       )}

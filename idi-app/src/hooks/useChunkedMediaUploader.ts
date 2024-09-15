@@ -16,6 +16,7 @@ export function useChunkedMediaUploader() {
   const [isRecording, setIsRecording] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploadComplete, setIsUploadComplete] = useState(true);
   const mediaRecorder = useRef<MediaRecorder | null>(null);
   const uploadedSize = useRef<number>(0);
   const buffer = useRef<Blob>(
@@ -25,6 +26,8 @@ export function useChunkedMediaUploader() {
   const isUploading = useRef<boolean>(false);
   const uploadComplete = useRef<boolean>(false);
   const recordingTimeout = useRef<NodeJS.Timeout | null>(null);
+  const cancelUpload = useRef<boolean>(false);
+  const [isUploadingFinalChunks, setIsUploadingFinalChunks] = useState(false);
 
   const uploadNextChunk = useCallback(
     async (isLastChunk = false) => {
@@ -90,6 +93,7 @@ export function useChunkedMediaUploader() {
             console.log("Upload completed");
             setUploadProgress(100);
             uploadComplete.current = true;
+            setIsUploadComplete(true);
             return true;
           }
 
@@ -146,6 +150,7 @@ export function useChunkedMediaUploader() {
         });
         isUploading.current = false;
         uploadComplete.current = false;
+        setIsUploadComplete(false);
 
         buffer.current = new Blob([], { type: mimeType });
 
@@ -182,7 +187,7 @@ export function useChunkedMediaUploader() {
   );
 
   const stopRecording = useCallback(async () => {
-    console.debug("Stopping recording");
+    console.log("Stopping recording");
     if (recordingTimeout.current) {
       clearTimeout(recordingTimeout.current);
     }
@@ -191,9 +196,11 @@ export function useChunkedMediaUploader() {
       return new Promise<void>((resolve, reject) => {
         if (mediaRecorder.current) {
           const timeoutId = setTimeout(() => {
-            console.debug(
+            console.log(
               "Video recording stop process timed out after 18 seconds",
             );
+            cancelUpload.current = true;
+            setIsUploadComplete(true);
             reject(new Error("Recording stop process timed out"));
           }, 18000);
 
@@ -205,27 +212,37 @@ export function useChunkedMediaUploader() {
 
           mediaRecorder.current.onstop = async () => {
             setIsRecording(false);
-            console.debug(
+            console.log("Setting isUploadingFinalChunks to true");
+            setIsUploadingFinalChunks(true); // Set to true when final upload starts
+            console.log(
               "Recording stopped, waiting for any in-progress uploads to complete...",
             );
 
             // Wait for any in-progress uploads to complete
-            while (isUploading.current) {
+            while (isUploading.current && !cancelUpload.current) {
               await new Promise((resolve) => setTimeout(resolve, 100));
             }
 
-            console.debug("Uploading final chunks...");
+            console.log("Uploading final chunks...");
 
             try {
-              while (buffer.current.size > 0 && !uploadComplete.current) {
+              while (
+                buffer.current.size > 0 &&
+                !uploadComplete.current &&
+                !cancelUpload.current
+              ) {
                 const uploadResult = await uploadNextChunk(true);
                 if (uploadResult) break;
               }
 
-              console.debug("Final upload complete");
+              console.log("Final upload complete");
             } catch (error) {
-              console.debug("Error during final upload:", error);
+              console.log("Error during final upload:", error);
               setError("Failed to upload all chunks. Please try again.");
+            } finally {
+              setIsUploadComplete(true);
+              console.log("Setting isUploadingFinalChunks to false");
+              setIsUploadingFinalChunks(false); // Set to false when final upload ends
             }
 
             // Reset states
@@ -234,6 +251,7 @@ export function useChunkedMediaUploader() {
             uploadedSize.current = 0;
             totalSize.current = 0;
             uploadComplete.current = false;
+            cancelUpload.current = false;
 
             clearTimeout(timeoutId);
             clearTimeout(poorConnectionTimeoutId);
@@ -255,5 +273,7 @@ export function useChunkedMediaUploader() {
     stopRecording,
     error,
     uploadProgress,
+    isUploadComplete,
+    isUploadingFinalChunks, // Expose this state
   };
 }
