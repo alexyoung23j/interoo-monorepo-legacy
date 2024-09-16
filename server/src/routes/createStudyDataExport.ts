@@ -2,6 +2,8 @@ import { Router, Request, Response as ExpressResponse } from "express";
 import { prisma } from "../index";
 import { authMiddleware } from "../middleware/auth";
 import * as XLSX from 'xlsx';
+import { Workbook, Worksheet, Column } from 'exceljs';
+
 import { FollowUpQuestion, InterviewParticipant, InterviewSession, Question, Study, Response, InterviewSessionStatus, QuestionType, MultipleChoiceOption } from "@shared/generated/client";
 
 const router = Router();
@@ -34,6 +36,8 @@ type ConstructedInterviewSessionData = {
   participantEmail: string;
   status: string;
   responseCount: number;
+  studyId: string;
+  id: string;
   responses: {
     questionId: string;
     followUpQuestionId: string | null;
@@ -144,6 +148,8 @@ const fetchStudyData = async (studyId: string): Promise<FetchStudyDataReturn> =>
     participantEmail: interview.participant?.email || 'N/A',
     status: interview.status,
     responseCount: interview.responses.length,
+    studyId: interview.studyId,
+    id: interview.id,
     responses: interview.responses.map(response => ({
       questionId: response.question.id,
       followUpQuestionId: response.followUpQuestion?.id || null,
@@ -216,7 +222,9 @@ const getFullTranscript = (interview: ConstructedInterviewSessionData): string =
     return transcript.trim();
 };
 
-const getInterviewVideoLink = (interview: any) => '';
+const getInterviewVideoLink = (interview: ConstructedInterviewSessionData, orgId: string, origin: string) => {
+    return `${origin}/org/${orgId}/study/${interview.studyId}/results?interviewSessionId=${interview.id}&modalOpen=true`
+};
 
 const getQuestionVideoLink = (question: ProcessedQuestion, response: QuestionResponse, orgId: string, origin: string) => {
     return `${origin}/org/${orgId}/study/${response.interviewSession.studyId}/results?questionId=${question.id}&interviewSessionId=${response.interviewSession.id}&responseId=${response.mainResponse?.id}&modalOpen=true`
@@ -266,112 +274,203 @@ const getFollowUpTranscript = (followUpResponse: { followUpQuestion: FollowUpQue
     return `Question (Follow Up): "${followUpQuestion.title}"\nResponse: "${response.fastTranscribedText || ''}"\n\n`;
 };
 
-const createExcelFile = (studyData: FetchStudyDataReturn, orgId: string, origin: string) => {
-  const workbook = XLSX.utils.book_new();
-
-  // Cover page (blank for now)
-  const coverSheet = XLSX.utils.aoa_to_sheet([[]]);
-  XLSX.utils.book_append_sheet(workbook, coverSheet, 'Cover');
-
-  // Completed Interviews
-  const completedInterviews = studyData.interviewSessionData
-    .filter((interview: any) => interview.status === InterviewSessionStatus.COMPLETED)
-    .sort((a: any, b: any) => new Date(a[0]).getTime() - new Date(b[0]).getTime());
-
-  const completedInterviewsData = completedInterviews.map((interview: any, index: number) => [
-    index + 1,
-    interview.participantName,
-    interview.participantEmail,
-    new Date(interview.lastUpdatedTime).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }),
-    '', // Duration (blank for now)
-    getFullTranscript(interview),
-    getInterviewVideoLink(interview)
-  ]);
-
-  const completedInterviewsSheet = XLSX.utils.aoa_to_sheet([
-    ['Interview Number', 'Participant Name', 'Participant Email', 'Date Completed', 'Duration', 'Full Transcript', 'Video Link'],
-    ...completedInterviewsData
-  ]);
-  XLSX.utils.book_append_sheet(workbook, completedInterviewsSheet, 'Completed Interviews');
-
-  // Incomplete Interviews
-  const incompleteInterviews = studyData.interviewSessionData
-    .filter((interview: any) => interview.status == InterviewSessionStatus.IN_PROGRESS)
-    .sort((a: any, b: any) => new Date(a.lastUpdatedTime).getTime() - new Date(b.lastUpdatedTime).getTime());
-
-  const incompleteInterviewsData = incompleteInterviews.map((interview: any, index: number) => [
-    index + 1,
-    interview.participantName,
-    interview.participantEmail,
-    new Date(interview.lastUpdatedTime).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }),
-    '', // Duration (blank for now)
-    getFullTranscript(interview),
-    getInterviewVideoLink(interview)
-  ]);
-
-  const incompleteInterviewsSheet = XLSX.utils.aoa_to_sheet([
-    ['Interview Number', 'Participant Name', 'Participant Email', 'Date Updated', 'Duration', 'Full Transcript', 'Video Link'],
-    ...incompleteInterviewsData
-  ]);
-  XLSX.utils.book_append_sheet(workbook, incompleteInterviewsSheet, 'Incomplete Interviews');
-
-  // Question-specific sheets
-  studyData.questions.forEach((question, questionIndex) => {
-    const sheetName = `Question ${question.questionOrder + 1}`;
-    
-    // Find the maximum number of follow-ups for this question
-    const maxFollowUps = Math.max(...question.responses.map(r => r.followUpResponses.length));
-
-    // Create header row
-    const header = [
-      'Interview Number',
-      'Date',
-      'Full Thread Transcript',
-      'Question Transcript'
-    ];
-    for (let i = 1; i <= maxFollowUps; i++) {
-      header.push(`Follow Up ${i} Transcript`);
-    }
-
-    const questionData: any[][] = [];
-
-    question.responses.filter((response) => response.interviewSession.status == InterviewSessionStatus.COMPLETED).forEach((response, index) => {
-
-      const row1: any[] = [
-        index + 1,
-        new Date(response.interviewSession.lastUpdatedTime || '').toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }),
-        getQuestionOrThreadTranscript(question, response, true),
-        getQuestionOrThreadTranscript(question, response, false)
-      ];
-
-      const row2: any[] = [
-        '',
-        '',
-        '',
-        getQuestionVideoLink(question, response, orgId, origin)
-      ];
-
-      response.followUpResponses.forEach((followUp, followUpIndex) => {
-        row1.push(getFollowUpTranscript(followUp));
-        row2.push(getFollowUpQuestionVideoLink(question, response, followUp.response, orgId, origin));
-      });
-
-      // Fill in empty cells for follow-ups if needed
-      while (row1.length < header.length) {
-        row1.push('');
-        row2.push('');
-      }
-
-      questionData.push(row1, row2, []); // Empty row for spacing
+interface InterviewData {
+    interviewNumber: number;
+    participantName: string;
+    participantEmail: string;
+    dateCompleted: Date;
+    duration: string;
+    fullTranscript: string;
+    videoLink: string;
+  }
+  
+  interface QuestionResponseData {
+    interviewNumber: number;
+    date: Date;
+    fullThreadTranscript: string;
+    questionTranscript: string;
+    questionVideoLink: string;
+    followUps: {
+      transcript: string;
+      videoLink: string;
+    }[];
+  }
+  
+  interface QuestionData {
+    questionNumber: number;
+    questionTitle: string;
+    responses: QuestionResponseData[];
+  }
+  
+  interface ExcelData {
+    coverPage: any[]; // You can define a more specific type if needed
+    completedInterviews: InterviewData[];
+    incompleteInterviews: InterviewData[];
+    questions: QuestionData[];
+  }
+  
+  // Modify the createExcelData function signature
+  const createExcelData = (studyData: FetchStudyDataReturn, orgId: string, origin: string): ExcelData => {
+    const excelData: ExcelData = {
+      coverPage: [],
+      completedInterviews: [],
+      incompleteInterviews: [],
+      questions: []
+    };
+  
+    // Completed Interviews
+    const completedInterviews = studyData.interviewSessionData
+      .filter((interview) => interview.status === InterviewSessionStatus.COMPLETED)
+      .sort((a, b) => new Date(a.lastUpdatedTime || '').getTime() - new Date(b.lastUpdatedTime || '').getTime());
+  
+    excelData.completedInterviews = completedInterviews.map((interview, index) => ({
+      interviewNumber: index + 1,
+      participantName: interview.participantName,
+      participantEmail: interview.participantEmail,
+      dateCompleted: new Date(interview.lastUpdatedTime || ''),
+      duration: '', // Duration (blank for now)
+      fullTranscript: getFullTranscript(interview),
+      videoLink: getInterviewVideoLink(interview, orgId, origin)
+    }));
+  
+    // Incomplete Interviews
+    const incompleteInterviews = studyData.interviewSessionData
+      .filter((interview) => interview.status === InterviewSessionStatus.IN_PROGRESS)
+      .sort((a, b) => new Date(a.lastUpdatedTime || '').getTime() - new Date(b.lastUpdatedTime || '').getTime());
+  
+    excelData.incompleteInterviews = incompleteInterviews.map((interview, index) => ({
+      interviewNumber: index + 1,
+      participantName: interview.participantName,
+      participantEmail: interview.participantEmail,
+      dateCompleted: new Date(interview.lastUpdatedTime || ''),
+      duration: '', // Duration (blank for now)
+      fullTranscript: getFullTranscript(interview),
+      videoLink: getInterviewVideoLink(interview, orgId, origin)
+    }));
+  
+    // Question-specific data
+    excelData.questions = studyData.questions.map((question) => {
+      const questionData: QuestionData = {
+        questionNumber: question.questionOrder + 1,
+        questionTitle: question.title,
+        responses: []
+      };
+  
+      question.responses
+        .filter((response) => response.interviewSession.status === InterviewSessionStatus.COMPLETED)
+        .forEach((response, index) => {
+          questionData.responses.push({
+            interviewNumber: index + 1,
+            date: new Date(response.interviewSession.lastUpdatedTime || ''),
+            fullThreadTranscript: getQuestionOrThreadTranscript(question, response, true),
+            questionTranscript: getQuestionOrThreadTranscript(question, response, false),
+            questionVideoLink: getQuestionVideoLink(question, response, orgId, origin),
+            followUps: response.followUpResponses.map((followUp) => ({
+              transcript: getFollowUpTranscript(followUp),
+              videoLink: getFollowUpQuestionVideoLink(question, response, followUp.response, orgId, origin)
+            }))
+          });
+        });
+  
+      return questionData;
     });
-
-    const questionSheet = XLSX.utils.aoa_to_sheet([header, ...questionData]);
-    XLSX.utils.book_append_sheet(workbook, questionSheet, sheetName);
-  });
-
-
-  return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
-};
+  
+    return excelData;
+  };
+  
+  const formatExcelWorkbook = (excelData: ExcelData) => {
+    const workbook = new Workbook();
+  
+    // Cover page
+    const coverSheet = workbook.addWorksheet('Cover');
+    // Add cover page formatting here
+  
+    // Completed Interviews
+    const completedInterviewsSheet = workbook.addWorksheet('Completed Interviews');
+    completedInterviewsSheet.columns = [
+      { header: 'Interview Number', key: 'interviewNumber', width: 15 },
+      { header: 'Participant Name', key: 'participantName', width: 20 },
+      { header: 'Participant Email', key: 'participantEmail', width: 30 },
+      { header: 'Date Completed', key: 'dateCompleted', width: 15 },
+      { header: 'Duration', key: 'duration', width: 10 },
+      { header: 'Full Transcript', key: 'fullTranscript', width: 50 },
+      { header: 'Video Link', key: 'videoLink', width: 50 }
+    ] as Partial<Column>[];
+    completedInterviewsSheet.addRows(excelData.completedInterviews);
+  
+    // Incomplete Interviews
+    const incompleteInterviewsSheet = workbook.addWorksheet('Incomplete Interviews');
+    incompleteInterviewsSheet.columns = [
+      { header: 'Interview Number', key: 'interviewNumber', width: 15 },
+      { header: 'Participant Name', key: 'participantName', width: 20 },
+      { header: 'Participant Email', key: 'participantEmail', width: 30 },
+      { header: 'Date Updated', key: 'dateCompleted', width: 15 },
+      { header: 'Duration', key: 'duration', width: 10 },
+      { header: 'Full Transcript', key: 'fullTranscript', width: 50 },
+      { header: 'Video Link', key: 'videoLink', width: 50 }
+    ] as Partial<Column>[];
+    incompleteInterviewsSheet.addRows(excelData.incompleteInterviews);
+  
+    // Question-specific sheets
+    excelData.questions.forEach((questionData: QuestionData) => {
+        const sheetName = `Question ${questionData.questionNumber}`;
+        const questionSheet = workbook.addWorksheet(sheetName);
+        
+        const columns: Partial<Column>[] = [
+          { header: 'Interview Number', key: 'interviewNumber', width: 15 },
+          { header: 'Date', key: 'date', width: 15 },
+          { header: 'Full Thread Transcript', key: 'fullThreadTranscript', width: 50 },
+          { header: 'Question Transcript', key: 'questionTranscript', width: 50 },
+        ];
+    
+        // Add follow-up columns dynamically
+        const maxFollowUps = Math.max(...questionData.responses.map(r => r.followUps.length));
+        for (let i = 1; i <= maxFollowUps; i++) {
+          columns.push(
+            { header: `Follow Up ${i} Transcript`, key: `followUp${i}Transcript`, width: 50 },
+          );
+        }
+    
+        questionSheet.columns = columns;
+    
+        questionData.responses.forEach((response, index) => {
+          // Add transcript row
+          const transcriptRow: { [key: string]: any } = {
+            interviewNumber: response.interviewNumber,
+            date: response.date,
+            fullThreadTranscript: response.fullThreadTranscript,
+            questionTranscript: response.questionTranscript,
+          };
+          
+          response.followUps.forEach((followUp, index) => {
+            transcriptRow[`followUp${index + 1}Transcript`] = followUp.transcript;
+          });
+    
+          questionSheet.addRow(transcriptRow);
+    
+          // Add video link row
+          const videoLinkRow: { [key: string]: any } = {
+            interviewNumber: '',
+            date: '',
+            fullThreadTranscript: '',
+            questionTranscript: response.questionVideoLink,
+          };
+    
+          response.followUps.forEach((followUp, index) => {
+            videoLinkRow[`followUp${index + 1}Transcript`] = followUp.videoLink;
+          });
+    
+          questionSheet.addRow(videoLinkRow);
+    
+          // Add empty row for spacing (except after the last response)
+          if (index < questionData.responses.length - 1) {
+            questionSheet.addRow({});
+          }
+        });
+      });
+    
+      return workbook;
+  };
 
 const createStudyDataExport = async (req: Request, res: ExpressResponse) => {
   const { studyId } = req.params;
@@ -384,15 +483,19 @@ const createStudyDataExport = async (req: Request, res: ExpressResponse) => {
   try {
     // Fetch study data
     const studyData = await fetchStudyData(studyId);
-    // Create Excel file
-    const excelBuffer = createExcelFile(studyData, studyData.orgId, origin);
+    // Create Excel data
+    const excelData = createExcelData(studyData, studyData.orgId, origin);
+
+    // Format Excel workbook
+    const workbook = formatExcelWorkbook(excelData);
 
     // Set headers for file download
     res.setHeader('Content-Disposition', `attachment; filename="study_data_${studyId}.xlsx"`);
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 
     // Send the file
-    res.send(excelBuffer);
+    await workbook.xlsx.write(res);
+    res.end();
 
   } catch (error) {
     console.error('Error creating study data export:', error);
