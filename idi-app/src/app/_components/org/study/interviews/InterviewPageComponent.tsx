@@ -10,6 +10,8 @@ import BasicHeaderCard from "@/app/_components/reusable/BasicHeaderCard";
 import { Button } from "@/components/ui/button";
 import { ArrowSquareOut } from "@phosphor-icons/react";
 import InterviewSessionModal from "./InterviewSessionModal";
+import BasicTag from "@/app/_components/reusable/BasicTag";
+import CardTable from "@/app/_components/reusable/CardTable";
 
 interface InterviewPageComponentProps {
   interviewData: {
@@ -40,16 +42,47 @@ const InterviewPageComponent: React.FC<InterviewPageComponentProps> = ({
       : "N/A";
   };
 
-  const getStatusClass = (status: InterviewSessionStatus) => {
+  const getStatusProps = (status: InterviewSessionStatus) => {
     switch (status) {
       case InterviewSessionStatus.COMPLETED:
-        return "bg-green-100 text-green-800";
+        return { color: "bg-green-100", borderColor: "border-green-400" };
       case InterviewSessionStatus.IN_PROGRESS:
-        return "bg-yellow-100 text-yellow-800";
+        return { color: "bg-yellow-100", borderColor: "border-yellow-400" };
+      case InterviewSessionStatus.NOT_STARTED:
+        return { color: "bg-theme-100", borderColor: "border-theme-300" };
       default:
-        return "bg-gray-100 text-gray-800";
+        return { color: "bg-theme-100", borderColor: "border-theme-300" };
     }
   };
+
+  const columns = [
+    { key: "id", header: "Id", width: "33%" },
+    {
+      key: "dateTaken",
+      header: "Date Taken",
+      width: "22%",
+      className: "justify-end",
+    },
+    {
+      key: "timeTaken",
+      header: "Time Taken",
+      width: "22%",
+      className: "justify-end",
+    },
+    { key: "status", header: "Status", width: "23%", className: "justify-end" },
+  ];
+
+  const tableData = interviewData.interviewSessions.map((session) => ({
+    id: session.id || "Anonymous Participant",
+    dateTaken: formatDate(session.startTime),
+    timeTaken: "5:42", // TODO: Calculate actual time taken
+    status: (
+      <BasicTag {...getStatusProps(session.status)} fixedWidth={false}>
+        {session.status.toLowerCase()}
+      </BasicTag>
+    ),
+    originalSession: session,
+  }));
 
   return (
     <>
@@ -90,43 +123,14 @@ const InterviewPageComponent: React.FC<InterviewPageComponentProps> = ({
             <div className="mt-8 text-xl font-medium text-theme-900">
               Interviews
             </div>
-            <div className="flex flex-row items-center gap-4 px-4 py-1 font-medium text-theme-600">
-              <div className="w-1/3">Id</div>
-              <div className="flex flex-1 justify-end gap-4">
-                <div className="w-1/4 text-right">Date Taken</div>
-                <div className="w-1/4 text-right">Time Taken</div>
-                <div className="w-1/4 text-right">Status</div>
-              </div>
-            </div>
-            {interviewData.interviewSessions.map((session) => (
-              <div
-                key={session.id}
-                className="flex cursor-pointer flex-row items-center gap-4 rounded-md border border-theme-200 px-4 py-3 hover:bg-theme-50"
-                onClick={() => {
-                  setSelectedInterview(session);
-                  setIsModalOpen(true);
-                }}
-              >
-                <div className="w-1/3 font-medium text-theme-900">
-                  {session.id || "Anonymous Participant"}
-                </div>
-                <div className="flex flex-1 justify-end gap-4">
-                  <div className="w-1/4 text-right text-theme-600">
-                    {formatDate(session.startTime)}
-                  </div>
-                  <div className="w-1/4 text-right text-theme-600">
-                    5:42 {/* TODO: Calculate actual time taken */}
-                  </div>
-                  <div className="w-1/4 text-right">
-                    <span
-                      className={`rounded-md px-3 py-1.5 text-xs font-medium ${getStatusClass(session.status)} inline-block`}
-                    >
-                      {session.status.toLowerCase()}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
+            <CardTable
+              data={tableData}
+              columns={columns}
+              onRowClick={(row) => {
+                setSelectedInterview(row.originalSession);
+                setIsModalOpen(true);
+              }}
+            />
           </div>
         }
         showRightContent={false}
