@@ -1,8 +1,7 @@
 import { Router, Request, Response as ExpressResponse } from "express";
 import { prisma } from "../index";
 import { authMiddleware } from "../middleware/auth";
-import * as XLSX from "xlsx";
-import { Workbook, Worksheet, Column } from "exceljs";
+import { Workbook, Worksheet, Column, FillGradientPath, FillGradientAngle } from "exceljs";
 
 import {
   FollowUpQuestion,
@@ -267,6 +266,9 @@ const getQuestionVideoLink = (
   orgId: string,
   origin: string,
 ) => {
+  if (question.questionType != QuestionType.OPEN_ENDED) {
+    return "";
+  }
   return `${origin}/org/${orgId}/study/${response.interviewSession.studyId}/results?questionId=${question.id}&interviewSessionId=${response.interviewSession.id}&responseId=${response.mainResponse?.id}&modalOpen=true`;
 };
 
@@ -476,33 +478,44 @@ const createExcelData = (
 const formatExcelWorkbook = (excelData: ExcelData) => {
     const workbook = new Workbook();
   
-    // Add Cover page
-    workbook.addWorksheet('Cover');
-  
     const formatSheet = (sheet: Worksheet, columns: Partial<Column>[], data: any[], description: string, isQuestionSheet: boolean = false) => {
-      // Add blank column to the left and other columns
+      // Add blank column to the left and other columns, plus an extra blank column at the end
       sheet.columns = [
-        { header: '', key: 'blank', width: 5 },
-        ...columns.map(col => ({ ...col, width: Math.min(col.width || 0, 50), header: '' }))
+        { header: '', key: 'blank_left', width: 5 },
+        ...columns.map(col => ({ ...col, width: Math.min(col.width || 0, 50), header: '' })),
+        { header: '', key: 'blank_right', width: 10 }
       ];
   
       // Add description
       sheet.addRow([]); // Blank row
-      sheet.addRow(['', description]);
+      sheet.addRow(['', description, '', '', '', '', '', '', '', ]);
       sheet.addRow([]);
       sheet.addRow([]);
   
       // Style description cell
-      const descriptionCell = sheet.getCell('B2');
-      descriptionCell.alignment = { wrapText: true, vertical: 'top' };
-      descriptionCell.font = { bold: true };
+      const descriptionCell = sheet.getCell('B3');
+      sheet.mergeCells('B3:G3'); // Merge 6 cells (B3 to G3)
+      descriptionCell.alignment = { wrapText: true, vertical: 'justify', horizontal: "center" };
+      descriptionCell.font = { bold: true, size: 14, color: { argb: 'FFFDFCFD' }  }; // Increased font size
+  
+      // Apply linear gradient to description cell
+      const fill: FillGradientAngle = {
+        type: 'gradient',
+        gradient: 'angle',
+        degree: 0,
+        stops: [
+          {position: 0, color: {argb: 'FF426473'}},
+          {position: 1, color: {argb: 'FFB2C1C7'}},
+        ]
+      };
+      descriptionCell.fill = fill;
   
       // Add column headers
-      const headerRow = sheet.addRow(['', ...columns.map(col => col.header)]);
+      const headerRow = sheet.addRow(['', ...columns.map(col => col.header), '']);
       headerRow.height = 40; // 3x the default height (20)
       headerRow.font = { bold: true, color: { argb: 'FFFDFCFD' } }; // White text (theme-off-white)
       headerRow.eachCell((cell, colNumber) => {
-        if (colNumber > 1) {
+        if (colNumber > 1 && colNumber <= columns.length + 1) {
           cell.fill = {
             type: 'pattern',
             pattern: 'solid',
@@ -516,14 +529,14 @@ const formatExcelWorkbook = (excelData: ExcelData) => {
       // Add data
       let groupIndex = 0;
       data.forEach((row, rowIndex) => {
-        const newRow = sheet.addRow(['', ...Object.values(row)]);
+        const newRow = sheet.addRow(['', ...Object.values(row), '']);
         newRow.height = 20; // Set a fixed height for data rows
   
         if (isQuestionSheet) {
           if (rowIndex % 3 !== 2) { // Not an empty row
             const fillColor = groupIndex % 2 === 0 ? 'FFF5F7F7' : 'FFD5DDE1'; // theme-50 and theme-100
             newRow.eachCell((cell, colNumber) => {
-              if (colNumber > 1) {
+              if (colNumber > 1 && colNumber <= columns.length + 1) {
                 cell.fill = {
                   type: 'pattern',
                   pattern: 'solid',
@@ -531,8 +544,14 @@ const formatExcelWorkbook = (excelData: ExcelData) => {
                 };
                 if (rowIndex % 3 === 0) { // First row of a group
                   cell.border = { top: { style: 'thin' } };
+                  if (colNumber === 2) { // Interview number column
+                    cell.border.right = { style: 'thin' };
+                  }
                 } else if (rowIndex % 3 === 1) { // Second row of a group
                   cell.border = { bottom: { style: 'thin' } };
+                  if (colNumber === 2) { // Interview number column
+                    cell.border.right = { style: 'thin' };
+                  }
                 }
               }
             });
@@ -540,15 +559,21 @@ const formatExcelWorkbook = (excelData: ExcelData) => {
             groupIndex++; // Increment group index for empty rows
           }
         } else {
-            const fillColor = rowIndex % 2 === 0 ? 'FFF5F7F7' : 'FFD5DDE1'; // theme-50 and theme-100
-            newRow.eachCell((cell, colNumber) => {
-            if (colNumber > 1) {
+          const fillColor = rowIndex % 2 === 0 ? 'FFF5F7F7' : 'FFD5DDE1'; // theme-50 and theme-100
+          newRow.eachCell((cell, colNumber) => {
+            if (colNumber > 1 && colNumber <= columns.length + 1) {
               cell.fill = {
                 type: 'pattern',
                 pattern: 'solid',
                 fgColor: { argb: fillColor }
               };
-              cell.border = { top: { style: 'thin' }, bottom: { style: 'thin' } };
+              cell.border = { 
+                top: { style: 'thin' }, 
+                bottom: { style: 'thin' }
+              };
+              if (colNumber === 2) { // Interview number column
+                cell.border.right = { style: 'thin' };
+              }
             }
           });
         }
@@ -557,7 +582,7 @@ const formatExcelWorkbook = (excelData: ExcelData) => {
       // Apply styles to all cells
       sheet.eachRow((row, rowNumber) => {
         row.eachCell((cell, colNumber) => {
-          if (colNumber > 1) { // Skip the first (blank) column
+          if (colNumber > 1 && colNumber <= columns.length + 1) { // Skip the first and last (blank) columns
             if (cell.value && typeof cell.value === 'string' && cell.value.startsWith('http')) {
               cell.value = { text: cell.value, hyperlink: cell.value };
               cell.font = { color: { argb: '0000FF' }, underline: true };
@@ -574,15 +599,15 @@ const formatExcelWorkbook = (excelData: ExcelData) => {
       completedInterviewsSheet,
       [
         { header: 'INTERVIEW NUMBER', key: 'interviewNumber', width: 20 },
-        { header: 'PARTICIPANT NAME', key: 'participantName', width: 25 },
-        { header: 'PARTICIPANT EMAIL', key: 'participantEmail', width: 35 },
+        { header: 'PARTICIPANT NAME', key: 'participantName', width: 20 },
+        { header: 'PARTICIPANT EMAIL', key: 'participantEmail', width: 20 },
         { header: 'DATE COMPLETED', key: 'dateCompleted', width: 20 },
         { header: 'DURATION', key: 'duration', width: 15 },
-        { header: 'FULL TRANSCRIPT', key: 'fullTranscript', width: 50 },
-        { header: 'VIDEO LINK', key: 'videoLink', width: 50 }
+        { header: 'FULL INTERVIEW TRANSCRIPT', key: 'fullTranscript', width: 50 },
+        { header: 'RECORDING LINK', key: 'videoLink', width: 50 }
       ],
       excelData.completedInterviews,
-      'This sheet contains data for all completed interviews.'
+      'This sheet contains data for all completed interviews. See the "Incomplete Interviews" sheet for interviews that are still in progress.'
     );
   
     // Incomplete Interviews
@@ -591,12 +616,12 @@ const formatExcelWorkbook = (excelData: ExcelData) => {
       incompleteInterviewsSheet,
       [
         { header: 'INTERVIEW NUMBER', key: 'interviewNumber', width: 20 },
-        { header: 'PARTICIPANT NAME', key: 'participantName', width: 25 },
-        { header: 'PARTICIPANT EMAIL', key: 'participantEmail', width: 35 },
+        { header: 'PARTICIPANT NAME', key: 'participantName', width: 20 },
+        { header: 'PARTICIPANT EMAIL', key: 'participantEmail', width: 20 },
         { header: 'DATE UPDATED', key: 'dateCompleted', width: 20 },
         { header: 'DURATION', key: 'duration', width: 15 },
-        { header: 'FULL TRANSCRIPT', key: 'fullTranscript', width: 50 },
-        { header: 'VIDEO LINK', key: 'videoLink', width: 50 }
+        { header: 'FULL INTERVIEW TRANSCRIPT', key: 'fullTranscript', width: 50 },
+        { header: 'RECORDING LINK', key: 'videoLink', width: 50 }
       ],
       excelData.incompleteInterviews,
       'This sheet contains data for all incomplete interviews.'
@@ -609,7 +634,7 @@ const formatExcelWorkbook = (excelData: ExcelData) => {
       
       const columns: Partial<Column>[] = [
         { header: 'INTERVIEW NUMBER', key: 'interviewNumber', width: 20 },
-        { header: 'DATE', key: 'date', width: 20 },
+        { header: 'DATE COMPLETED', key: 'date', width: 20 },
         { header: 'FULL THREAD TRANSCRIPT', key: 'fullThreadTranscript', width: 50 },
         { header: 'QUESTION TRANSCRIPT', key: 'questionTranscript', width: 50 },
       ];
@@ -652,7 +677,7 @@ const formatExcelWorkbook = (excelData: ExcelData) => {
         questionSheet,
         columns,
         data,
-        `This sheet contains responses for Question ${questionData.questionNumber}: ${questionData.questionTitle}`,
+        `This sheet contains responses (and responses to follow ups) for Question ${questionData.questionNumber}: ${questionData.questionTitle}. `,
         true // isQuestionSheet
       );
     });
@@ -662,6 +687,7 @@ const formatExcelWorkbook = (excelData: ExcelData) => {
 
 const createStudyDataExport = async (req: Request, res: ExpressResponse) => {
   const { studyId } = req.params;
+  console.log("studyId", studyId);
   const origin = req.get("origin") || req.get("referer") || "Unknown";
 
   if (!studyId) {
