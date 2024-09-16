@@ -499,35 +499,55 @@ const formatExcelWorkbook = (excelData: ExcelData) => {
   
       // Add column headers
       const headerRow = sheet.addRow(['', ...columns.map(col => col.header)]);
-      headerRow.font = { bold: true };
+      headerRow.height = 40; // 3x the default height (20)
+      headerRow.font = { bold: true, color: { argb: 'FFFDFCFD' } }; // White text (theme-off-white)
       headerRow.eachCell((cell, colNumber) => {
         if (colNumber > 1) {
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FF426473' } // theme-600 background
+          };
           cell.border = { top: { style: 'thin' }, bottom: { style: 'thin' } };
+          cell.alignment = { vertical: 'bottom', horizontal: 'center' };
         }
       });
   
       // Add data
+      let groupIndex = 0;
       data.forEach((row, rowIndex) => {
         const newRow = sheet.addRow(['', ...Object.values(row)]);
         newRow.height = 20; // Set a fixed height for data rows
   
         if (isQuestionSheet) {
-          if (rowIndex % 3 === 0) { // First row of a group
+          if (rowIndex % 3 !== 2) { // Not an empty row
+            const fillColor = groupIndex % 2 === 0 ? 'FFF5F7F7' : 'FFD5DDE1'; // theme-50 and theme-100
             newRow.eachCell((cell, colNumber) => {
               if (colNumber > 1) {
-                cell.border = { top: { style: 'thin' } };
+                cell.fill = {
+                  type: 'pattern',
+                  pattern: 'solid',
+                  fgColor: { argb: fillColor }
+                };
+                if (rowIndex % 3 === 0) { // First row of a group
+                  cell.border = { top: { style: 'thin' } };
+                } else if (rowIndex % 3 === 1) { // Second row of a group
+                  cell.border = { bottom: { style: 'thin' } };
+                }
               }
             });
-          } else if (rowIndex % 3 === 1) { // Second row of a group
-            newRow.eachCell((cell, colNumber) => {
-              if (colNumber > 1) {
-                cell.border = { bottom: { style: 'thin' } };
-              }
-            });
+          } else {
+            groupIndex++; // Increment group index for empty rows
           }
         } else {
-          newRow.eachCell((cell, colNumber) => {
+            const fillColor = rowIndex % 2 === 0 ? 'FFF5F7F7' : 'FFD5DDE1'; // theme-50 and theme-100
+            newRow.eachCell((cell, colNumber) => {
             if (colNumber > 1) {
+              cell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: fillColor }
+              };
               cell.border = { top: { style: 'thin' }, bottom: { style: 'thin' } };
             }
           });
