@@ -66,6 +66,7 @@ type ProcessedQuestion = {
 type FetchStudyDataReturn = {
     questions: ProcessedQuestion[];
     interviewSessionData: ConstructedInterviewSessionData[];
+    orgId: string;
 };
 
 
@@ -91,7 +92,7 @@ const fetchStudyData = async (studyId: string): Promise<FetchStudyDataReturn> =>
               multipleChoiceSelection: true
             }
           },
-          participant: true
+          participant: true,
         }
       }
     }
@@ -158,7 +159,8 @@ const fetchStudyData = async (studyId: string): Promise<FetchStudyDataReturn> =>
 
   return {
     questions: processedQuestions,
-    interviewSessionData
+    interviewSessionData,
+    orgId: study.organizationId
   };
 };
 
@@ -214,7 +216,15 @@ const getFullTranscript = (interview: ConstructedInterviewSessionData): string =
     return transcript.trim();
 };
 
-const getVideoLink = (interview: any) => '';
+const getInterviewVideoLink = (interview: any) => '';
+
+const getQuestionVideoLink = (question: ProcessedQuestion, response: QuestionResponse, orgId: string, origin: string) => {
+    return `${origin}/org/${orgId}/study/${response.interviewSession.studyId}/results?questionId=${question.id}&interviewSessionId=${response.interviewSession.id}&responseId=${response.mainResponse?.id}&modalOpen=true`
+};
+
+const getFollowUpQuestionVideoLink = (question: ProcessedQuestion, questionResponse: QuestionResponse, response: Response, orgId: string, origin: string) => {
+    return `${origin}/org/${orgId}/study/${questionResponse.interviewSession.studyId}/results?questionId=${question.id}&interviewSessionId=${questionResponse.interviewSession.id}&responseId=${response?.id}&modalOpen=true`
+};
 
 
 const getQuestionOrThreadTranscript = (processedQuestion: ProcessedQuestion, questionResponse: QuestionResponse, includeFollowUps: boolean): string => {
@@ -248,7 +258,7 @@ const getQuestionOrThreadTranscript = (processedQuestion: ProcessedQuestion, que
     return transcript.trim();
   };
 
-  
+
 const getFollowUpTranscript = (followUpResponse: { followUpQuestion: FollowUpQuestion; response: Response }): string => {
     const followUpQuestion = followUpResponse.followUpQuestion;
     const response = followUpResponse.response;
@@ -256,7 +266,7 @@ const getFollowUpTranscript = (followUpResponse: { followUpQuestion: FollowUpQue
     return `Question (Follow Up): "${followUpQuestion.title}"\nResponse: "${response.fastTranscribedText || ''}"\n\n`;
 };
 
-const createExcelFile = (studyData: FetchStudyDataReturn) => {
+const createExcelFile = (studyData: FetchStudyDataReturn, orgId: string, origin: string) => {
   const workbook = XLSX.utils.book_new();
 
   // Cover page (blank for now)
@@ -275,7 +285,7 @@ const createExcelFile = (studyData: FetchStudyDataReturn) => {
     new Date(interview.lastUpdatedTime).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }),
     '', // Duration (blank for now)
     getFullTranscript(interview),
-    getVideoLink(interview)
+    getInterviewVideoLink(interview)
   ]);
 
   const completedInterviewsSheet = XLSX.utils.aoa_to_sheet([
@@ -296,7 +306,7 @@ const createExcelFile = (studyData: FetchStudyDataReturn) => {
     new Date(interview.lastUpdatedTime).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }),
     '', // Duration (blank for now)
     getFullTranscript(interview),
-    getVideoLink(interview)
+    getInterviewVideoLink(interview)
   ]);
 
   const incompleteInterviewsSheet = XLSX.utils.aoa_to_sheet([
@@ -325,7 +335,8 @@ const createExcelFile = (studyData: FetchStudyDataReturn) => {
 
     const questionData: any[][] = [];
 
-    question.responses.forEach((response, index) => {
+    question.responses.filter((response) => response.interviewSession.status == InterviewSessionStatus.COMPLETED).forEach((response, index) => {
+
       const row1: any[] = [
         index + 1,
         new Date(response.interviewSession.lastUpdatedTime || '').toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }),
@@ -337,12 +348,12 @@ const createExcelFile = (studyData: FetchStudyDataReturn) => {
         '',
         '',
         '',
-        getVideoLink(response)
+        getQuestionVideoLink(question, response, orgId, origin)
       ];
 
       response.followUpResponses.forEach((followUp, followUpIndex) => {
         row1.push(getFollowUpTranscript(followUp));
-        row2.push(getVideoLink(followUp));
+        row2.push(getFollowUpQuestionVideoLink(question, response, followUp.response, orgId, origin));
       });
 
       // Fill in empty cells for follow-ups if needed
@@ -364,6 +375,7 @@ const createExcelFile = (studyData: FetchStudyDataReturn) => {
 
 const createStudyDataExport = async (req: Request, res: ExpressResponse) => {
   const { studyId } = req.params;
+  const origin = req.get('origin') || req.get('referer') || 'Unknown';
 
   if (!studyId) {
     return res.status(400).json({ error: 'Missing studyId parameter' });
@@ -373,7 +385,7 @@ const createStudyDataExport = async (req: Request, res: ExpressResponse) => {
     // Fetch study data
     const studyData = await fetchStudyData(studyId);
     // Create Excel file
-    const excelBuffer = createExcelFile(studyData);
+    const excelBuffer = createExcelFile(studyData, studyData.orgId, origin);
 
     // Set headers for file download
     res.setHeader('Content-Disposition', `attachment; filename="study_data_${studyId}.xlsx"`);
