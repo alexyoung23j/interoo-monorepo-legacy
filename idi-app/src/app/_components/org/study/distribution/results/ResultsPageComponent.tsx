@@ -19,6 +19,7 @@ import QuestionModal from "./QuestionModal";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useExportData } from "@/hooks/useExportData";
 import { ClipLoader } from "react-spinners";
+import { showErrorToast } from "@/app/utils/toastUtils";
 
 export type ExtendedStudy = Study & {
   completedInterviewsCount: number;
@@ -120,7 +121,10 @@ const ResultsPageComponent: React.FC<ResultsPageComponentProps> = ({
                 onClick={() => {
                   handleExport(
                     `${study.title}-data-export-${new Date().toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" }).replace(/\//g, "-")}`,
-                  );
+                  ).catch((error) => {
+                    console.error("Error exporting data", error);
+                    showErrorToast("Error exporting data");
+                  });
                 }}
               >
                 {isExporting ? (
