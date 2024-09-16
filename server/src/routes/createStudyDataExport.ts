@@ -677,7 +677,7 @@ const formatExcelWorkbook = (excelData: ExcelData) => {
         questionSheet,
         columns,
         data,
-        `This sheet contains responses (and responses to follow ups) for Question ${questionData.questionNumber}: ${questionData.questionTitle}. `,
+        `This sheet contains responses (and responses to follow ups) for Question ${questionData.questionNumber}: "${questionData.questionTitle}". `,
         true // isQuestionSheet
       );
     });

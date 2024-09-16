@@ -102,6 +102,7 @@ const handleNoTranscription = async (
   requestData: TranscribeAndGenerateNextQuestionRequest, 
   transcribedText: string
 ): Promise<TranscribeAndGenerateNextQuestionResponse> => {
+  console.log('No transcription', { requestData, transcribedText });
   return {
     id: requestData.currentResponseId,
     isFollowUp: requestData.thread.length > 0,
