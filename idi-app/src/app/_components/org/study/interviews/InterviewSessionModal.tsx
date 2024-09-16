@@ -123,7 +123,7 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
       leftContent={
         <div className="flex h-full w-full flex-col p-4">
           <div className="mb-4 flex w-full items-center justify-between gap-3">
-            <h2 className="text-xl font-bold text-theme-900">
+            <h2 className="text-lg font-semibold text-theme-900">
               Interview Media
             </h2>
             <Button
@@ -172,7 +172,7 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
       }
       rightContent={
         <div className="p-4">
-          <h2 className="mb-4 text-xl font-bold">Responses</h2>
+          <h2 className="mb-4 text-lg font-semibold">Responses</h2>
           {isLoadingResponses ? (
             <div className="flex h-full w-full items-center justify-center">
               <ClipLoader color="grey" />
