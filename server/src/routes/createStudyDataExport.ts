@@ -6,7 +6,6 @@ import { FollowUpQuestion, InterviewParticipant, InterviewSession, Question, Stu
 
 const router = Router();
 
-
 type QuestionWithResponses = Question & {
   Response: Response[];
   FollowUpQuestion: (FollowUpQuestion & {
@@ -28,10 +27,6 @@ type StudyWithQuestionsAndInterviews = Study & {
   interviews: InterviewWithResponses[];
 };
 
-type QuestionData = (string | {
-  question: QuestionWithResponses | FollowUpQuestion;
-  response: Response;
-})[];
 
 type ConstructedInterviewSessionData = {
   lastUpdatedTime: Date | null;
@@ -49,10 +44,30 @@ type ConstructedInterviewSessionData = {
   }[];
 };
 
-type FetchStudyDataReturn = {
-  questionMap: Record<string, QuestionData[]>;
-  interviewSessionData: ConstructedInterviewSessionData[];
+type QuestionResponse = {
+    interviewSession: InterviewSession;
+    mainQuestionTitle: string;
+    mainResponse: Response | null;
+    followUpResponses: {
+      followUpQuestion: FollowUpQuestion;
+      response: Response;
+    }[];
+  };
+  
+type ProcessedQuestion = {
+    id: string;
+    questionOrder: number;
+    title: string;
+    questionType: QuestionType;
+    multipleChoiceOptions: MultipleChoiceOption[];
+    responses: QuestionResponse[];
 };
+
+type FetchStudyDataReturn = {
+    questions: ProcessedQuestion[];
+    interviewSessionData: ConstructedInterviewSessionData[];
+};
+
 
 const fetchStudyData = async (studyId: string): Promise<FetchStudyDataReturn> => {
   const study = await prisma.study.findUnique({
@@ -60,12 +75,6 @@ const fetchStudyData = async (studyId: string): Promise<FetchStudyDataReturn> =>
     include: {
       questions: {
         include: {
-          Response: true,
-          FollowUpQuestion: {
-            include: {
-              Response: true
-            }
-          },
           multipleChoiceOptions: true
         }
       },
@@ -92,72 +101,66 @@ const fetchStudyData = async (studyId: string): Promise<FetchStudyDataReturn> =>
     throw new Error('Study not found');
   }
 
-  const questionMap = new Map<string, QuestionData[]>();
-  const interviewSessionData: ConstructedInterviewSessionData[] = [];
+  const processedQuestions: ProcessedQuestion[] = study.questions.map(question => ({
+    id: question.id,
+    questionOrder: question.questionOrder,
+    title: question.title,
+    questionType: question.questionType,
+    multipleChoiceOptions: question.multipleChoiceOptions,
+    responses: []
+  }));
 
-  // Process questions and responses
-  study.questions.forEach(question => {
-    const questionData: QuestionData[] = [];
-    study.interviews.forEach(interview => {
-      const interviewData: QuestionData = [interview.id];
-      const mainResponse = interview.responses.find(r => r.question.id === question.id && r.followUpQuestion == null && (r.fastTranscribedText !== '' || r.multipleChoiceOptionId !== null));
-      
-      if (mainResponse) {
-        interviewData.push({
-          question,
-          response: mainResponse
-        });
-
-        // Process follow-up questions and responses
-        const followUps = question.FollowUpQuestion.map(followUp => {
-            const followUpResponse = interview.responses.find(r => r.followUpQuestion?.id === followUp.id);
-            if (!followUpResponse) {
-                return undefined;
-            }
-            return {
-                question: followUp, 
-                response: followUpResponse
-            };
-        }).filter((item): item is NonNullable<typeof item> => Boolean(item));
-        
-        interviewData.push(...followUps);
-      }
-
-      questionData.push(interviewData);
-    });
-
-    questionMap.set(question.id, questionData);
-  });
-
-  // Process interview session data
   study.interviews.forEach(interview => {
-    const interviewData: ConstructedInterviewSessionData = {
-      lastUpdatedTime: interview.lastUpdatedTime || null,
-      participantName: interview.participant?.name || 'Anonymous',
-      participantEmail: interview.participant?.email || 'N/A',
-      status: interview.status,
-      responseCount: interview.responses.length,
-      responses: interview.responses.map(response => ({
-        questionId: response.question.id,
-        followUpQuestionId: response.followUpQuestion?.id || null,
-        question: {
-            ...response.question,
-            multipleChoiceOptions: response.question.multipleChoiceOptions
-          },        
-        followUpQuestion: response.followUpQuestion,
-        responseText: response.fastTranscribedText,
-        multipleChoiceOptionId: response.multipleChoiceOptionId
-      }))
-    };
-    interviewSessionData.push(interviewData);
+    processedQuestions.forEach(processedQuestion => {
+      const mainResponse = interview.responses.find(r => 
+        r.question.id === processedQuestion.id && r.followUpQuestion == null && (r.fastTranscribedText !== '' || r.multipleChoiceOptionId !== null)
+      );
+
+      const followUpResponses = interview.responses
+        .filter(r => r.question.id === processedQuestion.id && r.followUpQuestion != null)
+        .map(r => ({
+          followUpQuestion: r.followUpQuestion!,
+          response: r
+        }));
+
+      processedQuestion.responses.push({
+        interviewSession: interview,
+        mainQuestionTitle: processedQuestion.title,
+        mainResponse: mainResponse || null,
+        followUpResponses
+      });
+    });
   });
+
+  // Sort questions by questionOrder
+  processedQuestions.sort((a, b) => a.questionOrder - b.questionOrder);
+
+
+   // Process interview session data (unchanged)
+   const interviewSessionData: ConstructedInterviewSessionData[] = study.interviews.map(interview => ({
+    lastUpdatedTime: interview.lastUpdatedTime || null,
+    participantName: interview.participant?.name || 'Anonymous',
+    participantEmail: interview.participant?.email || 'N/A',
+    status: interview.status,
+    responseCount: interview.responses.length,
+    responses: interview.responses.map(response => ({
+      questionId: response.question.id,
+      followUpQuestionId: response.followUpQuestion?.id || null,
+      question: {
+        ...response.question,
+        multipleChoiceOptions: response.question.multipleChoiceOptions
+      },
+      followUpQuestion: response.followUpQuestion,
+      responseText: response.fastTranscribedText,
+      multipleChoiceOptionId: response.multipleChoiceOptionId
+    }))
+  }));
 
   return {
-    questionMap: Object.fromEntries(questionMap),
+    questions: processedQuestions,
     interviewSessionData
   };
 };
-  
 
 const getFullTranscript = (interview: ConstructedInterviewSessionData): string => {
     let transcript = '';
@@ -212,11 +215,48 @@ const getFullTranscript = (interview: ConstructedInterviewSessionData): string =
 };
 
 const getVideoLink = (interview: any) => '';
-const getFullThreadTranscript = (interviewData: any) => '';
-const getQuestionTranscript = (questionResponse: any) => '';
-const getFollowUpTranscript = (followUpResponse: any) => '';
 
-const createExcelFile = (studyData: any) => {
+
+const getQuestionOrThreadTranscript = (processedQuestion: ProcessedQuestion, questionResponse: QuestionResponse, includeFollowUps: boolean): string => {
+    let transcript = '';
+  
+    if (questionResponse.mainResponse) {
+      const question = processedQuestion;
+      transcript += `Question: "${question.title}"\n`;
+  
+      switch (question.questionType) {
+        case QuestionType.OPEN_ENDED:
+          transcript += `Response: "${questionResponse.mainResponse.fastTranscribedText || ''}"\n\n`;
+          break;
+        case QuestionType.MULTIPLE_CHOICE:
+          const selectedOption = question.multipleChoiceOptions.find(o => o.id === questionResponse.mainResponse?.multipleChoiceOptionId);
+          transcript += `Multiple Choice Selection: [${selectedOption?.optionText ?? 'N/A'}]\n\n`;
+          break;
+        default:
+          transcript += `Response: [Response not available for this question type]\n\n`;
+      }
+    }
+  
+    // Add follow-up questions and responses
+    if (includeFollowUps) {
+        questionResponse.followUpResponses.forEach(followUp => {
+        transcript += `Question (Follow Up): "${followUp.followUpQuestion.title}"\n`;
+        transcript += `Response: "${followUp.response.fastTranscribedText || ''}"\n\n`;
+        });
+    }
+  
+    return transcript.trim();
+  };
+
+  
+const getFollowUpTranscript = (followUpResponse: { followUpQuestion: FollowUpQuestion; response: Response }): string => {
+    const followUpQuestion = followUpResponse.followUpQuestion;
+    const response = followUpResponse.response;
+
+    return `Question (Follow Up): "${followUpQuestion.title}"\nResponse: "${response.fastTranscribedText || ''}"\n\n`;
+};
+
+const createExcelFile = (studyData: FetchStudyDataReturn) => {
   const workbook = XLSX.utils.book_new();
 
   // Cover page (blank for now)
@@ -265,42 +305,59 @@ const createExcelFile = (studyData: any) => {
   ]);
   XLSX.utils.book_append_sheet(workbook, incompleteInterviewsSheet, 'Incomplete Interviews');
 
-  // Question pages
-  Object.entries(studyData.questionMap).forEach(([questionId, questionData]: [string, any], questionIndex: number) => {
-    const maxFollowUps = Math.max(...questionData.map((interviewData: any) => interviewData.length - 2));
+  // Question-specific sheets
+  studyData.questions.forEach((question, questionIndex) => {
+    const sheetName = `Question ${question.questionOrder + 1}`;
     
-    const headers = ['Interview Number', 'Full Thread Transcript', 'Question Transcript'];
+    // Find the maximum number of follow-ups for this question
+    const maxFollowUps = Math.max(...question.responses.map(r => r.followUpResponses.length));
+
+    // Create header row
+    const header = [
+      'Interview Number',
+      'Date',
+      'Full Thread Transcript',
+      'Question Transcript'
+    ];
     for (let i = 1; i <= maxFollowUps; i++) {
-      headers.push(`Follow Up ${i} Transcript`);
+      header.push(`Follow Up ${i} Transcript`);
     }
 
-    const questionSheetData = questionData.flatMap((interviewData: any, interviewIndex: number) => {
-      const row1 = [
-        interviewIndex + 1,
-        getFullThreadTranscript(interviewData),
-        getQuestionTranscript(interviewData[1])
+    const questionData: any[][] = [];
+
+    question.responses.forEach((response, index) => {
+      const row1: any[] = [
+        index + 1,
+        new Date(response.interviewSession.lastUpdatedTime || '').toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }),
+        getQuestionOrThreadTranscript(question, response, true),
+        getQuestionOrThreadTranscript(question, response, false)
       ];
 
-      for (let i = 2; i < interviewData.length; i++) {
-        row1.push(getFollowUpTranscript(interviewData[i]));
-      }
+      const row2: any[] = [
+        '',
+        '',
+        '',
+        getVideoLink(response)
+      ];
 
-      // Pad with empty cells if needed
-      while (row1.length < headers.length) {
+      response.followUpResponses.forEach((followUp, followUpIndex) => {
+        row1.push(getFollowUpTranscript(followUp));
+        row2.push(getVideoLink(followUp));
+      });
+
+      // Fill in empty cells for follow-ups if needed
+      while (row1.length < header.length) {
         row1.push('');
-      }
-
-      const row2 = ['', '', getVideoLink(interviewData[0])];
-      while (row2.length < headers.length) {
         row2.push('');
       }
 
-      return [row1, row2];
+      questionData.push(row1, row2, []); // Empty row for spacing
     });
 
-    const questionSheet = XLSX.utils.aoa_to_sheet([headers, ...questionSheetData]);
-    XLSX.utils.book_append_sheet(workbook, questionSheet, `Question ${questionIndex + 1}`);
+    const questionSheet = XLSX.utils.aoa_to_sheet([header, ...questionData]);
+    XLSX.utils.book_append_sheet(workbook, questionSheet, sheetName);
   });
+
 
   return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
 };
@@ -315,7 +372,6 @@ const createStudyDataExport = async (req: Request, res: ExpressResponse) => {
   try {
     // Fetch study data
     const studyData = await fetchStudyData(studyId);
-
     // Create Excel file
     const excelBuffer = createExcelFile(studyData);
 
