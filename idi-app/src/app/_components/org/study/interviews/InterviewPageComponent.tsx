@@ -93,16 +93,6 @@ const InterviewPageComponent: React.FC<InterviewPageComponentProps> = ({
               <div className="text-lg font-medium text-theme-900">
                 Interview Statistics
               </div>
-              <Button
-                variant="secondary"
-                className="flex flex-row items-center gap-2"
-                onClick={() => {
-                  // TODO: Implement export functionality
-                }}
-              >
-                <ArrowSquareOut size={16} className="text-theme-900" /> Export
-                Interviews
-              </Button>
             </div>
             <BasicHeaderCard
               items={[

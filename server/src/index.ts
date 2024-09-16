@@ -16,6 +16,7 @@ import { TextToSpeechClient } from "@google-cloud/text-to-speech";
 import { getCurrentQuestionMetadataRoute } from "./routes/getCurrentQuestionMetadata";
 import { getMediaSignedUrlRoute } from "./routes/getSignedUrlForMediaView";
 import { convertAndDownloadMediaRoute } from "./routes/convertAndDownloadMedia";
+import { createStudyDataExportRoute } from "./routes/createStudyDataExport";
 
 // Configuration and Setup
 const rootDir = path.resolve(__dirname, "../..");
@@ -68,6 +69,7 @@ app.use("/api/get-tts-audio", getTtsAudioRoute);
 app.use("/api/get-current-question-metadata", getCurrentQuestionMetadataRoute);
 app.use("/api/get-signed-urls-for-media-view", getMediaSignedUrlRoute);
 app.use("/api/convert-and-download", convertAndDownloadMediaRoute);
+app.use("/api/create-study-data-export", createStudyDataExportRoute);
 
 // Server Startup
 const startServer = () => {

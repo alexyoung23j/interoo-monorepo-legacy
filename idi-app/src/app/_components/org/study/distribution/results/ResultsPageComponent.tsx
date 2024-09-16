@@ -17,6 +17,8 @@ import { ArrowSquareOut, X } from "@phosphor-icons/react";
 import ResponsesPreview from "./ResponsesPreviewComponent";
 import QuestionModal from "./QuestionModal";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useExportData } from "@/hooks/useExportData";
+import { ClipLoader } from "react-spinners";
 
 export type ExtendedStudy = Study & {
   completedInterviewsCount: number;
@@ -34,6 +36,10 @@ const ResultsPageComponent: React.FC<ResultsPageComponentProps> = ({
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
+
+  const { handleExport, isExporting } = useExportData({
+    studyId: study.id,
+  });
 
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(
     null,
@@ -112,11 +118,17 @@ const ResultsPageComponent: React.FC<ResultsPageComponentProps> = ({
                 variant="secondary"
                 className="flex flex-row gap-2"
                 onClick={() => {
-                  // TODO
+                  handleExport(
+                    `${study.title}-data-export-${new Date().toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" }).replace(/\//g, "-")}`,
+                  );
                 }}
               >
-                <ArrowSquareOut size={16} className="text-theme-900" /> Export
-                Data
+                {isExporting ? (
+                  <ClipLoader size={16} color="grey" />
+                ) : (
+                  <ArrowSquareOut size={16} className="text-theme-900" />
+                )}
+                Export Data
               </Button>
             </div>
             <BasicHeaderCard
