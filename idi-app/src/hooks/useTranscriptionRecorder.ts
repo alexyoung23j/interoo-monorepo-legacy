@@ -128,9 +128,10 @@ export function useTranscriptionRecorder({
         `recording.${mimeType.split("/")[1]}`,
       );
 
-      const { thread, ...otherData } = additionalData;
+      const { thread, boostedKeywords, ...otherData } = additionalData;
 
       formData.append("thread", JSON.stringify(thread));
+      formData.append("boostedKeywords", JSON.stringify(boostedKeywords));
 
       // Update otherData with the correct times as ISO strings
       otherData.currentResponseStartTime = new Date(

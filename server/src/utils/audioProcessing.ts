@@ -2,10 +2,10 @@ import { deepgram } from "../index";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { ChatOpenAI } from "@langchain/openai";
 import { MessageContent, MessageContentText } from "@langchain/core/messages";
-import { FollowUpLevel } from "@shared/generated/client";
+import { BoostedKeyword, FollowUpLevel } from "@shared/generated/client";
 import { RunnableSequence } from "@langchain/core/runnables";
 import { StructuredOutputParser } from "@langchain/core/output_parsers";
-import { ConversationState, TranscribeAndGenerateNextQuestionRequest, BoostedKeyword } from "../../../shared/types";
+import { ConversationState, TranscribeAndGenerateNextQuestionRequest } from "../../../shared/types";
 import { createRequestLogger } from "./logger";
 
 
@@ -68,7 +68,7 @@ export const decideFollowUpPromptIfNecessary = async (
     ? buildAlwaysFollowUpPrompt()
     : buildDecideFollowUpPrompt();
 
-  const llm = new ChatOpenAI({ model: "gpt-4o" });
+  const llm = new ChatOpenAI({ model: "gpt-4o", temperature: 0 });
 
   const chain = RunnableSequence.from([prompt, llm]);
 
@@ -164,7 +164,8 @@ const buildDecideFollowUpPrompt = () => {
     isOnlyCorrectingOrAskingQuestionBack: <boolean>
     
     Set isOnlyCorrectingOrAskingQuestionBack to true if the participant's latest response is only correcting a detail in the question 
-    or asking a question back to you. Otherwise, set it to false.
+    or asking a question back to you. Otherwise, set it to false. If you set isOnlyCorrectingOrAskingQuestionBack to true, you should always
+    be returning a followUpQuestion and setting shouldFollowUp to true. 
 
     Examples:
     - "I think you meant to ask about my job, not my hobbies." (isOnlyCorrectingOrAskingQuestionBack: true)
@@ -185,7 +186,7 @@ const buildDecideFollowUpPrompt = () => {
 
     Keep your follow ups to 1-2 sentences. DO NOT BE VERBOSE EVER!
     
-    You must ALWAYS format in valid YAML as described above. Output this and NOTHING ELSE.
+    You must ALWAYS format in valid YAML as described above. Output this and NOTHING ELSE. Remember to set a value for all three fields, every time.
   `);
 };
 
@@ -226,7 +227,8 @@ const buildAlwaysFollowUpPrompt = () => {
     isOnlyCorrectingOrAskingQuestionBack: <boolean>
     
     Set isOnlyCorrectingOrAskingQuestionBack to true if the participant's latest response is only correcting a detail in the question 
-    or asking a question back to you. Otherwise, set it to false.
+    or asking a question back to you. Otherwise, set it to false. If you set isOnlyCorrectingOrAskingQuestionBack to true, you should always
+    be returning a followUpQuestion and setting shouldFollowUp to true. 
 
     Examples:
     - "Did you mean to ask about my current job or my previous one?" (isOnlyCorrectingOrAskingQuestionBack: true)
@@ -246,7 +248,7 @@ const buildAlwaysFollowUpPrompt = () => {
 
     Keep your follow ups to 1-2 sentences. DO NOT BE VERBOSE EVER!
     
-    You must ALWAYS format in valid YAML as described above. Output this and NOTHING ELSE.
+    You must ALWAYS format in valid YAML as described above. Output this and NOTHING ELSE. Remember to set a value for all three fields, every time.
   `);
 };
 

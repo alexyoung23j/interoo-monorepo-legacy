@@ -33,7 +33,6 @@ export const DisplayQuestion: React.FC<DisplayQuestionProps> = ({
   const isBackgroundLight = isColorLight(organization.secondaryColor ?? "");
   const [currentQuestion] = useAtom(currentQuestionAtom);
 
-  console.log({ length: currentQuestion?.title.length });
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-4 p-4 pt-8 md:py-0">
       <div

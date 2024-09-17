@@ -1,4 +1,4 @@
-import { FollowUpQuestion, Question, VideoStimulusType, FollowUpLevel } from "./generated/client";
+import { FollowUpQuestion, Question, VideoStimulusType, FollowUpLevel, BoostedKeyword } from "./generated/client";
 import { Response } from "./generated/client";
 
 // Add this new type
@@ -112,6 +112,7 @@ export class TranscribeAndGenerateNextQuestionRequestBuilder {
 
   setThread(val: ConversationState): this {
     this.data.thread = val;
+    console.log("Setting thread", val);
     return this;
   }
 
@@ -155,6 +156,7 @@ export class TranscribeAndGenerateNextQuestionRequestBuilder {
 
   setBoostedKeywords(val: BoostedKeyword[]): this {
     this.data.boostedKeywords = val;
+    console.log("Setting boosted keywords", val);
     return this;
   }
 
@@ -233,10 +235,4 @@ export interface CurrentQuestionMetadataRequest {
   followUpQuestionId?: string; // Add this line
   fileExtension: string;
   contentType: string;
-}
-
-export interface BoostedKeyword {
-  id: string;
-  keyword: string;
-  definition: string | null;
 }
