@@ -15,8 +15,11 @@ import BasicTag from "@/app/_components/reusable/BasicTag";
 import BasicMediaViewer from "@/app/_components/reusable/BasicMediaViewer";
 import { useInterviewSessionMediaUrls } from "@/hooks/useInterviewSessionMediaUrls";
 import { Button } from "@/components/ui/button";
-import { Download } from "@phosphor-icons/react";
+import { CopySimple, Download } from "@phosphor-icons/react";
 import { useMediaDownload } from "@/hooks/useMediaDownload";
+import { Sparkle } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { showSuccessToast } from "@/app/utils/toastUtils";
 
 interface InterviewSessionModalProps {
   isOpen: boolean;
@@ -41,6 +44,7 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
   const [selectedResponseId, setSelectedResponseId] = useState<string | null>(
     null,
   );
+  const [showFollowUps, setShowFollowUps] = useState(true);
 
   const { data: responsesData, isLoading: isLoadingResponses } =
     api.interviews.getInterviewSessionResponses.useQuery(
@@ -98,6 +102,33 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
     return null; // or a loading indicator
   }
 
+  const copyInterviewThread = () => {
+    if (!filteredResponses || filteredResponses.length === 0) return;
+
+    const formattedThread = filteredResponses
+      .map((response) => {
+        const questionTitle = response.followUpQuestion
+          ? response.followUpQuestion.title
+          : `${response.question.questionOrder + 1}: ${response.question.title}`;
+        const questionType = response.followUpQuestion
+          ? "Follow Up"
+          : "Original Question";
+
+        return `${questionType}: "${questionTitle}"\nAnswer: "${response.fastTranscribedText}"\n`;
+      })
+      .join("\n");
+
+    navigator.clipboard
+      .writeText(formattedThread)
+      .then(() => {
+        console.log("Interview thread copied to clipboard");
+        showSuccessToast("Interview thread copied to clipboard");
+      })
+      .catch((err) => {
+        console.error("Failed to copy interview thread: ", err);
+      });
+  };
+
   return (
     <SplitScreenModal
       isOpen={isOpen}
@@ -106,23 +137,23 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
         <BasicHeaderCard
           items={[
             {
-              title: interviewSession.id,
-              subtitle: "Interview Id",
+              title: "Anonymous",
+              subtitle: "Respondent",
             },
             {
               title: interviewSession.startTime?.toDateString() ?? "",
-              subtitle: "Date Taken",
+              subtitle: "Date",
             },
             {
               title: totalTime,
-              subtitle: "Time Taken",
+              subtitle: "Duration",
             },
           ]}
         />
       }
       leftContent={
-        <div className="flex h-full w-full flex-col p-4">
-          <div className="mb-4 flex w-full items-center justify-between gap-3">
+        <div className="flex h-full w-full flex-col gap-4">
+          <div className="flex w-full items-center justify-between gap-3">
             <h2 className="text-lg font-semibold text-theme-900">
               Interview Media
             </h2>
@@ -152,6 +183,8 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
               {`Download ${currentResponseContentType?.startsWith("audio") ? "audio" : "video"}`}
             </Button>
           </div>
+          <div className="h-[1px] w-full bg-theme-200 text-theme-900"></div>
+
           <div className="flex-grow">
             {isLoadingMediaUrls ? (
               <div className="flex h-full w-full items-center justify-center">
@@ -171,49 +204,87 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
         </div>
       }
       rightContent={
-        <div className="p-4">
-          <h2 className="mb-4 text-lg font-semibold">Responses</h2>
+        <div className="flex h-fit w-full flex-col gap-4">
+          <div className="flex w-full items-center justify-between gap-3">
+            <h2 className="flex items-center gap-2 text-lg font-semibold">
+              Summary <Sparkle className="text-theme-900" size={16} />
+            </h2>
+            <Button
+              className="flex items-center gap-1"
+              variant="secondary"
+              size="sm"
+              onClick={copyInterviewThread}
+            >
+              {`Copy Interview Thread`}{" "}
+              <CopySimple size={16} className="text-theme-900" />
+            </Button>
+          </div>
+          <div className="h-[1px] w-full bg-theme-200 text-theme-900"></div>
+          <div className="mb-4 text-sm text-theme-600">
+            AI powered summaries coming soon!
+          </div>
+
+          <div className="flex w-full items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold">Responses</h2>
+            <div className="flex items-center gap-2">
+              <div className="text-xs font-light text-theme-600">
+                Show Follow Ups
+              </div>
+              <Switch
+                className="data-[state=checked]:bg-theme-500"
+                checked={showFollowUps}
+                onCheckedChange={(checked) => setShowFollowUps(checked)}
+              />
+            </div>
+          </div>
+          <div className="h-[1px] w-full bg-theme-200 text-theme-900"></div>
           {isLoadingResponses ? (
             <div className="flex h-full w-full items-center justify-center">
               <ClipLoader color="grey" />
             </div>
           ) : filteredResponses.length > 0 ? (
             <div className="flex flex-col gap-4">
-              {filteredResponses.map((response: ExtendedResponse) => (
-                <BasicCard
-                  key={response.id}
-                  className={`flex cursor-pointer flex-col gap-2 transition-all duration-200 ${
-                    response.id === selectedResponseId
-                      ? "bg-theme-50 shadow-md"
-                      : "shadow hover:bg-theme-50"
-                  }`}
-                  shouldHover
-                  isSelected={response.id === selectedResponseId}
-                  onClick={() => setSelectedResponseId(response.id)}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-grow font-semibold text-theme-900">
-                      {response.followUpQuestion
-                        ? response.followUpQuestion.title
-                        : response.question.title}
+              {filteredResponses
+                .filter(
+                  (response) => showFollowUps || !response.followUpQuestion,
+                )
+                .map((response: ExtendedResponse) => (
+                  <BasicCard
+                    key={response.id}
+                    className={`flex cursor-pointer flex-col gap-2 transition-all duration-200 ${
+                      response.id === selectedResponseId
+                        ? "bg-theme-50 shadow-md"
+                        : "shadow hover:bg-theme-50"
+                    }`}
+                    shouldHover
+                    isSelected={response.id === selectedResponseId}
+                    onClick={() => setSelectedResponseId(response.id)}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-grow font-semibold text-theme-900">
+                        {response.followUpQuestion
+                          ? response.followUpQuestion.title
+                          : `${response.question.questionOrder + 1}: ${response.question.title}`}
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-theme-500">
-                    {response.followUpQuestion && (
-                      <BasicTag className="py-0.5 text-xs">Follow Up</BasicTag>
-                    )}
-                    <span className="italic">
-                      {formatDuration(
-                        new Date(response.createdAt),
-                        new Date(response.updatedAt),
+                    <div className="flex items-center gap-2 text-sm text-theme-500">
+                      {response.followUpQuestion && (
+                        <BasicTag className="py-0.5 text-xs">
+                          Follow Up
+                        </BasicTag>
                       )}
-                    </span>
-                  </div>
-                  <div className="text-theme-600">
-                    {`"${response.fastTranscribedText}"`}
-                  </div>
-                </BasicCard>
-              ))}
+                      <span className="italic">
+                        {formatDuration(
+                          new Date(response.createdAt),
+                          new Date(response.updatedAt),
+                        )}
+                      </span>
+                    </div>
+                    <div className="text-theme-600">
+                      {`"${response.fastTranscribedText}"`}
+                    </div>
+                  </BasicCard>
+                ))}
             </div>
           ) : (
             <p>No responses available.</p>

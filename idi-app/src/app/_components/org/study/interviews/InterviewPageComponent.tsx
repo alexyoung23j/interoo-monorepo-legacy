@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   InterviewSession,
   InterviewSessionStatus,
@@ -12,6 +12,7 @@ import { ArrowSquareOut } from "@phosphor-icons/react";
 import InterviewSessionModal from "./InterviewSessionModal";
 import BasicTag from "@/app/_components/reusable/BasicTag";
 import CardTable from "@/app/_components/reusable/CardTable";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 interface InterviewPageComponentProps {
   interviewData: {
@@ -23,49 +24,70 @@ interface InterviewPageComponentProps {
   orgId: string;
 }
 
+const formatDate = (date: Date | null) => {
+  return date
+    ? new Date(date).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : "N/A";
+};
+
+const getStatusProps = (status: InterviewSessionStatus) => {
+  switch (status) {
+    case InterviewSessionStatus.COMPLETED:
+      return { color: "bg-green-100", borderColor: "border-green-400" };
+    case InterviewSessionStatus.IN_PROGRESS:
+      return { color: "bg-yellow-100", borderColor: "border-yellow-400" };
+    case InterviewSessionStatus.NOT_STARTED:
+      return { color: "bg-theme-100", borderColor: "border-theme-300" };
+    default:
+      return { color: "bg-theme-100", borderColor: "border-theme-300" };
+  }
+};
+
 const InterviewPageComponent: React.FC<InterviewPageComponentProps> = ({
   interviewData,
   studyId,
   orgId,
 }) => {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
   const [selectedInterview, setSelectedInterview] =
     useState<InterviewSession | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const formatDate = (date: Date | null) => {
-    return date
-      ? new Date(date).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        })
-      : "N/A";
-  };
+  useEffect(() => {
+    const interviewSessionId = searchParams.get("interviewSessionId");
+    const modalOpen = searchParams.get("modalOpen");
 
-  const getStatusProps = (status: InterviewSessionStatus) => {
-    switch (status) {
-      case InterviewSessionStatus.COMPLETED:
-        return { color: "bg-green-100", borderColor: "border-green-400" };
-      case InterviewSessionStatus.IN_PROGRESS:
-        return { color: "bg-yellow-100", borderColor: "border-yellow-400" };
-      case InterviewSessionStatus.NOT_STARTED:
-        return { color: "bg-theme-100", borderColor: "border-theme-300" };
-      default:
-        return { color: "bg-theme-100", borderColor: "border-theme-300" };
+    if (interviewSessionId) {
+      const interview =
+        interviewData.interviewSessions.find(
+          (i) => i.id === interviewSessionId,
+        ) ?? null;
+      setSelectedInterview(interview);
     }
-  };
+
+    if (modalOpen === "true") {
+      setIsModalOpen(true);
+    }
+  }, [searchParams, interviewData.interviewSessions]);
 
   const columns = [
-    { key: "id", header: "Id", width: "33%" },
+    { key: "respondent", header: "Respondent", width: "33%" },
     {
       key: "dateTaken",
-      header: "Date Taken",
+      header: "Date Started",
       width: "22%",
       className: "justify-end",
     },
     {
       key: "timeTaken",
-      header: "Time Taken",
+      header: "Duration",
       width: "22%",
       className: "justify-end",
     },
@@ -73,7 +95,7 @@ const InterviewPageComponent: React.FC<InterviewPageComponentProps> = ({
   ];
 
   const tableData = interviewData.interviewSessions.map((session) => ({
-    id: session.id || "Anonymous Participant",
+    respondent: "Anonymous",
     dateTaken: formatDate(session.startTime),
     timeTaken: "5:42", // TODO: Calculate actual time taken
     status: (
@@ -119,6 +141,9 @@ const InterviewPageComponent: React.FC<InterviewPageComponentProps> = ({
               onRowClick={(row) => {
                 setSelectedInterview(row.originalSession);
                 setIsModalOpen(true);
+                router.push(
+                  `${pathname}?interviewSessionId=${row.originalSession.id}&modalOpen=true`,
+                );
               }}
             />
           </div>
@@ -132,6 +157,9 @@ const InterviewPageComponent: React.FC<InterviewPageComponentProps> = ({
           onClose={() => {
             setIsModalOpen(false);
             setSelectedInterview(null);
+            const newSearchParams = new URLSearchParams(searchParams);
+            newSearchParams.delete("modalOpen");
+            router.push(`${pathname}?${newSearchParams.toString()}`);
           }}
           interviewSession={selectedInterview}
           studyId={studyId}
