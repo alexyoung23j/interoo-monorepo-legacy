@@ -166,6 +166,13 @@ export function useTranscriptionRecorder({
         if (transcribeAndGenerateNextQuestionResponse.noAnswerDetected) {
           showWarningToast("Sorry, I couldn't hear you. Please try again!");
           setNoAnswerDetected(true);
+          if (transcribeAndGenerateNextQuestionResponse.newSessionUrl) {
+            setCurrentResponseAndUploadUrl((prev) => ({
+              ...prev,
+              uploadSessionUrl:
+                transcribeAndGenerateNextQuestionResponse.newSessionUrl ?? null,
+            }));
+          }
           return null;
         }
 

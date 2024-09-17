@@ -119,8 +119,8 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
 
     console.log("Starting response...");
     console.log(
-      "Current upload URL:",
-      currentResponseAndUploadUrl.uploadSessionUrl,
+      "Current question metadata:",
+      currentResponseAndUploadUrl,
     );
 
     try {

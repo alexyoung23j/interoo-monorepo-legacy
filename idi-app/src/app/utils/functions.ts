@@ -146,6 +146,9 @@ export function calculateTranscribeAndGenerateNextQuestionRequest({
   }, 0);
 
   // Use the builder to create the request
+  const contentType =
+    getSupportedMimeType(study.videoEnabled ?? false) || "video/webm";
+
   return new TranscribeAndGenerateNextQuestionRequestBuilder()
     .setNextBaseQuestionId(nextBaseQuestion?.id ?? "")
     .setCurrentBaseQuestionId(currentBaseQuestion.id)
@@ -165,6 +168,9 @@ export function calculateTranscribeAndGenerateNextQuestionRequest({
     .setCurrentQuestionNumber(currentQuestionOrder)
     .setTargetInterviewLength(study.targetLength ?? undefined)
     .setBoostedKeywords(study.boostedKeywords ?? [])
+    .setOrganizationId(study.organizationId)
+    .setStudyId(study.id)
+    .setContentType(contentType)
     .build();
 }
 
