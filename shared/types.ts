@@ -42,6 +42,9 @@ export interface TranscribeAndGenerateNextQuestionRequest {
   currentQuestionNumber: number;
   targetInterviewLength?: number; // in minutes
   boostedKeywords: BoostedKeyword[];
+  organizationId: string;
+  studyId: string;
+  contentType: string;
 }
 
 export class TranscribeAndGenerateNextQuestionRequestBuilder {
@@ -62,6 +65,9 @@ export class TranscribeAndGenerateNextQuestionRequestBuilder {
     currentQuestionNumber: 0,
     targetInterviewLength: undefined,
     boostedKeywords: [],
+    organizationId: "",
+    studyId: "",
+    contentType: ""
   };
 
   setNextBaseQuestionId(val: string): this {
@@ -152,6 +158,21 @@ export class TranscribeAndGenerateNextQuestionRequestBuilder {
     return this;
   }
 
+  setOrganizationId(val: string): this {
+    this.data.organizationId = val;
+    return this;
+  }
+
+  setStudyId(val: string): this {
+    this.data.studyId = val;
+    return this;
+  }
+
+  setContentType(val: string): this {
+    this.data.contentType = val;
+    return this;
+  }
+
   build(): TranscribeAndGenerateNextQuestionRequest {
     return this.data;
   }
@@ -176,6 +197,7 @@ export interface TranscribeAndGenerateNextQuestionResponse {
   transcribedText: string
   noAnswerDetected: boolean
   isJunkResponse: boolean
+  newSessionUrl?: string;
 }
 
 // Need to keep up to date with Prisma schema

@@ -6,6 +6,9 @@ import { prisma } from "..";
 import { TranscribeAndGenerateNextQuestionRequestBuilder, ConversationState, TranscribeAndGenerateNextQuestionResponse, TranscribeAndGenerateNextQuestionRequest, BoostedKeyword } from "../../../shared/types";
 import { createRequestLogger } from '../utils/logger';
 import { InterviewSessionStatus } from "@shared/generated/client";
+import { bucket, bucketName } from "../index";
+import axios from "axios";
+import path from "path";
 
 const router = Router();
 
@@ -39,6 +42,9 @@ const extractRequestData = (req: Request): Promise<{ audioBuffer: Buffer, reques
         case 'currentResponseId':
         case 'currentResponseStartTime':
         case 'currentResponseEndTime':
+        case 'organizationId':
+        case 'studyId':
+        case 'contentType':
           requestDataBuilder.set(fieldname as keyof TranscribeAndGenerateNextQuestionRequest, val);
           break;
         case 'shouldFollowUp':
@@ -102,7 +108,32 @@ const handleNoTranscription = async (
   requestData: TranscribeAndGenerateNextQuestionRequest, 
   transcribedText: string
 ): Promise<TranscribeAndGenerateNextQuestionResponse> => {
-  console.log('No transcription', { requestData, transcribedText });
+  const basePath = path.join(requestData.organizationId, requestData.studyId, requestData.currentBaseQuestionId, requestData.currentResponseId);
+  const fileName = 'recording';
+  const filePath = path.join(basePath, fileName);
+
+  const [signedUrl] = await bucket.file(filePath).getSignedUrl({
+    version: 'v4',
+    action: 'resumable',
+    expires: Date.now() + 30 * 60 * 1000, // URL expires in 30 minutes
+    contentType: requestData.contentType,
+  });
+
+  // Initiate the resumable upload session
+  const response = await axios.post(signedUrl, null, {
+    headers: {
+      'Content-Type': requestData.contentType,
+      'X-Goog-Resumable': 'start',
+      'Origin': process.env.FRONTEND_URL
+    }
+  });
+
+  const newSessionUrl = response.headers['location'];
+
+  if (!newSessionUrl) {
+    throw new Error('Failed to get new session URL');
+  }
+
   return {
     id: requestData.currentResponseId,
     isFollowUp: requestData.thread.length > 0,
@@ -111,6 +142,7 @@ const handleNoTranscription = async (
     isJunkResponse: true,
     questionId: requestData.currentBaseQuestionId,
     nextQuestionId: requestData.currentBaseQuestionId,
+    newSessionUrl: newSessionUrl,
   };
 };
 
