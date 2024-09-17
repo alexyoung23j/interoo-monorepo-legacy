@@ -60,9 +60,8 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
     [responsesData],
   );
 
-  const { data: mediaUrlData, isLoading: isLoadingMediaUrls } =
+  const { mediaUrls, loadingUrls, fetchMediaUrl } =
     useInterviewSessionMediaUrls({
-      responses: filteredResponses,
       studyId,
       orgId,
     });
@@ -81,9 +80,29 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
       const firstResponse = filteredResponses[0];
       if (firstResponse && firstResponse.id) {
         setSelectedResponseId(firstResponse.id);
+        fetchMediaUrl(firstResponse.id, firstResponse.questionId).catch(
+          (err) => {
+            console.log("Failed to fetch media url: ", err);
+          },
+        );
       }
     }
-  }, [isOpen, filteredResponses, selectedResponseId]);
+  }, [isOpen, filteredResponses, selectedResponseId, fetchMediaUrl]);
+
+  useEffect(() => {
+    if (selectedResponseId) {
+      const selectedResponse = filteredResponses.find(
+        (r) => r.id === selectedResponseId,
+      );
+      if (selectedResponse) {
+        fetchMediaUrl(selectedResponseId, selectedResponse.questionId).catch(
+          (err) => {
+            console.log("Failed to fetch media url: ", err);
+          },
+        );
+      }
+    }
+  }, [selectedResponseId, filteredResponses, fetchMediaUrl]);
 
   const totalTime =
     interviewSession.startTime && interviewSession.lastUpdatedTime
@@ -94,12 +113,13 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
       : "0:00";
 
   const currentResponseMediaUrl =
-    mediaUrlData?.signedUrls[selectedResponseId ?? ""]?.signedUrl;
+    mediaUrls[selectedResponseId ?? ""]?.signedUrl;
   const currentResponseContentType =
-    mediaUrlData?.signedUrls[selectedResponseId ?? ""]?.contentType;
+    mediaUrls[selectedResponseId ?? ""]?.contentType;
+  const isLoadingCurrentMedia = loadingUrls[selectedResponseId ?? ""] ?? false;
 
   if (!studyId || !orgId) {
-    return null; // or a loading indicator
+    return null;
   }
 
   const copyInterviewThread = () => {
@@ -136,18 +156,12 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
       topContent={
         <BasicHeaderCard
           items={[
-            {
-              title: "Anonymous",
-              subtitle: "Respondent",
-            },
+            { title: "Anonymous", subtitle: "Respondent" },
             {
               title: interviewSession.startTime?.toDateString() ?? "",
               subtitle: "Date",
             },
-            {
-              title: totalTime,
-              subtitle: "Duration",
-            },
+            { title: totalTime, subtitle: "Duration" },
           ]}
         />
       }
@@ -186,7 +200,7 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
           <div className="h-[1px] w-full bg-theme-200 text-theme-900"></div>
 
           <div className="flex-grow">
-            {isLoadingMediaUrls ? (
+            {isLoadingCurrentMedia ? (
               <div className="flex h-full w-full items-center justify-center">
                 <ClipLoader color="grey" />
               </div>
