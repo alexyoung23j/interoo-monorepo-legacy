@@ -198,7 +198,9 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
                 }
               />
             ) : (
-              <p>No media available for this response.</p>
+              <div className="flex h-full w-full items-center justify-center">
+                <ClipLoader color="grey" />
+              </div>
             )}
           </div>
         </div>
@@ -239,7 +241,7 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
           </div>
           <div className="h-[1px] w-full bg-theme-200 text-theme-900"></div>
           {isLoadingResponses ? (
-            <div className="flex h-full w-full items-center justify-center">
+            <div className="flex h-72 w-full items-center justify-center">
               <ClipLoader color="grey" />
             </div>
           ) : filteredResponses.length > 0 ? (

@@ -37,11 +37,9 @@ const formatDate = (date: Date | null) => {
 const getStatusProps = (status: InterviewSessionStatus) => {
   switch (status) {
     case InterviewSessionStatus.COMPLETED:
-      return { color: "bg-green-100", borderColor: "border-green-400" };
+      return { color: "bg-[#CEDBD3]", borderColor: "border-[#427356]" };
     case InterviewSessionStatus.IN_PROGRESS:
-      return { color: "bg-yellow-100", borderColor: "border-yellow-400" };
-    case InterviewSessionStatus.NOT_STARTED:
-      return { color: "bg-theme-100", borderColor: "border-theme-300" };
+      return { color: "bg-[#D2C3D2]", borderColor: "border-[#734271]" };
     default:
       return { color: "bg-theme-100", borderColor: "border-theme-300" };
   }
@@ -96,11 +94,17 @@ const InterviewPageComponent: React.FC<InterviewPageComponentProps> = ({
 
   const tableData = interviewData.interviewSessions.map((session) => ({
     respondent: "Anonymous",
-    dateTaken: formatDate(session.startTime),
-    timeTaken: "5:42", // TODO: Calculate actual time taken
+    dateTaken: (
+      <div className="text-xs font-light text-theme-600">
+        {formatDate(session.startTime)}
+      </div>
+    ),
+    timeTaken: <div className="text-xs font-light text-theme-600">TODO</div>,
     status: (
       <BasicTag {...getStatusProps(session.status)} fixedWidth={false}>
-        {session.status.toLowerCase()}
+        {session.status === InterviewSessionStatus.COMPLETED
+          ? "Completed"
+          : "In Progress"}
       </BasicTag>
     ),
     originalSession: session,
