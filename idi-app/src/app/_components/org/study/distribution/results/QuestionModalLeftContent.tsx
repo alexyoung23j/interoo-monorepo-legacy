@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { FollowUpQuestion, Question, Response } from "@shared/generated/client";
 import { ClipLoader } from "react-spinners";
 import BasicCard from "@/app/_components/reusable/BasicCard";
-import { formatDuration } from "@/app/utils/functions";
 import BasicTag from "@/app/_components/reusable/BasicTag";
 import { useQuery } from "@tanstack/react-query";
 import { fetchResponses } from "@/server/interoo-backend";

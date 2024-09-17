@@ -8,7 +8,7 @@ import {
 } from "@shared/generated/client";
 import BasicHeaderCard from "@/app/_components/reusable/BasicHeaderCard";
 import { api } from "@/trpc/react";
-import { formatDuration } from "@/app/utils/functions";
+import { formatDuration, formatElapsedTime } from "@/app/utils/functions";
 import BasicCard from "@/app/_components/reusable/BasicCard";
 import { ClipLoader } from "react-spinners";
 import BasicTag from "@/app/_components/reusable/BasicTag";
@@ -104,13 +104,7 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
     }
   }, [selectedResponseId, filteredResponses, fetchMediaUrl]);
 
-  const totalTime =
-    interviewSession.startTime && interviewSession.lastUpdatedTime
-      ? formatDuration(
-          new Date(interviewSession.startTime),
-          new Date(interviewSession.lastUpdatedTime),
-        )
-      : "0:00";
+  const totalTime = formatElapsedTime(interviewSession.elapsedTime);
 
   const currentResponseMediaUrl =
     mediaUrls[selectedResponseId ?? ""]?.signedUrl;

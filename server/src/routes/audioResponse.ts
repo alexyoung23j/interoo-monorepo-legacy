@@ -104,6 +104,11 @@ const validateRequestData = (requestData: TranscribeAndGenerateNextQuestionReque
             requestData.currentResponseId);
 };
 
+const calculateElapsedTimeMs = (requestData: TranscribeAndGenerateNextQuestionRequest): number => {
+  const currentResponseTimeMs = new Date(requestData.currentResponseEndTime).getTime() - new Date(requestData.currentResponseStartTime).getTime();
+  return requestData.elapsedInterviewTime + currentResponseTimeMs;
+};
+
 const handleNoTranscription = async (
   requestData: TranscribeAndGenerateNextQuestionRequest, 
   transcribedText: string
@@ -148,7 +153,8 @@ const handleNoTranscription = async (
 
 const handleNoFollowUp = async (
   requestData: TranscribeAndGenerateNextQuestionRequest, 
-  transcribedText: string
+  transcribedText: string,
+  elapsedTimeMs: number
 ): Promise<TranscribeAndGenerateNextQuestionResponse> => {
   // Update the response with the transcription
   const updatedResponse = await updateResponseWithTranscription(requestData.currentResponseId, transcribedText, false, requestData);
@@ -158,14 +164,16 @@ const handleNoFollowUp = async (
       where: { id: requestData.interviewSessionId },
       data: { 
         currentQuestionId: requestData.nextBaseQuestionId,
-        lastUpdatedTime: new Date().toISOString()
+        lastUpdatedTime: new Date().toISOString(),
+        elapsedTime: elapsedTimeMs
       }
     });
   } else {
     await prisma.interviewSession.update({
       where: { id: requestData.interviewSessionId },
       data: {
-        status: InterviewSessionStatus.COMPLETED
+        status: InterviewSessionStatus.COMPLETED,
+        elapsedTime: elapsedTimeMs
       }
     });
   }
@@ -187,7 +195,8 @@ const handlePotentialFollowUp = async (
   requestLogger: ReturnType<typeof createRequestLogger>,
   minFollowUps: number,
   maxFollowUps: number,
-  wouldBeNextFollowUpNumber: number
+  wouldBeNextFollowUpNumber: number,
+  elapsedTimeMs: number
 ): Promise<TranscribeAndGenerateNextQuestionResponse> => {
   const { shouldFollowUp, followUpQuestion, isJunkResponse } = await decideFollowUpPromptIfNecessary(requestData, transcribedText, requestLogger, minFollowUps, maxFollowUps, wouldBeNextFollowUpNumber);
 
@@ -206,7 +215,8 @@ const handlePotentialFollowUp = async (
             parentQuestionId: requestData.currentBaseQuestionId,
           }
         },
-        lastUpdatedTime: new Date().toISOString()
+        lastUpdatedTime: new Date().toISOString(),
+        elapsedTime: elapsedTimeMs
       },
       include: {
         FollowUpQuestions: {
@@ -226,28 +236,24 @@ const handlePotentialFollowUp = async (
       questionId: requestData.currentBaseQuestionId
     };
   } else {
-    return handleNoFollowUp(requestData, transcribedText);
+    return handleNoFollowUp(requestData, transcribedText, elapsedTimeMs);
   }
 };
 
-const shouldFollowUpBasedOnTime = (requestData: TranscribeAndGenerateNextQuestionRequest): boolean => {
+const shouldFollowUpBasedOnTime = (requestData: TranscribeAndGenerateNextQuestionRequest, elapsedTimeMs: number): boolean => {
   const requestLogger = createRequestLogger();
 
   if (!requestData.targetInterviewLength) {
     return true; // If no target length is set, always allow follow-ups
   }
 
-  // Include the current response time in the elapsed time calculation
-  const currentResponseTime = new Date(requestData.currentResponseEndTime).getTime() - new Date(requestData.currentResponseStartTime).getTime();
-  const totalElapsedTime = requestData.elapsedInterviewTime + currentResponseTime;
-  const elapsedTimeInMinutes = totalElapsedTime / (1000 * 60);
-
+  const elapsedTimeMinutes = elapsedTimeMs / (1000 * 60);
   const targetTimePerQuestion = requestData.targetInterviewLength / requestData.numTotalEstimatedInterviewQuestions;
   const expectedElapsedTime = targetTimePerQuestion * (requestData.currentQuestionNumber + 1);
 
   // If we're more than 30% behind schedule, don't follow up
-  if (elapsedTimeInMinutes > expectedElapsedTime * 1.3) {
-    requestLogger.info('Not following up because we\'re more than 30% behind schedule', { elapsedTimeInMinutes, expectedElapsedTime });
+  if (elapsedTimeMinutes > expectedElapsedTime * 1.3) {
+    requestLogger.info('Not following up because we\'re more than 30% behind schedule', { elapsedTimeMinutes, expectedElapsedTime });
     return false;
   }
 
@@ -284,6 +290,8 @@ const processAudioResponse = async (
     return handleNoTranscription(requestData, transcribedText);
   }
 
+  const elapsedTimeMs = calculateElapsedTimeMs(requestData);
+
   const [minFollowUps, maxFollowUps] = getFollowUpLevelRange(requestData.followUpLevel);
   const wouldBeNextFollowUpNumber = requestData.thread.filter(t => t.threadItem.type === "response" && t.threadItem.isJunkResponse === false).length + 1;
 
@@ -293,10 +301,10 @@ const processAudioResponse = async (
 
   if (!requestData.shouldFollowUp || 
     wouldBeNextFollowUpNumber > maxFollowUps || 
-      !shouldFollowUpBasedOnTime(requestData)) {
-    return handleNoFollowUp(requestData, transcribedText);
+      !shouldFollowUpBasedOnTime(requestData, elapsedTimeMs)) {
+    return handleNoFollowUp(requestData, transcribedText, elapsedTimeMs);
   } else {
-    return handlePotentialFollowUp(requestData, transcribedText, requestLogger, minFollowUps, maxFollowUps, wouldBeNextFollowUpNumber);
+    return handlePotentialFollowUp(requestData, transcribedText, requestLogger, minFollowUps, maxFollowUps, wouldBeNextFollowUpNumber, elapsedTimeMs);
   }
 };
 
