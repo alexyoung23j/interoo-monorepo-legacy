@@ -7,12 +7,11 @@ import {
 } from "@shared/generated/client";
 import SplitScreenLayout from "@/app/_components/layouts/org/SplitScreenLayout";
 import BasicHeaderCard from "@/app/_components/reusable/BasicHeaderCard";
-import { Button } from "@/components/ui/button";
-import { ArrowSquareOut } from "@phosphor-icons/react";
 import InterviewSessionModal from "./InterviewSessionModal";
 import BasicTag from "@/app/_components/reusable/BasicTag";
 import CardTable from "@/app/_components/reusable/CardTable";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { formatElapsedTime } from "@/app/utils/functions";
 
 interface InterviewPageComponentProps {
   interviewData: {
@@ -92,6 +91,24 @@ const InterviewPageComponent: React.FC<InterviewPageComponentProps> = ({
     { key: "status", header: "Status", width: "23%", className: "justify-end" },
   ];
 
+  const calculateAverageCompletionTime = () => {
+    const completedInterviews = interviewData.interviewSessions.filter(
+      (session) => session.status === InterviewSessionStatus.COMPLETED,
+    );
+
+    if (completedInterviews.length === 0) return "N/A";
+
+    const totalElapsedTime = completedInterviews.reduce(
+      (sum, session) => sum + session.elapsedTime,
+      0,
+    );
+    const averageElapsedTime = Math.round(
+      totalElapsedTime / completedInterviews.length,
+    );
+
+    return formatElapsedTime(averageElapsedTime);
+  };
+
   const tableData = interviewData.interviewSessions.map((session) => ({
     respondent: "Anonymous",
     dateTaken: (
@@ -99,7 +116,11 @@ const InterviewPageComponent: React.FC<InterviewPageComponentProps> = ({
         {formatDate(session.startTime)}
       </div>
     ),
-    timeTaken: <div className="text-xs font-light text-theme-600">TODO</div>,
+    timeTaken: (
+      <div className="text-xs font-light text-theme-600">
+        {formatElapsedTime(session.elapsedTime)}
+      </div>
+    ),
     status: (
       <BasicTag {...getStatusProps(session.status)} fixedWidth={false}>
         {session.status === InterviewSessionStatus.COMPLETED
@@ -131,7 +152,7 @@ const InterviewPageComponent: React.FC<InterviewPageComponentProps> = ({
                   subtitle: "Incomplete Interviews",
                 },
                 {
-                  title: "5:32", // TODO: Calculate actual average completion time
+                  title: calculateAverageCompletionTime(),
                   subtitle: "Avg. Completion Time",
                 },
               ]}
