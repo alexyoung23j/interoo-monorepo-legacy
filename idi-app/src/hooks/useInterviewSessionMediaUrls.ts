@@ -1,59 +1,74 @@
-import { UseQueryResult, useQuery } from "@tanstack/react-query";
+import { useState, useCallback } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { fetchResponses } from "@/server/interoo-backend";
 import { Response } from "@shared/generated/client";
 
 interface UseInterviewSessionMediaUrlsProps {
-  responses: Response[] | null;
   studyId: string;
   orgId: string;
 }
 
 interface MediaUrlData {
-  signedUrls: Record<
-    string,
-    {
-      signedUrl: string;
-      contentType: "video" | "audio";
-    }
-  >;
+  signedUrl: string;
+  contentType: "video" | "audio";
 }
 
-// Define the return type of fetchResponses
+// New type for the fetchResponses result
 interface FetchResponsesResult {
-  signedUrls: MediaUrlData["signedUrls"];
+  signedUrls: Record<string, MediaUrlData>;
+  responses: Response[];
 }
 
 export const useInterviewSessionMediaUrls = ({
-  responses,
   studyId,
   orgId,
-}: UseInterviewSessionMediaUrlsProps): UseQueryResult<MediaUrlData, Error> => {
-  return useQuery<MediaUrlData, Error>({
-    queryKey: ["interviewSessionResponses", responses?.map((r) => r.id)],
-    queryFn: async () => {
-      const supabase = createClient();
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session) throw new Error("No active session");
+}: UseInterviewSessionMediaUrlsProps) => {
+  const [mediaUrls, setMediaUrls] = useState<Record<string, MediaUrlData>>({});
+  const [loadingUrls, setLoadingUrls] = useState<Record<string, boolean>>({});
 
-      const allSignedUrls: MediaUrlData["signedUrls"] = {};
-
-      for (const response of responses ?? []) {
-        const result = (await fetchResponses({
-          responseIds: [response.id],
-          token: session.access_token,
-          studyId: studyId,
-          questionId: response.questionId,
-          orgId: orgId,
-        })) as FetchResponsesResult; // Cast the result to the expected type
-
-        Object.assign(allSignedUrls, result.signedUrls);
+  const fetchMediaUrl = useCallback(
+    async (responseId: string, questionId: string) => {
+      if (mediaUrls[responseId] || loadingUrls[responseId]) {
+        return;
       }
 
-      return { signedUrls: allSignedUrls };
+      setLoadingUrls((prev) => ({ ...prev, [responseId]: true }));
+
+      try {
+        const supabase = createClient();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (!session) throw new Error("No active session");
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        const result: FetchResponsesResult = await fetchResponses({
+          responseIds: [responseId],
+          token: session.access_token,
+          studyId,
+          questionId,
+          orgId,
+        });
+
+        const mediaUrlData = result.signedUrls[responseId];
+        if (mediaUrlData) {
+          setMediaUrls((prev) => ({
+            ...prev,
+            [responseId]: mediaUrlData,
+          }));
+        }
+      } catch (error) {
+        console.error("Error fetching media URL:", error);
+      } finally {
+        setLoadingUrls((prev) => ({ ...prev, [responseId]: false }));
+      }
     },
-    enabled: !!responses?.length,
-  });
+    [studyId, orgId],
+  );
+
+  return {
+    mediaUrls,
+    loadingUrls,
+    fetchMediaUrl,
+  };
 };
