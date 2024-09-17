@@ -162,7 +162,7 @@ export const studiesRouter = createTRPCRouter({
       const { studyId } = input;
 
       const interviewSessions = await ctx.db.interviewSession.findMany({
-        where: { studyId },
+        where: { studyId, status: { not: InterviewSessionStatus.NOT_STARTED } },
         include: {
           participant: true,
         },

@@ -13,7 +13,7 @@ const resolveCurrentRoute = (pathname: string) => {
     case "results":
       return "Results";
     case "interviews":
-      return "All Interviews";
+      return "Interviews";
     case "codebook":
       return "Codebook";
     case "approve-codes":

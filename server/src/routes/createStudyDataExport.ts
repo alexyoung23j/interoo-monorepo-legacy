@@ -257,7 +257,7 @@ const getInterviewVideoLink = (
   orgId: string,
   origin: string,
 ) => {
-  return `${origin}/org/${orgId}/study/${interview.studyId}/results?interviewSessionId=${interview.id}&modalOpen=true`;
+  return `${origin}/org/${orgId}/study/${interview.studyId}/interviews?interviewSessionId=${interview.id}&modalOpen=true`;
 };
 
 const getQuestionVideoLink = (
