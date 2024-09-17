@@ -147,7 +147,7 @@ export function calculateTranscribeAndGenerateNextQuestionRequest({
 
   // Use the builder to create the request
   const contentType =
-    getSupportedMimeType(study.videoEnabled ?? false) || "video/webm";
+    getSupportedMimeType(study.videoEnabled ?? false) ?? "video/webm";
 
   return new TranscribeAndGenerateNextQuestionRequestBuilder()
     .setNextBaseQuestionId(nextBaseQuestion?.id ?? "")
