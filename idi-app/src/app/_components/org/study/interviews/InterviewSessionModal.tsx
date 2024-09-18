@@ -195,14 +195,18 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
       });
   };
 
-  const handleDownloadWrapper = (event: React.MouseEvent) => {
+  const handleDownloadWrapper = async (event: React.MouseEvent) => {
     event.stopPropagation();
-    handleDownload(
-      currentResponseMediaUrl,
-      currentResponseContentType,
-      selectedResponseId,
-      `response_${selectedResponseId}`,
-    );
+    try {
+      await handleDownload(
+        currentResponseMediaUrl,
+        currentResponseContentType,
+        selectedResponseId,
+        `response_${selectedResponseId}`,
+      );
+    } catch (error) {
+      console.error("Download failed:", error);
+    }
   };
 
   return (
