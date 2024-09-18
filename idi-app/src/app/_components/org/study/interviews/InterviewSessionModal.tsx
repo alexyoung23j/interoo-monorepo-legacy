@@ -5,6 +5,7 @@ import {
   Response,
   Question,
   FollowUpQuestion,
+  Study,
 } from "@shared/generated/client";
 import BasicHeaderCard from "@/app/_components/reusable/BasicHeaderCard";
 import { api } from "@/trpc/react";
@@ -24,7 +25,7 @@ import { showSuccessToast } from "@/app/utils/toastUtils";
 interface InterviewSessionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  interviewSession: InterviewSession;
+  interviewSession: InterviewSession & { study: Study };
   studyId: string;
   orgId: string;
 }
@@ -111,7 +112,23 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
     }
   }, [selectedResponseId, filteredResponses, fetchMediaUrl]);
 
-  const totalTime = formatElapsedTime(interviewSession.elapsedTime);
+  const calculateElapsedTime = (
+    session: InterviewSession & { study: Study },
+  ) => {
+    const elapsedTime =
+      new Date(session.lastUpdatedTime!).getTime() -
+      new Date(session.startTime!).getTime();
+
+    if (session.study.targetLength === null) {
+      // If targetLength is null, cap at 1 hour (3,600,000 milliseconds)
+      return Math.min(elapsedTime, 3600000);
+    } else {
+      const maxTime = session.study.targetLength * 1.25 * 60 * 1000; // Convert minutes to milliseconds
+      return Math.min(elapsedTime, maxTime);
+    }
+  };
+
+  const totalTime = formatElapsedTime(calculateElapsedTime(interviewSession));
 
   const currentResponseMediaUrl =
     mediaUrls[selectedResponseId ?? ""]?.signedUrl;
@@ -123,7 +140,8 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
     return null;
   }
 
-  const copyInterviewThread = () => {
+  const copyInterviewThread = (event: React.MouseEvent) => {
+    event.stopPropagation();
     if (!filteredResponses || filteredResponses.length === 0) return;
 
     const formattedThread = filteredResponses
@@ -148,6 +166,47 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
       .catch((err) => {
         console.error("Failed to copy interview thread: ", err);
       });
+  };
+
+  const copyIndividualResponse = (
+    response: Response & {
+      question: Question | null;
+      followUpQuestion: FollowUpQuestion | null;
+    },
+    event: React.MouseEvent,
+  ) => {
+    event.stopPropagation();
+    const questionTitle = !response.followUpQuestion
+      ? response.question?.title
+      : response.followUpQuestion?.title;
+    const questionType = response.followUpQuestion
+      ? "Follow Up"
+      : "Original Question";
+
+    const formattedResponse = `${questionType}: "${questionTitle}"\nAnswer: "${response.fastTranscribedText}"`;
+
+    navigator.clipboard
+      .writeText(formattedResponse)
+      .then(() => {
+        showSuccessToast("Response copied to clipboard");
+      })
+      .catch((err) => {
+        console.error("Failed to copy response: ", err);
+      });
+  };
+
+  const handleDownloadWrapper = async (event: React.MouseEvent) => {
+    event.stopPropagation();
+    try {
+      await handleDownload(
+        currentResponseMediaUrl,
+        currentResponseContentType,
+        selectedResponseId,
+        `response_${selectedResponseId}`,
+      );
+    } catch (error) {
+      console.error("Download failed:", error);
+    }
   };
 
   return (
@@ -176,14 +235,7 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
               variant="secondary"
               className="gap-2"
               size="sm"
-              onClick={() =>
-                handleDownload(
-                  currentResponseMediaUrl,
-                  currentResponseContentType,
-                  selectedResponseId,
-                  `response_${selectedResponseId}`,
-                )
-              }
+              onClick={handleDownloadWrapper}
               disabled={
                 isDownloadingMedia ||
                 !currentResponseMediaUrl ||
@@ -283,6 +335,11 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
                           ? response.followUpQuestion.title
                           : `${response.question.questionOrder + 1}: ${response.question.title}`}
                       </div>
+                      <CopySimple
+                        size={16}
+                        className="flex-shrink-0 text-theme-900"
+                        onClick={(e) => copyIndividualResponse(response, e)}
+                      />
                     </div>
                     <div className="flex items-center gap-2 text-sm text-theme-500">
                       {response.followUpQuestion && (

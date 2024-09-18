@@ -3,7 +3,6 @@ import { FollowUpQuestion, Question, Response } from "@shared/generated/client";
 import { ClipLoader } from "react-spinners";
 import BasicCard from "@/app/_components/reusable/BasicCard";
 import { CopySimple } from "@phosphor-icons/react";
-import { Sparkle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDuration } from "@/app/utils/functions";
 import BasicTag from "@/app/_components/reusable/BasicTag";
@@ -33,7 +32,8 @@ const QuestionModalRightContent: React.FC<QuestionModalRightContentProps> = ({
     );
   }
 
-  const copyThread = () => {
+  const copyThread = (event: React.MouseEvent) => {
+    event.stopPropagation();
     if (!responses) return;
 
     const formattedThread = responses
@@ -65,7 +65,9 @@ const QuestionModalRightContent: React.FC<QuestionModalRightContentProps> = ({
       question: Question | null;
       followUpQuestion: FollowUpQuestion | null;
     },
+    event: React.MouseEvent,
   ) => {
+    event.stopPropagation();
     const questionTitle = !response.followUpQuestion
       ? response.question?.title
       : response.followUpQuestion?.title;
@@ -123,7 +125,7 @@ const QuestionModalRightContent: React.FC<QuestionModalRightContentProps> = ({
               <CopySimple
                 size={16}
                 className="flex-shrink-0 text-theme-900"
-                onClick={() => copyIndividualResponse(response)}
+                onClick={(e) => copyIndividualResponse(response, e)}
               />
             </div>
             <div className="flex items-center gap-2 text-sm text-theme-500">

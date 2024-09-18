@@ -54,8 +54,9 @@ const InterviewPageComponent: React.FC<InterviewPageComponentProps> = ({
   const router = useRouter();
   const pathname = usePathname();
 
-  const [selectedInterview, setSelectedInterview] =
-    useState<InterviewSession | null>(null);
+  const [selectedInterview, setSelectedInterview] = useState<
+    (InterviewSession & { study: Study }) | null
+  >(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
