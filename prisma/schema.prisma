@@ -23,27 +23,44 @@ model Invite {
 }
 
 model Organization {
-  id             String    @id @default(uuid())
+  id             String                  @id @default(uuid())
   name           String
-  primaryColor   String?   @default("#F0F2F3")
-  secondaryColor String?   @default("#64748B")
+  primaryColor   String?                 @default("#F0F2F3")
+  secondaryColor String?                 @default("#64748B")
   logoUrl        String?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @default(now())
-  users          Profile[]
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @default(now())
+  profiles       ProfileInOrganization[]
   studies        Study[]
   invites        Invite[]
+
+  users Profile[]
 }
 
 model Profile {
-  id             String       @id @default(uuid())
+  id             String                  @id @default(uuid())
   name           String
-  email          String       @unique
-  organizationId String
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @default(now())
+  email          String                  @unique
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @default(now())
   supabaseUserID String
+  organizations  ProfileInOrganization[]
+  organization   Organization?           @relation(fields: [organizationId], references: [id])
+  organizationId String?
+}
+
+model ProfileInOrganization {
+  id             String       @id @default(uuid())
+  profileId      String
+  organizationId String
+  profile        Profile      @relation(fields: [profileId], references: [id])
   organization   Organization @relation(fields: [organizationId], references: [id])
+  isDefaultOrg   Boolean      @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  @@unique([profileId, organizationId])
 }
 
 model Study {

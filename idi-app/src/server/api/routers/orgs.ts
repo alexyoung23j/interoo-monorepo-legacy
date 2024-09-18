@@ -22,6 +22,9 @@ export const orgsRouter = createTRPCRouter({
         where: {
           email: session.data.session?.user.email ?? "",
         },
+        include: {
+          organizations: true,
+        },
       });
 
       if (!profile) {
@@ -31,7 +34,9 @@ export const orgsRouter = createTRPCRouter({
         });
       }
 
-      const isOrgMember = profile.organizationId === input.orgId;
+      const isOrgMember = profile.organizations.some(
+        (org) => org.organizationId === input.orgId,
+      );
 
       return {
         isOrgMember,
@@ -44,13 +49,20 @@ export const orgsRouter = createTRPCRouter({
       where: {
         email: session.data.session?.user.email ?? "",
       },
+      include: {
+        organizations: true,
+      },
     });
 
     if (!profile) {
       return null;
     }
 
-    return profile.organizationId;
+    const defaultOrgId = profile.organizations.find(
+      (org) => org.isDefaultOrg,
+    )?.organizationId;
+
+    return defaultOrgId;
   }),
   getProfile: privateProcedure.query(async ({ ctx }) => {
     const { session } = ctx;
@@ -207,31 +219,48 @@ export const orgsRouter = createTRPCRouter({
         });
       }
 
+      let profile;
       const existingProfileWithUserEmail = await ctx.db.profile.findUnique({
         where: {
           email: session.data.session?.user.email ?? "",
-          organizationId: invite.organizationId,
+        },
+        include: {
+          organizations: true,
         },
       });
 
       if (existingProfileWithUserEmail) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "User already has a profile",
+        // Add the user to the organization
+        await ctx.db.profileInOrganization.create({
+          data: {
+            organizationId: invite.organizationId,
+            profileId: existingProfileWithUserEmail.id,
+            isDefaultOrg: false,
+          },
         });
-      }
 
-      // Create a new profile for the user
-      const newProfile = await ctx.db.profile.create({
-        data: {
-          name:
-            (session.data?.session?.user?.user_metadata?.full_name as string) ??
-            "",
-          email: session.data?.session?.user?.email ?? "",
-          organizationId: invite.organizationId,
-          supabaseUserID: session.data.session?.user.id ?? "",
-        },
-      });
+        profile = existingProfileWithUserEmail;
+      } else {
+        // Create a new profile for the user
+        const newProfile = await ctx.db.profile.create({
+          data: {
+            name:
+              (session.data?.session?.user?.user_metadata
+                ?.full_name as string) ?? "",
+            email: session.data?.session?.user?.email ?? "",
+            organizationId: invite.organizationId,
+            supabaseUserID: session.data.session?.user.id ?? "",
+            organizations: {
+              create: {
+                organizationId: invite.organizationId,
+                isDefaultOrg: true,
+              },
+            },
+          },
+        });
+
+        profile = newProfile;
+      }
 
       // Mark the invite as used
       await ctx.db.invite.update({
@@ -240,7 +269,7 @@ export const orgsRouter = createTRPCRouter({
       });
 
       return {
-        profile: newProfile,
+        profile: profile,
         organization: invite.organization,
       };
     }),
