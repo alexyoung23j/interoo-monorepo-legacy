@@ -25,8 +25,15 @@ export default async function OrgLayout({
   }
 
   return (
-    <div className="h-screen w-full bg-theme-50">
-      <SidebarContainer>{children}</SidebarContainer>
+    <div className="w-full bg-theme-50 sm:h-screen">
+      <div className="hidden sm:block">
+        <SidebarContainer>{children}</SidebarContainer>
+      </div>
+      <div className="block h-screen sm:hidden">
+        <div className="flex h-screen w-full items-center justify-center bg-theme-50 p-10 text-center text-theme-900">
+          Please visit Interoo on a desktop to access this page.
+        </div>
+      </div>
     </div>
   );
 }
