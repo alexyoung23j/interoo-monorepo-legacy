@@ -165,6 +165,7 @@ export const studiesRouter = createTRPCRouter({
         where: { studyId, status: { not: InterviewSessionStatus.NOT_STARTED } },
         include: {
           participant: true,
+          study: true,
         },
         orderBy: { startTime: "desc" },
       });
