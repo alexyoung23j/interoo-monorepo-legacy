@@ -4,7 +4,11 @@ import TitleLayout from "@/app/_components/layouts/org/TitleLayout";
 import { Button } from "@/components/ui/button";
 import { api } from "@/trpc/react";
 import { Link } from "@phosphor-icons/react";
-import { Organization, Profile } from "@shared/generated/client";
+import {
+  Organization,
+  Profile,
+  ProfileInOrganization,
+} from "@shared/generated/client";
 import React, { useState } from "react";
 import { BasicLinkCopy } from "../../reusable/BasicLinkCopy";
 import { showErrorToast } from "@/app/utils/toastUtils";
@@ -14,7 +18,7 @@ import BasicTitleSection from "../../reusable/BasicTitleSection";
 export default function SettingsPageComponent({
   org,
 }: {
-  org: (Organization & { users: Profile[] }) | null;
+  org: (Organization & { profiles: ProfileInOrganization[] }) | null;
 }) {
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
@@ -51,9 +55,9 @@ export default function SettingsPageComponent({
                 link={inviteLink}
                 toastString="Invite link copied."
               />
-              <div className="text-theme-600 text-xs">Shareable link</div>
+              <div className="text-xs text-theme-600">Shareable link</div>
             </div>
-            <div className="text-theme-600 mt-4 max-w-[50%] text-sm font-light">
+            <div className="mt-4 max-w-[50%] text-sm font-light text-theme-600">
               *This link will only allow a single member to join. To create
               additional invites, refresh this page and regenerate. Email
               invites are coming soon!
@@ -61,7 +65,7 @@ export default function SettingsPageComponent({
           </div>
         ) : (
           <Button
-            className="text-theme-off-white gap-2"
+            className="gap-2 text-theme-off-white"
             onClick={handleGenerateInviteLink}
           >
             <Link size={16} className="text-theme-off-white" />
