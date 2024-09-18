@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import {
   InterviewSession,
   InterviewSessionStatus,
+  Study,
 } from "@shared/generated/client";
 import SplitScreenLayout from "@/app/_components/layouts/org/SplitScreenLayout";
 import BasicHeaderCard from "@/app/_components/reusable/BasicHeaderCard";
@@ -11,11 +12,11 @@ import InterviewSessionModal from "./InterviewSessionModal";
 import BasicTag from "@/app/_components/reusable/BasicTag";
 import CardTable from "@/app/_components/reusable/CardTable";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { formatElapsedTime } from "@/app/utils/functions";
+import { formatDuration, formatElapsedTime } from "@/app/utils/functions";
 
 interface InterviewPageComponentProps {
   interviewData: {
-    interviewSessions: InterviewSession[];
+    interviewSessions: (InterviewSession & { study: Study })[];
     completedInterviewsCount: number;
     inProgressInterviewsCount: number;
   };
@@ -91,6 +92,22 @@ const InterviewPageComponent: React.FC<InterviewPageComponentProps> = ({
     { key: "status", header: "Status", width: "23%", className: "justify-end" },
   ];
 
+  const calculateElapsedTime = (
+    session: InterviewSession & { study: Study },
+  ) => {
+    const elapsedTime =
+      new Date(session.lastUpdatedTime!).getTime() -
+      new Date(session.startTime!).getTime();
+
+    if (session.study.targetLength === null) {
+      // If targetLength is null, cap at 1 hour (3,600,000 milliseconds)
+      return Math.min(elapsedTime, 3600000);
+    } else {
+      const maxTime = session.study.targetLength * 1.25 * 60 * 1000; // Convert minutes to milliseconds
+      return Math.min(elapsedTime, maxTime);
+    }
+  };
+
   const calculateAverageCompletionTime = () => {
     const completedInterviews = interviewData.interviewSessions.filter(
       (session) => session.status === InterviewSessionStatus.COMPLETED,
@@ -99,7 +116,7 @@ const InterviewPageComponent: React.FC<InterviewPageComponentProps> = ({
     if (completedInterviews.length === 0) return "N/A";
 
     const totalElapsedTime = completedInterviews.reduce(
-      (sum, session) => sum + session.elapsedTime,
+      (sum, session) => sum + calculateElapsedTime(session),
       0,
     );
     const averageElapsedTime = Math.round(
@@ -118,7 +135,7 @@ const InterviewPageComponent: React.FC<InterviewPageComponentProps> = ({
     ),
     timeTaken: (
       <div className="text-xs font-light text-theme-600">
-        {formatElapsedTime(session.elapsedTime)}
+        {formatElapsedTime(calculateElapsedTime(session))}
       </div>
     ),
     status: (
