@@ -29,51 +29,14 @@ const PlayPauseButton: React.FC<{
 );
 
 const VideoViewer: React.FC<{ mediaUrl: string }> = ({ mediaUrl }) => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isHovering, setIsHovering] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  const togglePlayPause = () => {
-    if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.pause();
-      } else {
-        videoRef.current.play().catch((error) => {
-          console.error("Error playing video:", error);
-        });
-      }
-      setIsPlaying(!isPlaying);
-    }
-  };
-
-  useEffect(() => {
-    const handleEnded = () => setIsPlaying(false);
-    videoRef.current?.addEventListener("ended", handleEnded);
-    return () => videoRef.current?.removeEventListener("ended", handleEnded);
-  }, []);
-
   return (
-    <div
-      className="relative flex w-full cursor-pointer items-center justify-center"
-      style={{ aspectRatio: "4/3" }}
-      onClick={togglePlayPause}
-      onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={() => setIsHovering(false)}
-    >
+    <div className="relative w-full" style={{ aspectRatio: "16/9" }}>
       <video
-        ref={videoRef}
         src={mediaUrl}
         className="h-full w-full object-contain"
+        controls
+        playsInline
       />
-      {(isHovering || !isPlaying) && (
-        <PlayPauseButton
-          isPlaying={isPlaying}
-          onClick={() => {
-            togglePlayPause();
-          }}
-          isVideo={true}
-        />
-      )}
     </div>
   );
 };
@@ -133,8 +96,9 @@ const BasicMediaViewer: React.FC<BasicMediaViewerProps> = ({
 
   return (
     <div
-      style={{ aspectRatio: "4/3" }}
-      className={`flex h-full min-h-72 w-full items-center justify-center rounded-sm border-2 border-theme-200 ${isVideo ? "bg-theme-900" : "bg-theme-50"}`}
+      className={`flex h-full min-h-72 w-full items-center justify-center rounded-sm border-2 border-theme-200 ${
+        isVideo ? "bg-theme-900" : "bg-theme-50"
+      }`}
     >
       {isVideo ? (
         <VideoViewer mediaUrl={mediaUrl} />
