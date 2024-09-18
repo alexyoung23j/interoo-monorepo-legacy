@@ -120,7 +120,7 @@ export const orgsRouter = createTRPCRouter({
       const org = await ctx.db.organization.findUnique({
         where: { id: input.orgId },
         include: {
-          users: true,
+          profiles: true,
         },
       });
       return org;
@@ -131,7 +131,11 @@ export const orgsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const numberOfProfiles = await ctx.db.profile.count({
         where: {
-          organizationId: input.organizationId,
+          organizations: {
+            some: {
+              organizationId: input.organizationId,
+            },
+          },
         },
       });
 
@@ -248,7 +252,6 @@ export const orgsRouter = createTRPCRouter({
               (session.data?.session?.user?.user_metadata
                 ?.full_name as string) ?? "",
             email: session.data?.session?.user?.email ?? "",
-            organizationId: invite.organizationId,
             supabaseUserID: session.data.session?.user.id ?? "",
             organizations: {
               create: {
