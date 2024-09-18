@@ -60,6 +60,13 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
     [responsesData],
   );
 
+  const selectedResponseQuestionId = useMemo(() => {
+    const selectedResponse = filteredResponses.find(
+      (r) => r.id === selectedResponseId,
+    );
+    return selectedResponse?.questionId;
+  }, [selectedResponseId, filteredResponses]);
+
   const { mediaUrls, loadingUrls, fetchMediaUrl } =
     useInterviewSessionMediaUrls({
       studyId,
@@ -70,7 +77,7 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
     useMediaDownload({
       orgId: orgId,
       studyId: studyId,
-      questionId: selectedResponseId ?? "",
+      questionId: selectedResponseQuestionId ?? "",
     });
 
   useEffect(() => {
