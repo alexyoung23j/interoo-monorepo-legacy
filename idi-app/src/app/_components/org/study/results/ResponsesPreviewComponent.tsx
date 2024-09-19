@@ -95,17 +95,9 @@ const ResponsesPreview: React.FC<ResponsesPreviewProps> = ({
             className="flex cursor-pointer flex-col gap-1 shadow-standard"
             shouldHover
             key={key}
-            onClick={() =>
-              onResponseClick(
-                responsesData?.find(
-                  (response) => response.id === processedResponse.id,
-                ) ?? null,
-              )
-            }
           >
             <div className="flex justify-between">
               <div className="text-sm text-theme-900">Response {index + 1}</div>
-              <ArrowSquareOut size={16} className="text-theme-900" />
             </div>
             <div className="text-xs text-theme-300">
               Selection:{" "}
@@ -155,14 +147,21 @@ const ResponsesPreview: React.FC<ResponsesPreviewProps> = ({
 
   return (
     <div className="flex flex-col gap-2 overflow-y-auto scrollbar-thin">
-      {processedResponses.map((processedResponse, index) =>
-        renderResponsesPreview(
-          processedResponse,
-          question?.questionType ?? QuestionType.OPEN_ENDED,
-          index,
-          processedResponse.id,
-        ),
-      )}
+      {processedResponses
+        .filter((processedResponse) => {
+          if (question?.questionType === QuestionType.MULTIPLE_CHOICE) {
+            return processedResponse.multipleChoiceOptionId !== null;
+          }
+          return true;
+        })
+        .map((processedResponse, index) =>
+          renderResponsesPreview(
+            processedResponse,
+            question?.questionType ?? QuestionType.OPEN_ENDED,
+            index,
+            processedResponse.id,
+          ),
+        )}
     </div>
   );
 };

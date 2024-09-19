@@ -89,6 +89,14 @@ export const studiesRouter = createTRPCRouter({
                         Response: {
                           where: {
                             followUpQuestionId: null,
+                            interviewSession: {
+                              status: {
+                                not: InterviewSessionStatus.NOT_STARTED,
+                              },
+                            },
+                            fastTranscribedText: {
+                              not: "",
+                            },
                           },
                         },
                       },

@@ -166,8 +166,8 @@ const ResultsPageComponent: React.FC<ResultsPageComponentProps> = ({
                   subtitle: "Incomplete Interviews",
                 },
                 {
-                  title: "2:25", // TODO: Add actual average completion time
-                  subtitle: "Average Completion Time",
+                  title: study.questions.length.toString(),
+                  subtitle: "# Questions",
                 },
               ]}
             />

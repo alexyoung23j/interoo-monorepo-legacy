@@ -86,12 +86,7 @@ const ResultsQuestionCard: React.FC<ResultsQuestionCardProps> = ({
                       Responses
                     </span>
                   </span>
-                  <span className="font-semibold text-theme-900">
-                    2:25 {/* TODO: Add actual average completion time */}
-                    <span className="font-normal text-theme-500">
-                      Avg. Completion Time
-                    </span>
-                  </span>
+
                   <span className="font-semibold text-theme-900">
                     {getFollowUpLevelAverage(question.followUpLevel)}{" "}
                     <span className="font-normal text-theme-500">
