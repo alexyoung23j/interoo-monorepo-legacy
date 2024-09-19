@@ -1,7 +1,7 @@
 import { useState } from "react";
 import axios from "axios";
 import { createClient } from "@/utils/supabase/client";
-import { ExtendedStudy } from "@/app/_components/org/study/distribution/results/ResultsPageComponent";
+import { ExtendedStudy } from "@/app/_components/org/study/results/ResultsPageComponent";
 import { downloadMedia } from "@/server/interoo-backend";
 
 interface UseMediaDownloadProps {

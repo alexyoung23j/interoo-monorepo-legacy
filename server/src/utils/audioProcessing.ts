@@ -40,6 +40,7 @@ export const transcribeAudio = async (audioBuffer: Buffer, requestLogger: Return
       keywords: keywords,
       smart_format: true,
     });
+
     
     requestLogger.info('Audio transcription completed');
     return result?.results.channels[0].alternatives[0].transcript ?? '';

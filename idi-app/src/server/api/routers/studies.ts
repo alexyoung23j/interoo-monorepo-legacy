@@ -15,7 +15,7 @@ import {
   Response,
 } from "@shared/generated/client";
 import { FastForwardCircle } from "@phosphor-icons/react/dist/ssr";
-import { ExtendedStudy } from "@/app/_components/org/study/distribution/results/ResultsPageComponent";
+import { ExtendedStudy } from "@/app/_components/org/study/results/ResultsPageComponent";
 
 export const studiesRouter = createTRPCRouter({
   /**

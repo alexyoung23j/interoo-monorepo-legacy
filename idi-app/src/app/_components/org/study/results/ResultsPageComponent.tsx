@@ -39,10 +39,15 @@ const ResultsPageComponent: React.FC<ResultsPageComponentProps> = ({
   const router = useRouter();
   const pathname = usePathname();
 
-  const { data: study, isLoading } = api.studies.getStudy.useQuery({
-    studyId: studyId,
-    includeQuestions: true,
-  });
+  const { data: study, isLoading } = api.studies.getStudy.useQuery(
+    {
+      studyId: studyId,
+      includeQuestions: true,
+    },
+    {
+      refetchOnWindowFocus: false,
+    },
+  );
 
   const { handleExport, isExporting } = useExportData({
     studyId: study?.id,

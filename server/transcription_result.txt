@@ -1,0 +1,389 @@
+{
+  "metadata": {
+    "transaction_key": "deprecated",
+    "request_id": "0ac94b11-8578-4fce-8145-1d849e63df30",
+    "sha256": "d1ed6488fa801c1544ac51d2bee2deef35036c58a99f164d8597cfcd63dc62dc",
+    "created": "2024-09-19T00:30:21.978Z",
+    "duration": 20.7,
+    "channels": 1,
+    "models": [
+      "30089e05-99d1-4376-b32e-c263170674af"
+    ],
+    "model_info": {
+      "30089e05-99d1-4376-b32e-c263170674af": {
+        "name": "2-general-nova",
+        "version": "2024-01-09.29447",
+        "arch": "nova-2"
+      }
+    }
+  },
+  "results": {
+    "channels": [
+      {
+        "alternatives": [
+          {
+            "transcript": "I love playing basketball. I'm gonna just keep talking for a little while. Let's see, basically, how this transcript actually gets transcribed. I also love Lil Wayne. I think he's awesome. Listening to some Lil Wayne right now on the Papa Man. Yeah.",
+            "confidence": 0.9920033,
+            "words": [
+              {
+                "word": "i",
+                "start": 0.96,
+                "end": 1.28,
+                "confidence": 0.99790585,
+                "punctuated_word": "I"
+              },
+              {
+                "word": "love",
+                "start": 1.28,
+                "end": 1.5999999,
+                "confidence": 0.99949706,
+                "punctuated_word": "love"
+              },
+              {
+                "word": "playing",
+                "start": 1.5999999,
+                "end": 2,
+                "confidence": 0.9999151,
+                "punctuated_word": "playing"
+              },
+              {
+                "word": "basketball",
+                "start": 2,
+                "end": 2.5,
+                "confidence": 0.863124,
+                "punctuated_word": "basketball."
+              },
+              {
+                "word": "i'm",
+                "start": 3.52,
+                "end": 3.6799998,
+                "confidence": 0.8833738,
+                "punctuated_word": "I'm"
+              },
+              {
+                "word": "gonna",
+                "start": 3.6799998,
+                "end": 3.9199998,
+                "confidence": 0.9969631,
+                "punctuated_word": "gonna"
+              },
+              {
+                "word": "just",
+                "start": 3.9199998,
+                "end": 4.16,
+                "confidence": 0.9988777,
+                "punctuated_word": "just"
+              },
+              {
+                "word": "keep",
+                "start": 4.16,
+                "end": 4.3199997,
+                "confidence": 0.9998733,
+                "punctuated_word": "keep"
+              },
+              {
+                "word": "talking",
+                "start": 4.3199997,
+                "end": 4.64,
+                "confidence": 0.999861,
+                "punctuated_word": "talking"
+              },
+              {
+                "word": "for",
+                "start": 4.64,
+                "end": 4.7999997,
+                "confidence": 0.9896325,
+                "punctuated_word": "for"
+              },
+              {
+                "word": "a",
+                "start": 4.7999997,
+                "end": 4.88,
+                "confidence": 0.98670083,
+                "punctuated_word": "a"
+              },
+              {
+                "word": "little",
+                "start": 4.88,
+                "end": 5.04,
+                "confidence": 0.97703564,
+                "punctuated_word": "little"
+              },
+              {
+                "word": "while",
+                "start": 5.04,
+                "end": 5.54,
+                "confidence": 0.9154141,
+                "punctuated_word": "while."
+              },
+              {
+                "word": "let's",
+                "start": 5.92,
+                "end": 6.3199997,
+                "confidence": 0.79255366,
+                "punctuated_word": "Let's"
+              },
+              {
+                "word": "see",
+                "start": 6.3199997,
+                "end": 6.72,
+                "confidence": 0.7625805,
+                "punctuated_word": "see,"
+              },
+              {
+                "word": "basically",
+                "start": 6.72,
+                "end": 7.2,
+                "confidence": 0.994856,
+                "punctuated_word": "basically,"
+              },
+              {
+                "word": "how",
+                "start": 7.2,
+                "end": 7.44,
+                "confidence": 0.998509,
+                "punctuated_word": "how"
+              },
+              {
+                "word": "this",
+                "start": 7.44,
+                "end": 7.68,
+                "confidence": 0.99756527,
+                "punctuated_word": "this"
+              },
+              {
+                "word": "transcript",
+                "start": 7.68,
+                "end": 8.18,
+                "confidence": 0.999645,
+                "punctuated_word": "transcript"
+              },
+              {
+                "word": "actually",
+                "start": 8.32,
+                "end": 8.639999,
+                "confidence": 0.99792385,
+                "punctuated_word": "actually"
+              },
+              {
+                "word": "gets",
+                "start": 8.639999,
+                "end": 8.96,
+                "confidence": 0.9991603,
+                "punctuated_word": "gets"
+              },
+              {
+                "word": "transcribed",
+                "start": 8.96,
+                "end": 9.46,
+                "confidence": 0.9975019,
+                "punctuated_word": "transcribed."
+              },
+              {
+                "word": "i",
+                "start": 10.775001,
+                "end": 10.8550005,
+                "confidence": 0.9130733,
+                "punctuated_word": "I"
+              },
+              {
+                "word": "also",
+                "start": 10.8550005,
+                "end": 11.175,
+                "confidence": 0.99978036,
+                "punctuated_word": "also"
+              },
+              {
+                "word": "love",
+                "start": 11.175,
+                "end": 11.335,
+                "confidence": 0.99933845,
+                "punctuated_word": "love"
+              },
+              {
+                "word": "lil",
+                "start": 11.335,
+                "end": 11.655001,
+                "confidence": 0.9004659,
+                "punctuated_word": "Lil"
+              },
+              {
+                "word": "wayne",
+                "start": 11.655001,
+                "end": 12.055,
+                "confidence": 0.9920033,
+                "punctuated_word": "Wayne."
+              },
+              {
+                "word": "i",
+                "start": 12.055,
+                "end": 12.215,
+                "confidence": 0.99785405,
+                "punctuated_word": "I"
+              },
+              {
+                "word": "think",
+                "start": 12.215,
+                "end": 12.455,
+                "confidence": 0.9999056,
+                "punctuated_word": "think"
+              },
+              {
+                "word": "he's",
+                "start": 12.455,
+                "end": 12.615,
+                "confidence": 0.8734784,
+                "punctuated_word": "he's"
+              },
+              {
+                "word": "awesome",
+                "start": 12.615,
+                "end": 13.115,
+                "confidence": 0.99884075,
+                "punctuated_word": "awesome."
+              },
+              {
+                "word": "listening",
+                "start": 14.615,
+                "end": 15.095,
+                "confidence": 0.61901546,
+                "punctuated_word": "Listening"
+              },
+              {
+                "word": "to",
+                "start": 15.095,
+                "end": 15.175,
+                "confidence": 0.9720766,
+                "punctuated_word": "to"
+              },
+              {
+                "word": "some",
+                "start": 15.175,
+                "end": 15.335,
+                "confidence": 0.9954333,
+                "punctuated_word": "some"
+              },
+              {
+                "word": "lil",
+                "start": 15.335,
+                "end": 15.575001,
+                "confidence": 0.9710736,
+                "punctuated_word": "Lil"
+              },
+              {
+                "word": "wayne",
+                "start": 15.575001,
+                "end": 15.815001,
+                "confidence": 0.99734527,
+                "punctuated_word": "Wayne"
+              },
+              {
+                "word": "right",
+                "start": 15.815001,
+                "end": 16.135,
+                "confidence": 0.95645386,
+                "punctuated_word": "right"
+              },
+              {
+                "word": "now",
+                "start": 16.135,
+                "end": 16.635,
+                "confidence": 0.98413706,
+                "punctuated_word": "now"
+              },
+              {
+                "word": "on",
+                "start": 17.335,
+                "end": 17.495,
+                "confidence": 0.9106502,
+                "punctuated_word": "on"
+              },
+              {
+                "word": "the",
+                "start": 17.495,
+                "end": 17.655,
+                "confidence": 0.6754627,
+                "punctuated_word": "the"
+              },
+              {
+                "word": "papa",
+                "start": 17.655,
+                "end": 17.975,
+                "confidence": 0.8381516,
+                "punctuated_word": "Papa"
+              },
+              {
+                "word": "man",
+                "start": 17.975,
+                "end": 18.475,
+                "confidence": 0.6710917,
+                "punctuated_word": "Man."
+              },
+              {
+                "word": "yeah",
+                "start": 20.295,
+                "end": 20.7,
+                "confidence": 0.7230461,
+                "punctuated_word": "Yeah."
+              }
+            ],
+            "paragraphs": {
+              "transcript": "\nI love playing basketball. I'm gonna just keep talking for a little while. Let's see, basically, how this transcript actually gets transcribed. I also love Lil Wayne. I think he's awesome.\n\nListening to some Lil Wayne right now on the Papa Man. Yeah.",
+              "paragraphs": [
+                {
+                  "sentences": [
+                    {
+                      "text": "I love playing basketball.",
+                      "start": 0.96,
+                      "end": 2.5
+                    },
+                    {
+                      "text": "I'm gonna just keep talking for a little while.",
+                      "start": 3.52,
+                      "end": 5.54
+                    },
+                    {
+                      "text": "Let's see, basically, how this transcript actually gets transcribed.",
+                      "start": 5.92,
+                      "end": 9.46
+                    },
+                    {
+                      "text": "I also love Lil Wayne.",
+                      "start": 10.775001,
+                      "end": 12.055
+                    },
+                    {
+                      "text": "I think he's awesome.",
+                      "start": 12.055,
+                      "end": 13.115
+                    }
+                  ],
+                  "num_words": 31,
+                  "start": 0.96,
+                  "end": 13.115
+                },
+                {
+                  "sentences": [
+                    {
+                      "text": "Listening to some Lil Wayne right now on the Papa Man.",
+                      "start": 14.615,
+                      "end": 18.475
+                    },
+                    {
+                      "text": "Yeah.",
+                      "start": 20.295,
+                      "end": 20.7
+                    }
+                  ],
+                  "num_words": 12,
+                  "start": 14.615,
+                  "end": 20.7
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

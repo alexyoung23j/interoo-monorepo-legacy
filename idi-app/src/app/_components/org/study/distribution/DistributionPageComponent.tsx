@@ -16,9 +16,14 @@ interface DistributionPageComponentProps {
 const DistributionPageComponent: React.FC<DistributionPageComponentProps> = ({
   studyId,
 }) => {
-  const { data: study, isLoading } = api.studies.getStudy.useQuery({
-    studyId: studyId,
-  });
+  const { data: study, isLoading } = api.studies.getStudy.useQuery(
+    {
+      studyId: studyId,
+    },
+    {
+      refetchOnWindowFocus: false,
+    },
+  );
 
   const [maxParticipants, setMaxParticipants] = useState<number | null>(null);
   const [hasChangedMaxParticipants, setHasChangedMaxParticipants] =

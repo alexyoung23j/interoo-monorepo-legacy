@@ -2,7 +2,7 @@ import { UseQueryResult, useQuery } from "@tanstack/react-query";
 import { createClient } from "@/utils/supabase/client";
 import { fetchResponses } from "@/server/interoo-backend";
 import { Response } from "@shared/generated/client";
-import { ExtendedStudy } from "@/app/_components/org/study/distribution/results/ResultsPageComponent";
+import { ExtendedStudy } from "@/app/_components/org/study/results/ResultsPageComponent";
 
 interface UseMediaSessionUrlsProps {
   responses: Response[] | null;

@@ -1,6 +1,6 @@
 import ResultsPageComponent, {
   ExtendedStudy,
-} from "@/app/_components/org/study/distribution/results/ResultsPageComponent";
+} from "@/app/_components/org/study/results/ResultsPageComponent";
 import { api } from "@/trpc/server";
 import { Question } from "@shared/generated/client";
 import { redirect } from "next/navigation";

@@ -56,9 +56,14 @@ const InterviewPageComponent: React.FC<InterviewPageComponentProps> = ({
   const pathname = usePathname();
 
   const { data: interviewData, isLoading } =
-    api.studies.getStudyInterviews.useQuery({
-      studyId: studyId,
-    });
+    api.studies.getStudyInterviews.useQuery(
+      {
+        studyId: studyId,
+      },
+      {
+        refetchOnWindowFocus: false,
+      },
+    );
 
   const [selectedInterview, setSelectedInterview] = useState<
     (InterviewSession & { study: Study }) | null
