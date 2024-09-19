@@ -87,7 +87,7 @@ const ResultsQuestionCard: React.FC<ResultsQuestionCardProps> = ({
                     </span>
                   </span>
                   <span className="font-semibold text-theme-900">
-                    TODO{" "}
+                    2:25 {/* TODO: Add actual average completion time */}
                     <span className="font-normal text-theme-500">
                       Avg. Completion Time
                     </span>
