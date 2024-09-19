@@ -11,14 +11,5 @@ export default async function ResultsPage({
 }: {
   params: { orgId: string; studyId: string };
 }) {
-  const study = await api.studies.getStudy({
-    studyId: params.studyId,
-    includeQuestions: true,
-  });
-
-  if (!study) {
-    redirect("/404");
-  }
-
-  return <ResultsPageComponent study={study} />;
+  return <ResultsPageComponent studyId={params.studyId} />;
 }

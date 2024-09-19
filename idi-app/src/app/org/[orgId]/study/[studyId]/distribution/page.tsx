@@ -8,12 +8,5 @@ export default async function DistributionPage({
 }: {
   params: { orgId: string; studyId: string };
 }) {
-  const study = await api.studies.getStudy({
-    studyId: params.studyId,
-  });
-
-  if (!study) {
-    redirect("/404");
-  }
-  return <DistributionPageComponent study={study} />;
+  return <DistributionPageComponent studyId={params.studyId} />;
 }

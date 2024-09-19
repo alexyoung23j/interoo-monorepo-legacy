@@ -20,6 +20,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useExportData } from "@/hooks/useExportData";
 import { ClipLoader } from "react-spinners";
 import { showErrorToast } from "@/app/utils/toastUtils";
+import { api } from "@/trpc/react";
 
 export type ExtendedStudy = Study & {
   completedInterviewsCount: number;
@@ -28,18 +29,23 @@ export type ExtendedStudy = Study & {
 };
 
 interface ResultsPageComponentProps {
-  study: ExtendedStudy;
+  studyId: string;
 }
 
 const ResultsPageComponent: React.FC<ResultsPageComponentProps> = ({
-  study,
+  studyId,
 }) => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
 
+  const { data: study, isLoading } = api.studies.getStudy.useQuery({
+    studyId: studyId,
+    includeQuestions: true,
+  });
+
   const { handleExport, isExporting } = useExportData({
-    studyId: study.id,
+    studyId: study?.id,
   });
 
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(
@@ -60,7 +66,8 @@ const ResultsPageComponent: React.FC<ResultsPageComponentProps> = ({
     const responseId = searchParams.get("responseId");
 
     if (questionId) {
-      const question = study.questions.find((q) => q.id === questionId) ?? null;
+      const question =
+        study?.questions.find((q) => q.id === questionId) ?? null;
       setSelectedQuestion(question);
     }
 
@@ -75,7 +82,7 @@ const ResultsPageComponent: React.FC<ResultsPageComponentProps> = ({
     if (modalOpen === "true") {
       setQuestionModalOpen(true);
     }
-  }, [searchParams, study.questions]);
+  }, [searchParams, study?.questions]);
 
   const handleViewResponses = (question: Question) => {
     if (selectedQuestion?.id === question.id) {
@@ -86,6 +93,14 @@ const ResultsPageComponent: React.FC<ResultsPageComponentProps> = ({
       router.push(`${pathname}?questionId=${question.id}`);
     }
   };
+
+  if (isLoading || !study) {
+    return (
+      <div className="flex h-full items-center justify-center bg-theme-off-white">
+        <ClipLoader size={50} color="grey" loading={true} />
+      </div>
+    );
+  }
 
   return (
     <>
