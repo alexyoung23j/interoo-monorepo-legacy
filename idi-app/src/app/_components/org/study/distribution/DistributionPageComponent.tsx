@@ -7,14 +7,19 @@ import { Input } from "@/components/ui/input";
 import { api } from "@/trpc/react";
 import { Study, StudyStatus } from "@shared/generated/client";
 import React, { useEffect, useState } from "react";
+import { ClipLoader } from "react-spinners";
 
 interface DistributionPageComponentProps {
-  study: Study;
+  studyId: string;
 }
 
 const DistributionPageComponent: React.FC<DistributionPageComponentProps> = ({
-  study,
+  studyId,
 }) => {
+  const { data: study, isLoading } = api.studies.getStudy.useQuery({
+    studyId: studyId,
+  });
+
   const [maxParticipants, setMaxParticipants] = useState<number | null>(null);
   const [hasChangedMaxParticipants, setHasChangedMaxParticipants] =
     useState(false);
@@ -32,7 +37,7 @@ const DistributionPageComponent: React.FC<DistributionPageComponentProps> = ({
       if (maxParticipants) {
         setHasChangedMaxParticipants(false);
         await updateStudy.mutateAsync({
-          id: study?.id,
+          id: study?.id ?? "",
           maxResponses: maxParticipants,
         });
         showSuccessToast("Max participants updated.");
@@ -43,8 +48,16 @@ const DistributionPageComponent: React.FC<DistributionPageComponentProps> = ({
     }
   };
 
+  if (isLoading || !study) {
+    return (
+      <div className="flex h-full items-center justify-center bg-theme-off-white">
+        <ClipLoader size={50} color="grey" loading={true} />
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-theme-off-white flex h-full flex-col gap-20 p-9">
+    <div className="flex h-full flex-col gap-20 bg-theme-off-white p-9">
       <BasicTitleSection
         title="Share"
         subtitle="Send this link to your survey participants."

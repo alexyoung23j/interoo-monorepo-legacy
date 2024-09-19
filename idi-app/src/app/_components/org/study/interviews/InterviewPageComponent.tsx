@@ -13,6 +13,8 @@ import BasicTag from "@/app/_components/reusable/BasicTag";
 import CardTable from "@/app/_components/reusable/CardTable";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { formatDuration, formatElapsedTime } from "@/app/utils/functions";
+import { api } from "@/trpc/react";
+import { ClipLoader } from "react-spinners";
 
 interface InterviewPageComponentProps {
   interviewData: {
@@ -46,13 +48,17 @@ const getStatusProps = (status: InterviewSessionStatus) => {
 };
 
 const InterviewPageComponent: React.FC<InterviewPageComponentProps> = ({
-  interviewData,
   studyId,
   orgId,
 }) => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
+
+  const { data: interviewData, isLoading } =
+    api.studies.getStudyInterviews.useQuery({
+      studyId: studyId,
+    });
 
   const [selectedInterview, setSelectedInterview] = useState<
     (InterviewSession & { study: Study }) | null
@@ -65,7 +71,7 @@ const InterviewPageComponent: React.FC<InterviewPageComponentProps> = ({
 
     if (interviewSessionId) {
       const interview =
-        interviewData.interviewSessions.find(
+        interviewData?.interviewSessions.find(
           (i) => i.id === interviewSessionId,
         ) ?? null;
       setSelectedInterview(interview);
@@ -74,7 +80,7 @@ const InterviewPageComponent: React.FC<InterviewPageComponentProps> = ({
     if (modalOpen === "true") {
       setIsModalOpen(true);
     }
-  }, [searchParams, interviewData.interviewSessions]);
+  }, [searchParams, interviewData?.interviewSessions]);
 
   const columns = [
     { key: "respondent", header: "Respondent", width: "33%" },
@@ -110,24 +116,25 @@ const InterviewPageComponent: React.FC<InterviewPageComponentProps> = ({
   };
 
   const calculateAverageCompletionTime = () => {
-    const completedInterviews = interviewData.interviewSessions.filter(
+    const completedInterviews = interviewData?.interviewSessions.filter(
       (session) => session.status === InterviewSessionStatus.COMPLETED,
     );
 
-    if (completedInterviews.length === 0) return "N/A";
+    if (completedInterviews?.length === 0) return "N/A";
 
-    const totalElapsedTime = completedInterviews.reduce(
-      (sum, session) => sum + calculateElapsedTime(session),
-      0,
-    );
+    const totalElapsedTime =
+      completedInterviews?.reduce(
+        (sum, session) => sum + calculateElapsedTime(session),
+        0,
+      ) ?? 0;
     const averageElapsedTime = Math.round(
-      totalElapsedTime / completedInterviews.length,
+      totalElapsedTime / (completedInterviews?.length ?? 1),
     );
 
     return formatElapsedTime(averageElapsedTime);
   };
 
-  const tableData = interviewData.interviewSessions.map((session) => ({
+  const tableData = interviewData?.interviewSessions.map((session) => ({
     respondent: "Anonymous",
     dateTaken: (
       <div className="text-xs font-light text-theme-600">
@@ -148,6 +155,14 @@ const InterviewPageComponent: React.FC<InterviewPageComponentProps> = ({
     ),
     originalSession: session,
   }));
+
+  if (isLoading || !interviewData) {
+    return (
+      <div className="flex h-full items-center justify-center bg-theme-off-white">
+        <ClipLoader size={50} color="grey" loading={true} />
+      </div>
+    );
+  }
 
   return (
     <>
@@ -179,7 +194,7 @@ const InterviewPageComponent: React.FC<InterviewPageComponentProps> = ({
               Interviews
             </div>
             <CardTable
-              data={tableData}
+              data={tableData ?? []}
               columns={columns}
               onRowClick={(row) => {
                 setSelectedInterview(row.originalSession);

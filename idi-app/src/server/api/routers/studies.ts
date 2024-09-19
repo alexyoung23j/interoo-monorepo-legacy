@@ -184,4 +184,15 @@ export const studiesRouter = createTRPCRouter({
         inProgressInterviewsCount,
       };
     }),
+  checkStudyExists: privateProcedure
+    .input(z.object({ studyId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const { studyId } = input;
+
+      const study = await ctx.db.study.findUnique({
+        where: { id: studyId },
+      });
+
+      return study;
+    }),
 });
