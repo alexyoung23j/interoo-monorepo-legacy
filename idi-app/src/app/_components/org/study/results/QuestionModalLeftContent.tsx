@@ -4,7 +4,6 @@ import { ClipLoader } from "react-spinners";
 import BasicCard from "@/app/_components/reusable/BasicCard";
 import BasicTag from "@/app/_components/reusable/BasicTag";
 import { useQuery } from "@tanstack/react-query";
-import { fetchResponses } from "@/server/interoo-backend";
 import { createClient } from "@/utils/supabase/client";
 import { ExtendedStudy } from "./ResultsPageComponent";
 import BasicMediaViewer from "@/app/_components/reusable/BasicMediaViewer";

@@ -45,9 +45,6 @@ export const useInterviewSessionMediaUrls = ({
         const result: FetchResponsesResult = await fetchResponses({
           responseIds: [responseId],
           token: session.access_token,
-          studyId,
-          questionId,
-          orgId,
         });
 
         const mediaUrlData = result.signedUrls[responseId];

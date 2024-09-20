@@ -57,7 +57,7 @@ const getCurrentQuestionMetadata = async (req: Request, res: Response) => {
     await prisma.responseMedia.create({
       data: {
         responseId: responseId,
-        mediaUrl: `https://storage.googleapis.com/${bucketName}/${filePath}`,
+        mediaUrl: filePath,
         transcribedText: "", // Initialize with empty string
         contentType: contentType  
       }

@@ -48,12 +48,8 @@ export const useMediaDownload = ({
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const blobData = await downloadMedia({
-        url: currentResponseMediaUrl,
         targetFormat,
         responseId: currentResponseId,
-        orgId,
-        studyId,
-        questionId,
         token: session.access_token,
       });
 

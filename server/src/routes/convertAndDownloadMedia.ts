@@ -1,23 +1,31 @@
 import { Router, Request, Response } from "express";
-import { prisma, bucket, bucketName } from "../index";
+import { prisma, bucket } from "../index";
 import { authMiddleware } from "../middleware/auth";
 import { Readable } from 'stream';
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path as string;
-const ffmpeg = require('fluent-ffmpeg') as any; // Type definition for fluent-ffmpeg is complex, using 'any' for simplicity
+const ffmpeg = require('fluent-ffmpeg') as any;
 
 const router = Router();
 
 const convertAndDownloadMedia = async (req: Request, res: Response) => {
-  const { url, targetFormat, responseId, orgId, studyId, questionId } = req.body;
+  const { targetFormat, responseId } = req.body;
 
-  if (!url || !targetFormat || !responseId || !orgId || !studyId || !questionId) {
+  if (!targetFormat || !responseId) {
     return res.status(400).json({ error: 'Missing required parameters' });
   }
 
   try {
-    // Fetch the file from Google Cloud Storage
-    const filePath = `${orgId}/${studyId}/${questionId}/${responseId}/recording`;
-    const file = bucket.file(filePath);
+    // Fetch the ResponseMedia associated with the responseId
+    const responseMedia = await prisma.responseMedia.findUnique({
+      where: { responseId },
+    });
+
+    if (!responseMedia) {
+      return res.status(404).json({ error: 'ResponseMedia not found' });
+    }
+
+    // Use the mediaUrl from ResponseMedia as the filePath
+    const file = bucket.file(responseMedia.mediaUrl);
     const [metadata] = await file.getMetadata();
     const contentType = metadata.contentType;
 

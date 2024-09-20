@@ -1,11 +1,11 @@
 import { Router, Request, Response } from "express";
-import { prisma, bucket, bucketName } from "../index";
+import { prisma, bucket } from "../index";
 import { authMiddleware } from "../middleware/auth";
 
 const router = Router();
 
 const getMediaSignedUrls = async (req: Request, res: Response) => {
-  const { responseIds, studyId, questionId, orgId } = req.body;
+  const { responseIds } = req.body;
 
   if (!Array.isArray(responseIds)) {
     return res.status(400).json({ error: 'responseIds must be an array' });
@@ -19,8 +19,7 @@ const getMediaSignedUrls = async (req: Request, res: Response) => {
     const signedUrlMap: Record<string, { signedUrl: string; contentType: string }> = {};
 
     for (const media of responseMedias) {
-      const filePath = `${orgId}/${studyId}/${questionId}/${media.responseId}/recording`;
-      const file = bucket.file(filePath);
+      const file = bucket.file(media.mediaUrl);
       const [signedUrl] = await file.getSignedUrl({
         version: 'v4',
         action: 'read',
