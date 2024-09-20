@@ -37,9 +37,6 @@ export const useMediaSessionUrls = ({
       const result = await fetchResponses({
         responseIds: responses?.map((r) => r.id) ?? [],
         token: session.access_token,
-        studyId: study.id,
-        questionId: questionId,
-        orgId: study.organizationId,
       });
       return result as MediaUrlData;
     },
