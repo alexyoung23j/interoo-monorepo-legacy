@@ -30,7 +30,6 @@ const PlayPauseButton: React.FC<{
 
 const VideoViewer: React.FC<{ mediaUrl: string }> = ({ mediaUrl }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
   const [isVertical, setIsVertical] = useState(false);
 
   useEffect(() => {
@@ -48,22 +47,12 @@ const VideoViewer: React.FC<{ mediaUrl: string }> = ({ mediaUrl }) => {
     }
   }, []);
 
-  useEffect(() => {
-    const container = containerRef.current;
-    if (container) {
-      container.style.aspectRatio = isVertical ? "9/16" : "16/9";
-    }
-  }, [isVertical]);
-
   return (
-    <div
-      ref={containerRef}
-      className="relative flex w-full items-center justify-center bg-theme-900"
-    >
+    <div className="relative flex h-full w-full items-center justify-center bg-theme-900">
       <video
         ref={videoRef}
         src={mediaUrl}
-        className={`h-full w-full ${isVertical ? "object-contain" : "object-cover"}`}
+        className={`max-h-full max-w-full ${isVertical ? "h-full" : "w-full"} object-contain`}
         controls
         playsInline
       />
@@ -127,7 +116,7 @@ const BasicMediaViewer: React.FC<BasicMediaViewerProps> = ({
   return (
     <div
       className={`flex h-full min-h-72 w-full items-center justify-center rounded-sm border-2 border-theme-200 ${
-        isVideo ? "bg-theme-900" : "bg-theme-50"
+        isVideo ? "" : "bg-theme-50"
       }`}
     >
       {isVideo ? (
