@@ -29,31 +29,12 @@ const PlayPauseButton: React.FC<{
 );
 
 const VideoViewer: React.FC<{ mediaUrl: string }> = ({ mediaUrl }) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [aspectRatio, setAspectRatio] = useState("16/9");
-
-  useEffect(() => {
-    const video = videoRef.current;
-    if (video) {
-      const updateAspectRatio = () => {
-        if (video.videoWidth && video.videoHeight) {
-          setAspectRatio(`${video.videoWidth} / ${video.videoHeight}`);
-        }
-      };
-
-      video.addEventListener("loadedmetadata", updateAspectRatio);
-      return () =>
-        video.removeEventListener("loadedmetadata", updateAspectRatio);
-    }
-  }, []);
-
   return (
     <div
-      className="relative max-h-full w-full max-w-full"
-      style={{ aspectRatio }}
+      className="relative flex w-full items-center justify-center"
+      style={{ aspectRatio: "4/3" }}
     >
       <video
-        ref={videoRef}
         src={mediaUrl}
         className="h-full w-full object-contain"
         controls
