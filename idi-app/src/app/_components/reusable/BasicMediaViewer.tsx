@@ -29,14 +29,41 @@ const PlayPauseButton: React.FC<{
 );
 
 const VideoViewer: React.FC<{ mediaUrl: string }> = ({ mediaUrl }) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isVertical, setIsVertical] = useState(false);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video) {
+      const handleLoadedMetadata = () => {
+        if (video.videoWidth && video.videoHeight) {
+          setIsVertical(video.videoHeight > video.videoWidth);
+        }
+      };
+
+      video.addEventListener("loadedmetadata", handleLoadedMetadata);
+      return () =>
+        video.removeEventListener("loadedmetadata", handleLoadedMetadata);
+    }
+  }, []);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (container) {
+      container.style.aspectRatio = isVertical ? "9/16" : "16/9";
+    }
+  }, [isVertical]);
+
   return (
     <div
-      className="relative flex w-full items-center justify-center"
-      style={{ aspectRatio: "4/3" }}
+      ref={containerRef}
+      className="relative flex w-full items-center justify-center bg-theme-900"
     >
       <video
+        ref={videoRef}
         src={mediaUrl}
-        className="h-full w-full object-contain"
+        className={`h-full w-full ${isVertical ? "object-contain" : "object-cover"}`}
         controls
         playsInline
       />
