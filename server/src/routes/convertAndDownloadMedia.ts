@@ -36,23 +36,32 @@ const convertAndDownloadMedia = async (req: Request, res: Response) => {
 
     // Set up the response headers
     res.setHeader('Content-Disposition', `attachment; filename="response_${responseId}.${targetFormat}"`);
-    res.setHeader('Content-Type', 'video/mp4');
+    res.setHeader('Content-Type', targetFormat === 'mp3' ? 'audio/mpeg' : 'video/mp4');
 
     // Create a readable stream from the file content
     const inputStream = Readable.from(fileContent);
 
-    // Use ffmpeg to convert the file
-    ffmpeg(inputStream)
+    const ffmpegCommand = ffmpeg(inputStream)
       .inputFormat(fileFormat)
-      .videoCodec('libx264')
-      .audioCodec('aac')
-      .toFormat('mp4')
-      .outputOptions('-movflags frag_keyframe+empty_moov')
+      .outputOptions('-movflags frag_keyframe+empty_moov');
+
+    if (targetFormat === 'mp3') {
+      ffmpegCommand
+        .audioCodec('libmp3lame')
+        .toFormat('mp3');
+    } else {
+      ffmpegCommand
+        .videoCodec('libx264')
+        .audioCodec('aac')
+        .toFormat('mp4');
+    }
+
+    ffmpegCommand
       .on('start', (commandLine: string) => {
-        // console.log('FFmpeg process started:', commandLine);
+        console.log('FFmpeg process started:', commandLine);
       })
       .on('progress', (progress: { percent: number }) => {
-        // console.log('Processing: ' + progress.percent + '% done');
+        console.log('Processing: ' + progress.percent + '% done');
       })
       .on('error', (err: Error, stdout: string, stderr: string) => {
         console.error('FFmpeg error:', err.message);
