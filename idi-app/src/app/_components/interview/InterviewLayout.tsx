@@ -10,6 +10,7 @@ import {
   QuestionType,
   Response,
   Study,
+  TtsProvider,
 } from "@shared/generated/client";
 import { InterviewProgressBar } from "./InterviewProgressBar";
 import { useParams } from "next/navigation";
@@ -61,6 +62,7 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
 }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
+
   const params = useParams();
   const interviewSessionId = params.interviewSessionId as string;
 
@@ -88,7 +90,11 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
     playAudio: playTtsAudio,
     stopAudio: stopTtsAudio,
     audioDuration: ttsAudioDuration,
-  } = useTtsAudio();
+  } = useTtsAudio({
+    useElevenLabs:
+      study.ttsProvider === TtsProvider.ELEVENLABS ||
+      interviewSession?.testMode,
+  });
 
   useEffect(() => {
     const initializeInterview = async () => {
@@ -104,8 +110,6 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
           FollowUpQuestions: fetchedSession.FollowUpQuestions ?? [],
         }));
         setCurrentQuestion(calculatedCurrentQuestion ?? null);
-
-        console.log("Fetched interview session status:", fetchedSession.status);
 
         // Update the progress based on the fetched session
         if (fetchedSession.status === InterviewSessionStatus.IN_PROGRESS) {

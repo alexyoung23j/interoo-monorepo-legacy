@@ -58,6 +58,8 @@ interface InterviewBottomBarProps {
   handleSubmitRangeResponse: () => void;
   playTtsAudio: (text: string) => Promise<void>;
   stopTtsAudio: () => void;
+  audioOn: boolean;
+  setAudioOn: (audioOn: boolean) => void;
 }
 
 const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
@@ -71,6 +73,8 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
   handleSubmitRangeResponse,
   playTtsAudio,
   stopTtsAudio,
+  audioOn,
+  setAudioOn,
 }) => {
   const [currentQuestion] = useAtom(currentQuestionAtom);
   const [currentResponseAndUploadUrl, setCurrentResponseAndUploadUrl] = useAtom(
@@ -79,7 +83,6 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
   const [interviewSession] = useAtom(interviewSessionAtom);
   const [responses, setResponses] = useAtom(responsesAtom);
   const [followUpQuestions] = useAtom(followUpQuestionsAtom);
-  const [audioOn, setAudioOn] = useState(true);
   const [isFullyRecording, setIsFullyRecording] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
   const transcriptionRecorder = useTranscriptionRecorder({
@@ -116,12 +119,6 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
       console.error("getUserMedia is not supported in this browser");
       return;
     }
-
-    console.log("Starting response...");
-    console.log(
-      "Current question metadata:",
-      currentResponseAndUploadUrl,
-    );
 
     try {
       stopTtsAudio();

@@ -59,6 +59,7 @@ export const InterviewPerformContent: React.FC<
     null,
   );
   const [awaitingOptionResponse, setAwaitingOptionResponse] = useState(false);
+  const [audioOn, setAudioOn] = useState(true);
 
   // Update the response to include the user's selection- or create in case user answers
   // before we get a chance to get the signed url and create the response on the backend
@@ -95,7 +96,6 @@ export const InterviewPerformContent: React.FC<
     const wasFinalQuestion = isLastQuestion(currentQuestion as Question);
 
     if (wasFinalQuestion) {
-      console.log("wasFinalQuestion");
       setInterviewSession((prev) => ({
         ...prev!,
         status: "COMPLETED",
@@ -126,7 +126,7 @@ export const InterviewPerformContent: React.FC<
 
     setAwaitingOptionResponse(false);
     setMultipleChoiceOptionSelectionId(null);
-    if (nextQuestion?.title) {
+    if (nextQuestion?.title && audioOn) {
       await playTtsAudio(nextQuestion.title);
     }
   };
@@ -159,7 +159,7 @@ export const InterviewPerformContent: React.FC<
 
     setAwaitingOptionResponse(false);
     setRangeSelectionValue(null);
-    if (nextQuestion?.title) {
+    if (nextQuestion?.title && audioOn) {
       await playTtsAudio(nextQuestion.title);
     }
   };
@@ -200,7 +200,6 @@ export const InterviewPerformContent: React.FC<
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const data: { sessionUrl: string; newResponse: Response } =
           await response.json();
-        console.log("Upload URL fetched successfully:", data.sessionUrl);
         setCurrentResponseAndUploadUrl({
           response: data.newResponse,
           uploadSessionUrl: data.sessionUrl,
@@ -245,6 +244,8 @@ export const InterviewPerformContent: React.FC<
         handleSubmitRangeResponse={handleSubmitRangeResponse}
         playTtsAudio={playTtsAudio}
         stopTtsAudio={stopTtsAudio}
+        audioOn={audioOn}
+        setAudioOn={setAudioOn}
       />
     </div>
   );
