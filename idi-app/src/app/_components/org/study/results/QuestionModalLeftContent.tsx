@@ -91,7 +91,7 @@ const QuestionModalLeftContent: React.FC<QuestionModalLeftContentProps> = ({
       </div>
       <div className="h-[1px] w-full bg-theme-200 text-theme-900"></div>
 
-      <div className="aspect-video w-full">
+      <div className="min-h-[80%] w-full flex-grow">
         <BasicMediaViewer
           mediaUrl={currentResponseMediaUrl ?? ""}
           mediaType={

@@ -29,14 +29,14 @@ const PlayPauseButton: React.FC<{
 );
 
 const VideoViewer: React.FC<{ mediaUrl: string }> = ({ mediaUrl }) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-
   return (
-    <div className="h-full w-full bg-theme-900">
+    <div
+      className="relative flex w-full items-center justify-center"
+      style={{ aspectRatio: "4/3" }}
+    >
       <video
-        ref={videoRef}
         src={mediaUrl}
-        className="h-full w-full object-cover"
+        className="h-full w-full object-contain"
         controls
         playsInline
       />
@@ -100,7 +100,7 @@ const BasicMediaViewer: React.FC<BasicMediaViewerProps> = ({
   return (
     <div
       className={`flex h-full min-h-72 w-full items-center justify-center rounded-sm border-2 border-theme-200 ${
-        isVideo ? "" : "bg-theme-50"
+        isVideo ? "bg-theme-900" : "bg-theme-50"
       }`}
     >
       {isVideo ? (
