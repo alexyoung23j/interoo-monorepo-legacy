@@ -226,7 +226,7 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
         />
       }
       leftContent={
-        <div className="flex h-full w-full flex-col gap-4">
+        <div className="flex h-fit w-full flex-col gap-4">
           <div className="flex w-full items-center justify-between gap-3">
             <h2 className="text-lg font-semibold text-theme-900">
               Interview Media
@@ -252,7 +252,7 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
           </div>
           <div className="h-[1px] w-full bg-theme-200 text-theme-900"></div>
 
-          <div className="flex-grow">
+          <div className="min-h-[80%] w-full flex-grow">
             {isLoadingCurrentMedia ? (
               <div className="flex h-full w-full items-center justify-center">
                 <ClipLoader color="grey" />
