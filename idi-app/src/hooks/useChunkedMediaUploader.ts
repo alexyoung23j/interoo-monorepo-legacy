@@ -62,7 +62,6 @@ export function useChunkedMediaUploader() {
         const end = start + chunk.size - 1;
         const total = isLastChunk ? totalSize.current.toString() : "*";
 
-        console.log(`Uploading chunk: bytes ${start}-${end}/${total}`);
         const response = await fetch(uploadUrl, {
           method: "PUT",
           headers: {
@@ -85,12 +84,8 @@ export function useChunkedMediaUploader() {
           }
 
           if (response.status === 308) {
-            console.log(
-              `Partial upload successful, uploaded to byte ${uploadedSize.current}`,
-            );
             buffer.current = buffer.current.slice(chunkSize);
           } else {
-            console.log("Upload completed");
             setUploadProgress(100);
             uploadComplete.current = true;
             setIsUploadComplete(true);
@@ -119,16 +114,11 @@ export function useChunkedMediaUploader() {
         type: buffer.current.type,
       });
       totalSize.current += chunk.size;
-      console.log(
-        `Added chunk to buffer. Total size: ${totalSize.current} bytes, Buffer size: ${buffer.current.size} bytes`,
-      );
-
       if (
         buffer.current.size >= CHUNK_SIZE &&
         !isUploading.current &&
         !uploadComplete.current
       ) {
-        console.log("Buffer size reached threshold, triggering upload");
         void uploadNextChunk();
       }
     },
@@ -187,7 +177,6 @@ export function useChunkedMediaUploader() {
   );
 
   const stopRecording = useCallback(async () => {
-    console.log("Stopping recording");
     if (recordingTimeout.current) {
       clearTimeout(recordingTimeout.current);
     }

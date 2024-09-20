@@ -23,7 +23,7 @@ export const StimulusModal: React.FC<StimulusModalProps> = ({
         <img
           src={stimulus.url}
           alt={stimulus.altText ?? "Image"}
-          className="max-h-[80vh] w-auto max-w-full object-contain"
+          className="max-h-[80vh] w-full max-w-full object-contain"
         />
       );
     } else if (stimulus.type === "video") {
@@ -46,7 +46,7 @@ export const StimulusModal: React.FC<StimulusModalProps> = ({
   return (
     <Dialog>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="max-w-[90vw] border-none bg-transparent p-0 shadow-none md:h-fit md:w-fit">
+      <DialogContent className="max-w-[90vw] border-none bg-transparent p-0 shadow-none md:w-fit md:min-w-[80vw] md:px-10 md:pt-14">
         <div className="flex flex-col items-center justify-center">
           {renderContent()}
           {stimulus.title && (

@@ -76,9 +76,8 @@ const handleTtsAudioRequest = async (req: Request, res: Response) => {
   const requestLogger = createRequestLogger();
 
   try {
-    // TODO: Decide how to handle the provider, defaulting to eleven for now
-    const { text, ttsProvider = 'elevenlabs' } = req.body;
-
+    const { text, ttsProvider = 'google'} = req.body;
+    
     if (!text) {
       requestLogger.warn('Missing required text field');
       return res.status(400).json({ error: 'Text is required' });

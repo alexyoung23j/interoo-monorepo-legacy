@@ -112,7 +112,6 @@ export class TranscribeAndGenerateNextQuestionRequestBuilder {
 
   setThread(val: ConversationState): this {
     this.data.thread = val;
-    console.log("Setting thread", val);
     return this;
   }
 
@@ -156,7 +155,6 @@ export class TranscribeAndGenerateNextQuestionRequestBuilder {
 
   setBoostedKeywords(val: BoostedKeyword[]): this {
     this.data.boostedKeywords = val;
-    console.log("Setting boosted keywords", val);
     return this;
   }
 

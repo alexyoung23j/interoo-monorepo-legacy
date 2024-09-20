@@ -9,7 +9,11 @@ interface TtsAudioHook {
   audioDuration: number | null;
 }
 
-export function useTtsAudio(): TtsAudioHook {
+export function useTtsAudio({
+  useElevenLabs,
+}: {
+  useElevenLabs?: boolean;
+}): TtsAudioHook {
   const [isLoading, setIsLoading] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +29,10 @@ export function useTtsAudio(): TtsAudioHook {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ text }),
+          body: JSON.stringify({
+            text,
+            ttsProvider: useElevenLabs ? "elevenlabs" : "google",
+          }),
         },
       );
 
@@ -35,7 +42,7 @@ export function useTtsAudio(): TtsAudioHook {
 
       return await response.arrayBuffer();
     },
-    [],
+    [useElevenLabs],
   );
 
   const playAudio = useCallback(

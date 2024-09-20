@@ -70,6 +70,7 @@ model Study {
   studyBackground    String?            @db.Text
   videoEnabled       Boolean?           @default(false)
   maxResponses       Int?
+  ttsProvider        TtsProvider        @default(GOOGLE)
   status             StudyStatus
   shortID            String             @unique
   createdAt          DateTime           @default(now())
@@ -80,6 +81,11 @@ model Study {
   questions          Question[]
   interviews         InterviewSession[]
   boostedKeywords    BoostedKeyword[]
+}
+
+enum TtsProvider {
+  GOOGLE
+  ELEVENLABS
 }
 
 model BoostedKeyword {

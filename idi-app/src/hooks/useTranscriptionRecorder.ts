@@ -143,8 +143,6 @@ export function useTranscriptionRecorder({
         formData.append(key, String(value));
       });
 
-      console.log("Data being sent to server:", Object.fromEntries(formData));
-
       try {
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/audio-response`,
@@ -210,11 +208,6 @@ export function useTranscriptionRecorder({
           setInterviewProgress("completed");
         }
 
-        console.log(
-          "transcribeAndGenerateNextQuestionResponse",
-          transcribeAndGenerateNextQuestionResponse,
-        );
-
         setResponses([
           ...responses,
           {
@@ -233,8 +226,6 @@ export function useTranscriptionRecorder({
             updatedAt: new Date(currentEndTime),
           },
         ]);
-        console.log("followUpQuestions", followUpQuestions);
-        console.log("responses", responses);
 
         return { textToPlay: nextCurrentQuestion?.title };
       } catch (error) {

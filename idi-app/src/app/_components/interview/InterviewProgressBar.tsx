@@ -50,9 +50,6 @@ export function InterviewProgressBar({
         baseQuestionWeight;
       let followUpProgress = 0;
 
-      console.log("calculated current q: ", calculatedCurrentQuestion);
-      console.log("flup questions:", followUpQuestions);
-
       if ("parentQuestionId" in calculatedCurrentQuestion) {
         const followUpsForCurrentBase = followUpQuestions.filter(
           (fq) =>
