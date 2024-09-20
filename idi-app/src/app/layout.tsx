@@ -6,6 +6,7 @@ import { type Metadata } from "next";
 import { Provider } from "jotai";
 
 import { TRPCReactProvider } from "@/trpc/react";
+import { Toaster } from "@/components/ui/toaster";
 
 import { Nunito_Sans } from "next/font/google";
 import { ToastContainer } from "react-toastify";
@@ -39,6 +40,7 @@ export default function RootLayout({
           <Provider>
             {children}
             <ToastContainer />
+            <Toaster />
           </Provider>
         </TRPCReactProvider>
       </body>

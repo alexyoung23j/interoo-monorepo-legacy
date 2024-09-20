@@ -198,12 +198,13 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
   const handleDownloadWrapper = async (event: React.MouseEvent) => {
     event.stopPropagation();
     try {
-      await handleDownload(
+      await handleDownload({
         currentResponseMediaUrl,
         currentResponseContentType,
-        selectedResponseId,
-        `response_${selectedResponseId}`,
-      );
+        currentResponseId: selectedResponseId,
+        fileName: `${interviewSession.study.title}_Question_${selectedResponseQuestionId}_Response_${selectedResponseId}`,
+        isAudio: currentResponseContentType?.split("/")[0] === "audio",
+      });
     } catch (error) {
       console.error("Download failed:", error);
     }
