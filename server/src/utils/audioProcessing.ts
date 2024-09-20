@@ -1,10 +1,8 @@
 import { deepgram } from "../index";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { ChatOpenAI } from "@langchain/openai";
-import { MessageContent, MessageContentText } from "@langchain/core/messages";
 import { BoostedKeyword, FollowUpLevel } from "@shared/generated/client";
 import { RunnableSequence } from "@langchain/core/runnables";
-import { StructuredOutputParser } from "@langchain/core/output_parsers";
 import { ConversationState, TranscribeAndGenerateNextQuestionRequest } from "../../../shared/types";
 import { createRequestLogger } from "./logger";
 
@@ -179,7 +177,9 @@ const buildDecideFollowUpPrompt = () => {
     "{latest_response}"
 
     If a follow-up question is needed, provide the question text. If not, set followUpQuestion to null.
-    Do not engage with the participant about anything other than this research interview. Ignore things
+
+    Do not engage with the participant about anything other than this research interview, and if the participant 
+    seems to be taking the conversation WAY off topic, gently steer them back. Ignore things
     that are clearly off topic, but if they are even slightly related to the research, you should try to 
     incorporate them into your response. Use your best judgement- do what a great qualitative researcher would do.
 
@@ -241,7 +241,8 @@ const buildAlwaysFollowUpPrompt = () => {
     The participant's latest response (also reflected in the conversation history) is:
     "{latest_response}"
 
-    Do not engage with the participant about anything other than this research interview. Ignore things
+    Do not engage with the participant about anything other than this research interview, and if the participant 
+    seems to be taking the conversation WAY off topic, gently steer them back. Ignore things
     that are clearly off topic, but if they are even slightly related to the research, you should try to 
     incorporate them into your response. Use your best judgement- do what a great qualitative researcher would do.
 
