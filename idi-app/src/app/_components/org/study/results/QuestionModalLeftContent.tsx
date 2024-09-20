@@ -74,7 +74,7 @@ const QuestionModalLeftContent: React.FC<QuestionModalLeftContentProps> = ({
           onClick={() =>
             handleDownload(
               currentResponseMediaUrl,
-              currentResponseContentType,
+              currentResponseContentType?.split("/")[0] as "video" | "audio",
               currentResponseId,
               `response_${currentResponseId}`,
             )
