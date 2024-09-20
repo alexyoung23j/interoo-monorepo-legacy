@@ -57,10 +57,6 @@ const QuestionModalLeftContent: React.FC<QuestionModalLeftContentProps> = ({
   const currentResponseContentType =
     mediaUrlData.signedUrls[currentResponseId ?? ""]?.contentType;
 
-  const currentResponse = responses.find(
-    (response) => response.id === currentResponseId,
-  );
-
   return (
     <div className="flex h-fit w-full flex-col gap-4">
       <div className="flex w-full items-center justify-between gap-3">
@@ -72,12 +68,13 @@ const QuestionModalLeftContent: React.FC<QuestionModalLeftContentProps> = ({
           className="gap-2"
           size="sm"
           onClick={() =>
-            handleDownload(
+            handleDownload({
               currentResponseMediaUrl,
-              currentResponseContentType?.split("/")[0] as "video" | "audio",
+              isAudio: currentResponseContentType?.split("/")[0] === "audio",
+              currentResponseContentType,
               currentResponseId,
-              `response_${currentResponseId}`,
-            )
+              fileName: `${study.title}_Question_${question.questionOrder + 1}_Response_${currentResponseId}`,
+            })
           }
           disabled={isDownloading || !currentResponseMediaUrl}
         >
