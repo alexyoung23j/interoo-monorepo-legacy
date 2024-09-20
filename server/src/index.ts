@@ -73,15 +73,7 @@ app.use("/api/create-study-data-export", createStudyDataExportRoute);
 
 // Server Startup
 const startServer = () => {
-  app.listen(port as number, "0.0.0.0", () => {
-    console.log(`Server is running on http://localhost:${port}`);
-    
-    // Add this block to crash the server after 10 seconds
-    setTimeout(() => {
-      console.log("Intentionally crashing the server after 10 seconds...");
-      process.exit(1); // This will crash the server
-    }, 10000);
-  });
+  app.listen(port as number, "0.0.0.0", () => console.log(`Server is running on http://localhost:${port}`));
 };
 
 if (process.env.NODE_ENV === 'development') {
