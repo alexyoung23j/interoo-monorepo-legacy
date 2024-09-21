@@ -140,7 +140,10 @@ export const useMediaDownload = ({
       description: (
         <div className="flex flex-row items-center space-x-2">
           <ClipLoader size={16} color="#587785" />
-          <span className="text-theme-900">Converting file...</span>
+          <span className="text-theme-900">
+            Converting and downloading file. Please don&apos;t leave this page
+            😁
+          </span>
         </div>
       ),
     });
