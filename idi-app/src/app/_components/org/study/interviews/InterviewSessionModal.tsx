@@ -119,12 +119,11 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
       new Date(session.lastUpdatedTime!).getTime() -
       new Date(session.startTime!).getTime();
 
-    if (session.study.targetLength === null) {
-      // If targetLength is null, cap at 1 hour (3,600,000 milliseconds)
-      return Math.min(elapsedTime, 3600000);
-    } else {
+    if (session.study.targetLength !== null) {
       const maxTime = session.study.targetLength * 1.25 * 60 * 1000; // Convert minutes to milliseconds
       return Math.min(elapsedTime, maxTime);
+    } else {
+      return elapsedTime;
     }
   };
 
