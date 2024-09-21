@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { fetchResponses } from "@/server/interoo-backend";
 import { Response } from "@shared/generated/client";
@@ -11,13 +11,15 @@ interface UseInterviewSessionMediaUrlsProps {
 interface MediaUrlData {
   signedUrl: string;
   contentType: "video" | "audio";
+  expiresAt: number;
 }
 
-// New type for the fetchResponses result
 interface FetchResponsesResult {
   signedUrls: Record<string, MediaUrlData>;
   responses: Response[];
 }
+
+const CACHE_DURATION = 55 * 60 * 1000; // 55 minutes in milliseconds
 
 export const useInterviewSessionMediaUrls = ({
   studyId,
@@ -25,10 +27,19 @@ export const useInterviewSessionMediaUrls = ({
 }: UseInterviewSessionMediaUrlsProps) => {
   const [mediaUrls, setMediaUrls] = useState<Record<string, MediaUrlData>>({});
   const [loadingUrls, setLoadingUrls] = useState<Record<string, boolean>>({});
+  const cachedUrls = useRef<Record<string, MediaUrlData>>({});
 
   const fetchMediaUrl = useCallback(
     async (responseId: string, questionId: string) => {
-      if (mediaUrls[responseId] || loadingUrls[responseId]) {
+      const now = Date.now();
+      const cachedUrl = cachedUrls.current[responseId];
+
+      if (cachedUrl && cachedUrl.expiresAt > now) {
+        setMediaUrls((prev) => ({ ...prev, [responseId]: cachedUrl }));
+        return;
+      }
+
+      if (loadingUrls[responseId]) {
         return;
       }
 
@@ -41,17 +52,21 @@ export const useInterviewSessionMediaUrls = ({
         } = await supabase.auth.getSession();
         if (!session) throw new Error("No active session");
 
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        const result: FetchResponsesResult = await fetchResponses({
+        const result = (await fetchResponses({
           responseIds: [responseId],
           token: session.access_token,
-        });
+        })) as FetchResponsesResult;
 
         const mediaUrlData = result.signedUrls[responseId];
         if (mediaUrlData) {
+          const urlWithExpiration: MediaUrlData = {
+            ...mediaUrlData,
+            expiresAt: now + CACHE_DURATION,
+          };
+          cachedUrls.current[responseId] = urlWithExpiration;
           setMediaUrls((prev) => ({
             ...prev,
-            [responseId]: mediaUrlData,
+            [responseId]: urlWithExpiration,
           }));
         }
       } catch (error) {

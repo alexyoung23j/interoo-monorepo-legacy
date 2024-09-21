@@ -20,19 +20,22 @@ interface MediaUrlData {
   >;
 }
 
+const STALE_TIME = 55 * 60 * 1000; // 55 minutes in milliseconds
+
 export const useMediaSessionUrls = ({
   responses,
   study,
   questionId,
 }: UseMediaSessionUrlsProps): UseQueryResult<MediaUrlData, Error> => {
   return useQuery<MediaUrlData, Error>({
-    queryKey: ["responses", responses?.map((r) => r.id)],
+    queryKey: ["mediaUrls", study.id, questionId, responses?.map((r) => r.id)],
     queryFn: async () => {
       const supabase = createClient();
       const {
         data: { session },
       } = await supabase.auth.getSession();
       if (!session) throw new Error("No active session");
+
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const result = await fetchResponses({
         responseIds: responses?.map((r) => r.id) ?? [],
@@ -41,5 +44,6 @@ export const useMediaSessionUrls = ({
       return result as MediaUrlData;
     },
     enabled: !!responses?.length,
+    staleTime: STALE_TIME, // Consider data fresh for 55 minutes
   });
 };
