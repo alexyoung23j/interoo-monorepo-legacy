@@ -1,6 +1,7 @@
 import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
+import { withSentryConfig } from "@sentry/nextjs";
 
 // Get __dirname equivalent in ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -41,4 +42,19 @@ const config = {
   },
 };
 
-export default config;
+const sentryConfig = {
+  org: "interoo",
+  project: "interoo-app",
+  sentryUrl: "https://sentry.io/",
+  silent: !process.env.CI,
+  widenClientFileUpload: true,
+  reactComponentAnnotation: {
+    enabled: true,
+  },
+  tunnelRoute: "/monitoring",
+  hideSourceMaps: true,
+  disableLogger: true,
+  automaticVercelMonitors: true,
+};
+
+export default withSentryConfig(config, sentryConfig);
