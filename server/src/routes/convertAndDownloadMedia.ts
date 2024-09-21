@@ -43,7 +43,9 @@ const convertAndDownloadMedia = async (req: Request, res: Response) => {
 
     const ffmpegCommand = ffmpeg(inputStream)
       .inputFormat(fileFormat)
-      .outputOptions('-movflags frag_keyframe+empty_moov');
+      .outputOptions('-movflags frag_keyframe+empty_moov')
+      .outputOptions('-preset faster')  // Faster encoding preset
+      .outputOptions('-crf 23');  // Constant Rate Factor for balance between quality and file size
 
     if (targetFormat === 'mp3') {
       ffmpegCommand
@@ -53,6 +55,9 @@ const convertAndDownloadMedia = async (req: Request, res: Response) => {
       ffmpegCommand
         .videoCodec('libx264')
         .audioCodec('aac')
+        .videoBitrate('1000k')  // Adjust video bitrate as needed
+        .audioBitrate('128k')   // Adjust audio bitrate as needed
+        .outputOptions('-vf scale=1280:-1')  // Scale video to 720p, maintain aspect ratio
         .toFormat('mp4');
     }
 
