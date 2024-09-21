@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useAtomValue } from "jotai";
 import { currentResponseAndUploadUrlAtom } from "@/app/state/atoms";
 import { showWarningToast } from "@/app/utils/toastUtils";
@@ -29,7 +29,7 @@ export function useChunkedMediaUploader() {
   const recordingTimeout = useRef<NodeJS.Timeout | null>(null);
   const cancelUpload = useRef<boolean>(false);
   const [isUploadingFinalChunks, setIsUploadingFinalChunks] = useState(false);
-  const recordingStartTime = useRef<number | null>(null);
+  const uploadStartTime = useRef<number | null>(null);
 
   const uploadNextChunk = useCallback(
     async (isLastChunk = false) => {
@@ -134,7 +134,6 @@ export function useChunkedMediaUploader() {
       }
 
       try {
-        recordingStartTime.current = Date.now(); // Set the start time
         const mimeType = getSupportedMimeType(isVideoEnabled);
         uploadedSize.current = 0;
         totalSize.current = 0;
@@ -203,9 +202,10 @@ export function useChunkedMediaUploader() {
           }, 8000);
 
           mediaRecorder.current.onstop = async () => {
+            uploadStartTime.current = Date.now(); // Start timing here
             setIsRecording(false);
             console.log("Setting isUploadingFinalChunks to true");
-            setIsUploadingFinalChunks(true); // Set to true when final upload starts
+            setIsUploadingFinalChunks(true);
             console.log(
               "Recording stopped, waiting for any in-progress uploads to complete...",
             );
@@ -230,20 +230,18 @@ export function useChunkedMediaUploader() {
               console.log("Final upload complete");
 
               // Log timing to Sentry
-              if (recordingStartTime.current) {
+              if (uploadStartTime.current) {
                 const endTime = Date.now();
-                const duration = endTime - recordingStartTime.current;
-                Sentry.captureMessage("Recording and upload completed", {
+                const duration = endTime - uploadStartTime.current;
+                Sentry.captureMessage("Upload completed", {
                   level: "info",
                   extra: {
                     duration: duration,
-                    startTime: new Date(
-                      recordingStartTime.current,
-                    ).toISOString(),
+                    startTime: new Date(uploadStartTime.current).toISOString(),
                     endTime: new Date(endTime).toISOString(),
                   },
                 });
-                recordingStartTime.current = null; // Reset for next recording
+                uploadStartTime.current = null; // Reset for next upload
               }
             } catch (error) {
               console.log("Error during final upload:", error);
@@ -251,7 +249,7 @@ export function useChunkedMediaUploader() {
             } finally {
               setIsUploadComplete(true);
               console.log("Setting isUploadingFinalChunks to false");
-              setIsUploadingFinalChunks(false); // Set to false when final upload ends
+              setIsUploadingFinalChunks(false);
             }
 
             // Reset states
@@ -283,6 +281,6 @@ export function useChunkedMediaUploader() {
     error,
     uploadProgress,
     isUploadComplete,
-    isUploadingFinalChunks, // Expose this state
+    isUploadingFinalChunks,
   };
 }
