@@ -14,11 +14,21 @@ import { BasicLinkCopy } from "../../reusable/BasicLinkCopy";
 import { showErrorToast } from "@/app/utils/toastUtils";
 import { TRPCClientError } from "@trpc/client";
 import BasicTitleSection from "../../reusable/BasicTitleSection";
+import BasicCard from "../../reusable/BasicCard";
+import CardTable from "../../reusable/CardTable";
+import { useRouter } from "next/navigation";
+
+interface BillingInfo {
+  studyBillingInfo: { studyId: string; studyName: string; minutes: number }[];
+  totalMinutes: number;
+}
 
 export default function SettingsPageComponent({
   org,
+  billingInfo,
 }: {
   org: (Organization & { profiles: ProfileInOrganization[] }) | null;
+  billingInfo: BillingInfo;
 }) {
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
@@ -42,8 +52,23 @@ export default function SettingsPageComponent({
     }
   };
 
+  const pricePerMinute = 0.3;
+  const currentBill = billingInfo.totalMinutes * pricePerMinute;
+
+  const columns = [
+    { key: "studyName", header: "Study Name", width: "70%" },
+    {
+      key: "minutes",
+      header: "Minutes",
+      width: "30%",
+      className: "justify-end",
+    },
+  ];
+
+  const router = useRouter();
+
   return (
-    <TitleLayout title="Settings" className="flex flex-col gap-20">
+    <TitleLayout title="Settings" className="flex flex-col gap-20 pb-20">
       <BasicTitleSection
         title="Team"
         subtitle="Send an invite link to a team member to join your org."
@@ -74,12 +99,35 @@ export default function SettingsPageComponent({
         )}
       </BasicTitleSection>
 
-      <BasicTitleSection title="Panel Credits" subtitle="Coming soon.">
-        <div></div>
-      </BasicTitleSection>
-
-      <BasicTitleSection title="Billing" subtitle="Coming soon.">
-        <div></div>
+      <BasicTitleSection title="Billing">
+        <BasicCard className="mt-2 flex flex-col gap-4">
+          <div className="flex justify-between">
+            <span className="text-lg font-semibold text-theme-900">
+              Current Bill:
+            </span>
+            <span className="text-lg font-semibold text-theme-900">
+              ${currentBill.toFixed(2)}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-sm text-theme-600">
+              Price per response minute:
+            </span>
+            <span className="text-sm text-theme-600">
+              ${pricePerMinute.toFixed(2)}
+            </span>
+          </div>
+          <div className="mt-4">
+            <CardTable
+              data={billingInfo.studyBillingInfo}
+              columns={columns}
+              tableClassName="mt-4"
+              onRowClick={(row) => {
+                router.push(`/org/${org?.id}/study/${row.studyId}/interviews`);
+              }}
+            />
+          </div>
+        </BasicCard>
       </BasicTitleSection>
     </TitleLayout>
   );
