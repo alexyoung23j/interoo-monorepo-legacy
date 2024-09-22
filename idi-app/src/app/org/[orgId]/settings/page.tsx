@@ -8,5 +8,6 @@ export default async function SettingsPage({
   params: { orgId: string };
 }) {
   const org = await api.orgs.getOrgDetails({ orgId: params.orgId });
-  return <SettingsPageComponent org={org} />;
+  const billingInfo = await api.orgs.getBillingInfo({ orgId: params.orgId });
+  return <SettingsPageComponent org={org} billingInfo={billingInfo} />;
 }

@@ -7,7 +7,6 @@ import {
   Response,
   InterviewSession,
 } from "@shared/generated/client";
-import BasicTitleSection from "@/app/_components/reusable/BasicTitleSection";
 import SplitScreenLayout from "@/app/_components/layouts/org/SplitScreenLayout";
 import BasicCard from "@/app/_components/reusable/BasicCard";
 import BasicHeaderCard from "@/app/_components/reusable/BasicHeaderCard";

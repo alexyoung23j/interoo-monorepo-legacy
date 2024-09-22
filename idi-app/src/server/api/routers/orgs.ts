@@ -276,4 +276,55 @@ export const orgsRouter = createTRPCRouter({
         organization: invite.organization,
       };
     }),
+  getBillingInfo: privateProcedure
+    .input(z.object({ orgId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const currentDate = new Date();
+      const firstDayOfMonth = new Date(
+        Date.UTC(currentDate.getUTCFullYear(), currentDate.getUTCMonth(), 1),
+      );
+
+      const studies = await ctx.db.study.findMany({
+        where: { organizationId: input.orgId },
+        include: {
+          interviews: {
+            where: {
+              startTime: { gte: firstDayOfMonth },
+            },
+          },
+        },
+      });
+
+      const studyBillingInfo = studies.map((study) => {
+        const totalMinutes = study.interviews.reduce((acc, interview) => {
+          const currentUTCDate = new Date(Date.now());
+          const duration =
+            (interview.lastUpdatedTime ?? currentUTCDate).getTime() -
+            (interview.startTime ?? currentUTCDate).getTime();
+          const durationInMinutes = Math.max(0, duration / (1000 * 60));
+
+          if (study.targetLength) {
+            return acc + Math.min(study.targetLength * 1.25, durationInMinutes);
+          } else {
+            return acc + Math.min(60, durationInMinutes);
+          }
+        }, 0);
+
+        return {
+          studyId: study.id,
+          studyName: study.title,
+          minutes: Math.round(totalMinutes),
+        };
+      });
+
+      const totalMinutes = studyBillingInfo.reduce(
+        (acc, study) => acc + study.minutes,
+        0,
+      );
+
+      return {
+        studyBillingInfo,
+        totalMinutes,
+      };
+    }),
 });
