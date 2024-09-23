@@ -62,7 +62,7 @@ function SideContent() {
   const studyId = params.studyId as string | undefined;
 
   return (
-    <nav className="flex w-48 flex-col items-center bg-theme-50 px-4">
+    <nav className="flex min-w-48 flex-col items-center bg-theme-50 px-4">
       <div className="h-[1px] w-full bg-theme-200" />
       <div className="mt-7 flex w-full flex-col items-start gap-1">
         {INNER_SIDEBAR_ROUTES.map((section, index) => (

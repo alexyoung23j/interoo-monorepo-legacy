@@ -17,11 +17,6 @@ import { api } from "@/trpc/react";
 import { ClipLoader } from "react-spinners";
 
 interface InterviewPageComponentProps {
-  interviewData: {
-    interviewSessions: (InterviewSession & { study: Study })[];
-    completedInterviewsCount: number;
-    inProgressInterviewsCount: number;
-  };
   studyId: string;
   orgId: string;
 }
