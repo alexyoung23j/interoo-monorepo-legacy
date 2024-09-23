@@ -43,6 +43,7 @@ model Profile {
   updatedAt      DateTime                @default(now())
   supabaseUserID String
   organizations  ProfileInOrganization[]
+  Favorite       Favorite[]
 }
 
 model ProfileInOrganization {
@@ -81,6 +82,14 @@ model Study {
   questions          Question[]
   interviews         InterviewSession[]
   boostedKeywords    BoostedKeyword[]
+
+  // Analysis
+  themeAnalysisInProgress     Boolean     @default(false)
+  summaryInProgress           Boolean     @default(false)
+  dimensionAnalysisInProgress Boolean     @default(false)
+  Theme                       Theme[]
+  Dimension                   Dimension[]
+  Favorite                    Favorite[]
 }
 
 enum TtsProvider {
@@ -196,8 +205,17 @@ model Response {
   followUpQuestionId String?
   followUpQuestion   FollowUpQuestion? @relation(fields: [followUpQuestionId], references: [id])
 
+  // Json blob of transcript in our shape
+  transcriptionBody Json?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
+
+  ResponseThreadThemeAnalysisJob     ResponseThreadThemeAnalysisJob[]
+  ResponseThreadDimensionAnalysisJob ResponseThreadDimensionAnalysisJob[]
+
+  Quote     Quote[]
+  Favorites Favorite[]
 }
 
 model ResponseMedia {
@@ -246,6 +264,11 @@ model InterviewSession {
   responses         Response[]
   FollowUpQuestions FollowUpQuestion[]
   participant       InterviewParticipant?
+
+  // Analysis
+  InterviewSummaryJob InterviewSummaryJob[]
+  textSummary         String?               @db.Text
+  Favorites           Favorite[]
 }
 
 model InterviewParticipant {
@@ -265,4 +288,152 @@ enum InterviewSessionStatus {
   NOT_STARTED
   IN_PROGRESS
   COMPLETED
+}
+
+/// ANALYSIS 
+
+// Jobs
+enum JobStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
+model InterviewSummaryJob {
+  id                 String           @id @default(uuid())
+  interviewSessionId String
+  interviewSession   InterviewSession @relation(fields: [interviewSessionId], references: [id])
+  status             JobStatus        @default(PENDING)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+}
+
+model ResponseThreadThemeAnalysisJob {
+  id String @id @default(uuid())
+
+  // The response to the base question. Other responses in the thread are found by looking for follow up questions
+  baseResponse Response @relation(fields: [responseId], references: [id])
+  responseId   String
+
+  status    JobStatus @default(PENDING)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model ResponseThreadDimensionAnalysisJob {
+  id String @id @default(uuid())
+
+  // The response to the base question. Other responses in the thread are found by looking for follow up questions
+  baseResponse Response @relation(fields: [responseId], references: [id])
+  responseId   String
+
+  status    JobStatus @default(PENDING)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+// Analysis Objects
+
+model Quote {
+  id        String @id @default(uuid())
+  plainText String
+
+  response   Response @relation(fields: [responseId], references: [id])
+  responseId String
+
+  // Index of the first and last word in the transcript blob
+  wordStartIndex Int
+  wordEndIndex   Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  themeId   String?
+
+  // Through tables for association with themes and dimensions
+  QuotesOnTheme     QuotesOnTheme[]
+  QuotesOnDimension QuotesOnDimension[]
+
+  Favorites Favorite[]
+}
+
+model QuotesOnTheme {
+  id String @id @default(uuid())
+
+  quote   Quote  @relation(fields: [quoteId], references: [id])
+  quoteId String
+
+  theme   Theme  @relation(fields: [themeId], references: [id])
+  themeId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Theme {
+  id String @id @default(uuid())
+
+  study   Study  @relation(fields: [studyId], references: [id])
+  studyId String
+
+  name        String
+  description String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Through table for association with quotes
+  QuotesOnTheme QuotesOnTheme[]
+}
+
+model QuotesOnDimension {
+  id String @id @default(uuid())
+
+  quote   Quote  @relation(fields: [quoteId], references: [id])
+  quoteId String
+
+  dimension   Dimension @relation(fields: [dimensionId], references: [id])
+  dimensionId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Dimension {
+  id String @id @default(uuid())
+
+  study   Study  @relation(fields: [studyId], references: [id])
+  studyId String
+
+  name        String
+  description String?
+  values      String[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Through table for association with quotes
+  QuotesOnDimension QuotesOnDimension[]
+}
+
+model Favorite {
+  id String @id @default(uuid())
+
+  createdBy   Profile @relation(fields: [createdById], references: [id])
+  createdById String
+
+  study   Study  @relation(fields: [studyId], references: [id])
+  studyId String
+
+  quote   Quote?  @relation(fields: [quoteId], references: [id])
+  quoteId String?
+
+  response   Response? @relation(fields: [responseId], references: [id])
+  responseId String?
+
+  interviewSession   InterviewSession? @relation(fields: [interviewSessionId], references: [id])
+  interviewSessionId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
