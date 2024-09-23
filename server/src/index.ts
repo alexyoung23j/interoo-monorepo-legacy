@@ -7,10 +7,10 @@ import cors from "cors";
 import { Storage } from "@google-cloud/storage";
 import { createClient as createDeepgramClient } from "@deepgram/sdk";
 import { ElevenLabsClient } from "elevenlabs";
-
+import { GoogleAuth } from "google-auth-library";
 
 // Import routes
-import { audioResponseRoute } from "./routes/audioResponse";
+import { audioResponseRoute, triggerAnalysisJobsSetup } from "./routes/audioResponse";
 import { getTtsAudioRoute } from "./routes/getTtsAudio";
 import { TextToSpeechClient } from "@google-cloud/text-to-speech";
 import { getCurrentQuestionMetadataRoute } from "./routes/getCurrentQuestionMetadata";
@@ -21,7 +21,6 @@ import { createStudyDataExportRoute } from "./routes/createStudyDataExport";
 // Configuration and Setup
 const rootDir = path.resolve(__dirname, "../..");
 dotenv.config({ path: path.join(rootDir, ".env") });
-
 
 const app = express();
 const port = process.env.PORT || 8800;
@@ -53,7 +52,15 @@ export const elevenLabsClient = new ElevenLabsClient({
 export const bucketName = process.env.GCS_BUCKET_NAME || 'idi-assets';
 export const bucket = storage.bucket(bucketName);
 
-
+// Create and export a GoogleAuth instance for Google Cloud Functions
+export const googleCredentials = {
+  projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
+  credentials: {
+    client_email: process.env.GOOGLE_STORAGE_EMAIL,
+    private_key: (process.env.GOOGLE_STORAGE_PRIVATE_KEY as string).replace(/\\n/gm, "\n")
+  }
+};
+export const googleAuth = new GoogleAuth(googleCredentials);
 
 // Middleware to add API key to requests
 app.use((req, res, next) => {
@@ -62,6 +69,27 @@ app.use((req, res, next) => {
 });
 app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
 app.use(express.json());
+
+// Test endpoint for triggerAnalysisJobsSetup (remove after testing on prod)
+app.post("/api/test-trigger-analysis-jobs", express.json(), (req, res) => {
+  const { interviewSessionId } = req.body;
+  
+  if (!interviewSessionId) {
+    return res.status(400).json({ error: "interviewSessionId is required in the request body" });
+  }
+
+  // Call the function without awaiting its result
+  triggerAnalysisJobsSetup(interviewSessionId)
+    .then(() => {
+      console.log("Analysis jobs setup triggered for session:", interviewSessionId);
+    })
+    .catch((error) => {
+      console.error("Error triggering analysis jobs setup:", error);
+    });
+
+  // Respond immediately
+  res.json({ message: "Analysis jobs setup triggered" });
+});
 
 // Routes
 app.use("/api/audio-response", audioResponseRoute);
