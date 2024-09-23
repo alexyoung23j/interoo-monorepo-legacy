@@ -240,6 +240,7 @@ model InterviewSession {
   currentQuestionId String?
   testMode          Boolean                @default(false)
   elapsedTime       Int                    @default(0)
+  summary           String?                @db.Text
   study             Study                  @relation(fields: [studyId], references: [id])
   CurrentQuestion   Question?              @relation(fields: [currentQuestionId], references: [id])
   responses         Response[]

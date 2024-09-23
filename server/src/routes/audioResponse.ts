@@ -9,8 +9,45 @@ import { BoostedKeyword, InterviewSessionStatus } from "@shared/generated/client
 import { bucket, bucketName } from "../index";
 import axios from "axios";
 import path from "path";
+import { googleAuth } from "../index";
 
 const router = Router();
+
+export async function triggerAnalysisJobsSetup(interviewSessionId: string): Promise<void> {
+  const targetAudience = "https://us-central1-interoo-dev.cloudfunctions.net/analysis-jobs-setup";
+  const url = targetAudience;
+
+  try {
+    const client = await googleAuth.getIdTokenClient(targetAudience);
+    
+    // Trigger function and move on
+    client.request({
+      url,
+      method: 'POST',
+      data: { interviewSessionId },
+    }).then(response => {
+      console.log('Analysis jobs setup completed successfully:', response.data);
+    }).catch(error => {
+      console.error('Error running analysis jobs setup:', error);
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          console.error('Error response:', error.response.status, error.response.data);
+        } else if (error.request) {
+          console.error('No response received:', error.request);
+        } else {
+          console.error('Error setting up request:', error.message);
+        }
+      } else {
+        console.error('Unexpected error:', error);
+      }
+    });
+
+    console.log('Analysis jobs setup request initiated for session:', interviewSessionId);
+  } catch (error) {
+    console.error('Error getting ID token client:', error);
+    throw error;
+  }
+}
 
 const extractRequestData = (req: Request): Promise<{ audioBuffer: Buffer, requestData: TranscribeAndGenerateNextQuestionRequest }> => {
   return new Promise((resolve, reject) => {
@@ -176,6 +213,7 @@ const handleNoFollowUp = async (
         elapsedTime: elapsedTimeMs
       }
     });
+    triggerAnalysisJobsSetup(requestData.interviewSessionId);
   }
 
   return {
