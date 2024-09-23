@@ -98,9 +98,13 @@ export default function SettingsPageComponent({
           </Button>
         )}
       </BasicTitleSection>
+      <BasicTitleSection title="Members">
+        <div className="text-theme-600">Coming soon!</div>
+      </BasicTitleSection>
 
       <BasicTitleSection title="Billing">
-        <BasicCard className="mt-2 flex flex-col gap-4">
+        <div className="text-theme-600">Coming soon!</div>
+        {/* <BasicCard className="mt-2 flex flex-col gap-4">
           <div className="flex justify-between">
             <span className="text-lg font-semibold text-theme-900">
               Current Bill:
@@ -127,7 +131,7 @@ export default function SettingsPageComponent({
               }}
             />
           </div>
-        </BasicCard>
+        </BasicCard> */}
       </BasicTitleSection>
     </TitleLayout>
   );
