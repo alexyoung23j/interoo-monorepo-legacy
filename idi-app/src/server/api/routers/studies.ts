@@ -79,6 +79,7 @@ export const studiesRouter = createTRPCRouter({
         include: {
           interviews: {
             select: { status: true },
+            where: { testMode: false },
           },
           ...(includeQuestions
             ? {
@@ -93,6 +94,7 @@ export const studiesRouter = createTRPCRouter({
                               status: {
                                 not: InterviewSessionStatus.NOT_STARTED,
                               },
+                              testMode: false,
                             },
                             fastTranscribedText: {
                               not: "",
@@ -170,7 +172,11 @@ export const studiesRouter = createTRPCRouter({
       const { studyId } = input;
 
       const interviewSessions = await ctx.db.interviewSession.findMany({
-        where: { studyId, status: { not: InterviewSessionStatus.NOT_STARTED } },
+        where: {
+          studyId,
+          status: { not: InterviewSessionStatus.NOT_STARTED },
+          testMode: false,
+        },
         include: {
           participant: true,
           study: true,

@@ -107,6 +107,9 @@ const fetchStudyData = async (
           },
           participant: true,
         },
+        where: {
+          testMode: false,
+        },
       },
     },
   })) as StudyWithQuestionsAndInterviews | null;
@@ -677,7 +680,7 @@ const formatExcelWorkbook = (excelData: ExcelData) => {
         questionSheet,
         columns,
         data,
-        `This sheet contains responses (and responses to follow ups) for Question ${questionData.questionNumber}: "${questionData.questionTitle}". `,
+        `Responses and follow ups for Question ${questionData.questionNumber}: "${questionData.questionTitle}". `,
         true // isQuestionSheet
       );
     });
@@ -687,7 +690,6 @@ const formatExcelWorkbook = (excelData: ExcelData) => {
 
 const createStudyDataExport = async (req: Request, res: ExpressResponse) => {
   const { studyId } = req.params;
-  console.log("studyId", studyId);
   const origin = req.get("origin") || req.get("referer") || "Unknown";
 
   if (!studyId) {
