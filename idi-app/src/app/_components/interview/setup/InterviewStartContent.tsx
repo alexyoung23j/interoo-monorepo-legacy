@@ -158,7 +158,7 @@ const IntroContent: React.FC<{
 
   return (
     <div className="flex w-full max-w-[80%] flex-col gap-4 md:max-w-96">
-      <div className="text-lg md:text-2xl">Welcome to {study.title}</div>
+      <div className="text-lg md:text-2xl">{study.title}</div>
       <div className="text-sm text-neutral-500 md:text-base">
         {study.welcomeDescription}
       </div>

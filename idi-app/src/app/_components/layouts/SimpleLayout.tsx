@@ -1,5 +1,8 @@
+"use client";
+
 import React from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 interface SimpleLayoutProps {
   children: React.ReactNode;
@@ -10,11 +13,17 @@ const SimpleLayout: React.FC<SimpleLayoutProps> = ({
   children,
   showLogo = true,
 }) => {
+  const router = useRouter();
   return (
     <div className="h-screen w-screen bg-theme-50 p-4">
       <div className="relative flex h-full w-full flex-col items-center justify-center rounded-sm border border-theme-200 bg-theme-off-white">
         {showLogo && (
-          <div className="absolute left-4 top-4">
+          <div
+            className="absolute left-4 top-4 cursor-pointer"
+            onClick={() => {
+              router.push("/");
+            }}
+          >
             <Image
               src="/logo_v1.png"
               alt=""

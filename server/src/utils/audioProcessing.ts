@@ -3,7 +3,7 @@ import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { ChatOpenAI } from "@langchain/openai";
 import { BoostedKeyword, FollowUpLevel } from "@shared/generated/client";
 import { RunnableSequence } from "@langchain/core/runnables";
-import { ConversationState, TranscribeAndGenerateNextQuestionRequest } from "../../../shared/types";
+import { ConversationState, FullTranscriptBlob, TranscribeAndGenerateNextQuestionRequest } from "../../../shared/types";
 import { createRequestLogger } from "./logger";
 
 
@@ -25,7 +25,59 @@ function parseYamlLikeResponse(response: string): { shouldFollowUp?: boolean | s
   return result;
 }
 
-export const transcribeAudio = async (audioBuffer: Buffer, requestLogger: ReturnType<typeof createRequestLogger>, boosted_keywords: BoostedKeyword[]): Promise<string> => {
+function convertToFullTranscriptBlob(deepgramResponse: any): FullTranscriptBlob {
+  if (!deepgramResponse?.results?.channels?.[0]?.alternatives?.[0]) {
+    return {
+      metadata: {
+        model: 'Unknown',
+        duration: 0,
+      },
+      transcript: {
+        words: [],
+        sentences: [],
+      },
+    };
+  }
+
+  const channel = deepgramResponse.results.channels[0];
+  const alternative = channel.alternatives[0];
+
+  const modelInfoKey = Object.keys(deepgramResponse.metadata?.model_info || {})[0];
+  const modelName = modelInfoKey 
+    ? deepgramResponse.metadata.model_info[modelInfoKey]?.name 
+    : 'Unknown';
+
+  return {
+    metadata: {
+      model: modelName,
+      duration: deepgramResponse.metadata?.duration || 0,
+    },
+    transcript: {
+      words: (alternative.words || []).map((word: any) => ({
+        word: word.punctuated_word || word.word,
+        start_time: word.start,
+        end_time: word.end,
+        is_sentence_end: Boolean((word.punctuated_word || word.word).match(/[.!?]$/)),
+      })),
+      sentences: (alternative.paragraphs?.paragraphs || []).flatMap((paragraph: any) =>
+        (paragraph.sentences || []).map((sentence: any, sentenceIndex: number, sentences: any[]) => {
+          const startWordIndex = alternative.words.findIndex((w: any) => w.start >= sentence.start);
+          const endWordIndex = alternative.words.findIndex((w: any) => w.end > sentence.end) - 1;
+          return {
+            text: sentence.text,
+            start_time: sentence.start,
+            end_time: sentence.end,
+            start_word_index: startWordIndex >= 0 ? startWordIndex : 0,
+            end_word_index: endWordIndex >= 0 ? endWordIndex : alternative.words.length - 1,
+            is_paragraph_end: sentenceIndex === sentences.length - 1,
+          };
+        })
+      ),
+    },
+  };
+}
+
+export const transcribeAudio = async (audioBuffer: Buffer, requestLogger: ReturnType<typeof createRequestLogger>, boosted_keywords: BoostedKeyword[]): Promise<{transcribedText: string, fullTranscriptBlob: FullTranscriptBlob}> => {
   try {
     requestLogger.info('Starting audio transcription');
     
@@ -40,8 +92,29 @@ export const transcribeAudio = async (audioBuffer: Buffer, requestLogger: Return
     });
 
     
+    let fullTranscriptBlob = {
+      metadata: {
+        model: 'Unknown',
+        duration: 0,
+      },
+      transcript: {
+        words: [],
+        sentences: [],
+      },
+    } as FullTranscriptBlob;
+    
+    try {
+      fullTranscriptBlob = convertToFullTranscriptBlob(result);
+    } catch (error) {
+      requestLogger.error('Error converting to full transcript blob', { error: String(error) });
+    }
+    const transcribedText = result?.results.channels[0].alternatives[0].transcript ?? '';
+    
     requestLogger.info('Audio transcription completed');
-    return result?.results.channels[0].alternatives[0].transcript ?? '';
+    return {
+      transcribedText,
+      fullTranscriptBlob,
+    };
   } catch (error) {
     requestLogger.error('Error transcribing audio', { error: String(error) });
     throw new Error('Failed to transcribe audio');
@@ -260,9 +333,9 @@ export const getFollowUpLevelRange = (level: string): [number, number] => {
     case FollowUpLevel.AUTOMATIC:
       return [2, 4];
     case FollowUpLevel.SURFACE:
-      return [1, 2];
+      return [1, 1];
     case FollowUpLevel.LIGHT:
-      return [2, 3];
+      return [1, 2];
     case FollowUpLevel.DEEP:
       return [3, 5];
     default:

@@ -3,7 +3,7 @@ import { Request, Response } from "express";
 import Busboy from 'busboy';
 import { transcribeAudio, decideFollowUpPromptIfNecessary, getFollowUpLevelRange } from "../utils/audioProcessing";
 import { prisma } from "..";
-import { TranscribeAndGenerateNextQuestionRequestBuilder, ConversationState, TranscribeAndGenerateNextQuestionResponse, TranscribeAndGenerateNextQuestionRequest } from "../../../shared/types";
+import { TranscribeAndGenerateNextQuestionRequestBuilder, ConversationState, TranscribeAndGenerateNextQuestionResponse, TranscribeAndGenerateNextQuestionRequest, FullTranscriptBlob } from "../../../shared/types";
 import { createRequestLogger } from '../utils/logger';
 import { BoostedKeyword, InterviewSessionStatus } from "@shared/generated/client";
 import { bucket, bucketName } from "../index";
@@ -148,7 +148,7 @@ const calculateElapsedTimeMs = (requestData: TranscribeAndGenerateNextQuestionRe
 
 const handleNoTranscription = async (
   requestData: TranscribeAndGenerateNextQuestionRequest, 
-  transcribedText: string
+  transcribedText: string,
 ): Promise<TranscribeAndGenerateNextQuestionResponse> => {
   const basePath = path.join(requestData.organizationId, requestData.studyId, requestData.currentBaseQuestionId, requestData.currentResponseId);
   const fileName = 'recording';
@@ -191,10 +191,11 @@ const handleNoTranscription = async (
 const handleNoFollowUp = async (
   requestData: TranscribeAndGenerateNextQuestionRequest, 
   transcribedText: string,
+  fullTranscriptBlob: FullTranscriptBlob,
   elapsedTimeMs: number
 ): Promise<TranscribeAndGenerateNextQuestionResponse> => {
   // Update the response with the transcription
-  const updatedResponse = await updateResponseWithTranscription(requestData.currentResponseId, transcribedText, false, requestData);
+  const updatedResponse = await updateResponseWithTranscription(requestData.currentResponseId, transcribedText, false, fullTranscriptBlob, requestData);
 
   if (requestData.nextBaseQuestionId) {
     await prisma.interviewSession.update({
@@ -230,6 +231,7 @@ const handleNoFollowUp = async (
 const handlePotentialFollowUp = async (
   requestData: TranscribeAndGenerateNextQuestionRequest, 
   transcribedText: string,
+  fullTranscriptBlob: FullTranscriptBlob,
   requestLogger: ReturnType<typeof createRequestLogger>,
   minFollowUps: number,
   maxFollowUps: number,
@@ -239,7 +241,8 @@ const handlePotentialFollowUp = async (
   const { shouldFollowUp, followUpQuestion, isJunkResponse } = await decideFollowUpPromptIfNecessary(requestData, transcribedText, requestLogger, minFollowUps, maxFollowUps, wouldBeNextFollowUpNumber);
 
   // Update the response with the transcription
-  await updateResponseWithTranscription(requestData.currentResponseId, transcribedText, isJunkResponse, requestData);
+  await updateResponseWithTranscription(requestData.currentResponseId, transcribedText, isJunkResponse, fullTranscriptBlob, requestData);
+
 
   if (shouldFollowUp && followUpQuestion) {
     const updatedSession = await prisma.interviewSession.update({
@@ -274,7 +277,7 @@ const handlePotentialFollowUp = async (
       questionId: requestData.currentBaseQuestionId
     };
   } else {
-    return handleNoFollowUp(requestData, transcribedText, elapsedTimeMs);
+    return handleNoFollowUp(requestData, transcribedText, fullTranscriptBlob, elapsedTimeMs);
   }
 };
 
@@ -298,7 +301,7 @@ const shouldFollowUpBasedOnTime = (requestData: TranscribeAndGenerateNextQuestio
   return true;
 }
 
-const updateResponseWithTranscription = async (responseId: string, transcribedText: string, isJunkResponse: boolean, requestData: TranscribeAndGenerateNextQuestionRequest) => {
+const updateResponseWithTranscription = async (responseId: string, transcribedText: string, isJunkResponse: boolean, fullTranscriptBlob: FullTranscriptBlob, requestData: TranscribeAndGenerateNextQuestionRequest) => {
   console.log('Updating response with transcription:', {
     responseId,
     createdAt: new Date(requestData.currentResponseStartTime).toISOString(),
@@ -311,7 +314,8 @@ const updateResponseWithTranscription = async (responseId: string, transcribedTe
       fastTranscribedText: transcribedText, 
       junkResponse: isJunkResponse, 
       createdAt: new Date(requestData.currentResponseStartTime),
-      updatedAt: new Date(requestData.currentResponseEndTime)
+      updatedAt: new Date(requestData.currentResponseEndTime),
+      transcriptionBody: fullTranscriptBlob
     }
   });
 };
@@ -321,7 +325,7 @@ const processAudioResponse = async (
   requestData: TranscribeAndGenerateNextQuestionRequest, 
   requestLogger: ReturnType<typeof createRequestLogger>
 ): Promise<TranscribeAndGenerateNextQuestionResponse> => {
-  const transcribedText = await transcribeAudio(audioBuffer, requestLogger, requestData.boostedKeywords);
+  const { transcribedText, fullTranscriptBlob } = await transcribeAudio(audioBuffer, requestLogger, requestData.boostedKeywords);
 
   if (transcribedText.length < 2) {
     // Handle no transcription, likely bad audio
@@ -340,9 +344,9 @@ const processAudioResponse = async (
   if (!requestData.shouldFollowUp || 
     wouldBeNextFollowUpNumber > maxFollowUps || 
       !shouldFollowUpBasedOnTime(requestData, elapsedTimeMs)) {
-    return handleNoFollowUp(requestData, transcribedText, elapsedTimeMs);
+    return handleNoFollowUp(requestData, transcribedText, fullTranscriptBlob, elapsedTimeMs);
   } else {
-    return handlePotentialFollowUp(requestData, transcribedText, requestLogger, minFollowUps, maxFollowUps, wouldBeNextFollowUpNumber, elapsedTimeMs);
+    return handlePotentialFollowUp(requestData, transcribedText, fullTranscriptBlob, requestLogger, minFollowUps, maxFollowUps, wouldBeNextFollowUpNumber, elapsedTimeMs);
   }
 };
 

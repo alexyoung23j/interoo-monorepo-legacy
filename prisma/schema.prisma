@@ -201,6 +201,9 @@ model Response {
 
   junkResponse Boolean @default(false)
 
+  // Json blob of transcript in our shape
+  transcriptionBody Json?
+
   // if follow-up response
   followUpQuestionId String?
   followUpQuestion   FollowUpQuestion? @relation(fields: [followUpQuestionId], references: [id])
