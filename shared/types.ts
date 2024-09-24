@@ -236,7 +236,7 @@ export interface CurrentQuestionMetadataRequest {
 }
 
 
-export interface FullTranscriptBlob {
+export type FullTranscriptBlob = {
   metadata: {
     model: string;
     duration: number;

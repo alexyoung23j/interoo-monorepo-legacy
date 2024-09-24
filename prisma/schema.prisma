@@ -378,6 +378,8 @@ model Theme {
   name        String
   description String?
 
+  tagColor String
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -407,6 +409,8 @@ model Attribute {
   name        String
   description String?
   values      String[]
+
+  tagColor String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
