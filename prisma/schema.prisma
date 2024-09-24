@@ -208,9 +208,6 @@ model Response {
   followUpQuestionId String?
   followUpQuestion   FollowUpQuestion? @relation(fields: [followUpQuestionId], references: [id])
 
-  // Json blob of transcript in our shape
-  transcriptionBody Json?
-
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
 
