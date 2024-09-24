@@ -234,3 +234,25 @@ export interface CurrentQuestionMetadataRequest {
   fileExtension: string;
   contentType: string;
 }
+export type FullTranscriptBlob = {
+  metadata: {
+    model: string;
+    duration: number;
+  };
+  transcript: {
+    words: Array<{
+      word: string;
+      start_time: number;
+      end_time: number;
+      is_sentence_end: boolean;
+    }>;
+    sentences: Array<{
+      text: string;
+      start_time: number;
+      end_time: number;
+      start_word_index: number;
+      end_word_index: number;
+      is_paragraph_end: boolean;
+    }>;
+  };
+}
