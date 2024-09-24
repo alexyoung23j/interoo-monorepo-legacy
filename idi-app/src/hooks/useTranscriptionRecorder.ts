@@ -224,6 +224,7 @@ export function useTranscriptionRecorder({
             multipleChoiceOptionId: null,
             createdAt: new Date(recordingStartTime ?? Date.now()),
             updatedAt: new Date(currentEndTime),
+            transcriptionBody: {},
           },
         ]);
 
