@@ -86,10 +86,10 @@ model Study {
   // Analysis
   themeAnalysisInProgress     Boolean     @default(false)
   summaryInProgress           Boolean     @default(false)
-  dimensionAnalysisInProgress Boolean     @default(false)
-  Theme                       Theme[]
-  Dimension                   Dimension[]
-  Favorite                    Favorite[]
+  attributeAnalysisInProgress Boolean     @default(false)
+  Themes                      Theme[]
+  Attributes                  Attribute[]
+  Favorites                   Favorite[]
 }
 
 enum TtsProvider {
@@ -212,7 +212,7 @@ model Response {
   updatedAt DateTime @default(now())
 
   ResponseThreadThemeAnalysisJob     ResponseThreadThemeAnalysisJob[]
-  ResponseThreadDimensionAnalysisJob ResponseThreadDimensionAnalysisJob[]
+  ResponseThreadAttributeAnalysisJob ResponseThreadAttributeAnalysisJob[]
 
   Quote     Quote[]
   Favorites Favorite[]
@@ -294,7 +294,7 @@ enum InterviewSessionStatus {
 
 // Jobs
 enum JobStatus {
-  PENDING
+  NOT_STARTED
   IN_PROGRESS
   COMPLETED
   FAILED
@@ -304,7 +304,7 @@ model InterviewSummaryJob {
   id                 String           @id @default(uuid())
   interviewSessionId String
   interviewSession   InterviewSession @relation(fields: [interviewSessionId], references: [id])
-  status             JobStatus        @default(PENDING)
+  status             JobStatus        @default(NOT_STARTED)
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
 }
@@ -316,19 +316,19 @@ model ResponseThreadThemeAnalysisJob {
   baseResponse Response @relation(fields: [responseId], references: [id])
   responseId   String
 
-  status    JobStatus @default(PENDING)
+  status    JobStatus @default(NOT_STARTED)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 }
 
-model ResponseThreadDimensionAnalysisJob {
+model ResponseThreadAttributeAnalysisJob {
   id String @id @default(uuid())
 
   // The response to the base question. Other responses in the thread are found by looking for follow up questions
   baseResponse Response @relation(fields: [responseId], references: [id])
   responseId   String
 
-  status    JobStatus @default(PENDING)
+  status    JobStatus @default(NOT_STARTED)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 }
@@ -348,11 +348,10 @@ model Quote {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  themeId   String?
 
-  // Through tables for association with themes and dimensions
+  // Through tables for association with themes and attributes
   QuotesOnTheme     QuotesOnTheme[]
-  QuotesOnDimension QuotesOnDimension[]
+  QuotesOnAttribute QuotesOnAttribute[]
 
   Favorites Favorite[]
 }
@@ -386,20 +385,20 @@ model Theme {
   QuotesOnTheme QuotesOnTheme[]
 }
 
-model QuotesOnDimension {
+model QuotesOnAttribute {
   id String @id @default(uuid())
 
   quote   Quote  @relation(fields: [quoteId], references: [id])
   quoteId String
 
-  dimension   Dimension @relation(fields: [dimensionId], references: [id])
-  dimensionId String
+  attribute   Attribute @relation(fields: [attributeId], references: [id])
+  attributeId String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-model Dimension {
+model Attribute {
   id String @id @default(uuid())
 
   study   Study  @relation(fields: [studyId], references: [id])
@@ -413,7 +412,7 @@ model Dimension {
   updatedAt DateTime @updatedAt
 
   // Through table for association with quotes
-  QuotesOnDimension QuotesOnDimension[]
+  QuotesOnAttribute QuotesOnAttribute[]
 }
 
 model Favorite {
