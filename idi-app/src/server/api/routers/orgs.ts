@@ -88,6 +88,7 @@ export const orgsRouter = createTRPCRouter({
               interviews: {
                 where: {
                   status: InterviewSessionStatus.COMPLETED,
+                  testMode: false,
                 },
               },
             },
