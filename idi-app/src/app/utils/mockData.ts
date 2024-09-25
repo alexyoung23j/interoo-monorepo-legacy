@@ -411,7 +411,7 @@ export const mockHighlights = [
     startWordIndex: 0,
     endWordIndex: 20,
     color: "#D5E0DA",
-    isActive: true,
+    isActive: false,
   },
   {
     id: "2",
