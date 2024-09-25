@@ -84,12 +84,9 @@ model Study {
   boostedKeywords    BoostedKeyword[]
 
   // Analysis
-  themeAnalysisInProgress     Boolean     @default(false)
-  summaryInProgress           Boolean     @default(false)
-  attributeAnalysisInProgress Boolean     @default(false)
-  Themes                      Theme[]
-  Attributes                  Attribute[]
-  Favorites                   Favorite[]
+  Themes     Theme[]
+  Attributes Attribute[]
+  Favorites  Favorite[]
 }
 
 enum TtsProvider {
