@@ -9,13 +9,15 @@ const auth = new GoogleAuth();
 const targetAudience = 'https://us-central1-interoo-dev.cloudfunctions.net/summarize-interview';
 const url = targetAudience;
 
-functions.http('summarizeInterviewAndSetUpAnalysis', async (req, res) => {
+functions.http('setUpAnalysis', async (req, res) => {
   const { interviewSessionId } = req.body;
 
   if (!interviewSessionId) {
     res.status(400).send('Missing interviewSessionId in request body');
     return;
   }
+
+  const test = 'test';
 
   try {
     // Stub: Setup Supabase tables for future jobs
