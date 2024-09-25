@@ -211,7 +211,7 @@ export default function QuoteTextField({
   return (
     <div
       ref={containerRef}
-      className={`${className} select-none whitespace-pre-wrap ${draggedHandle ? "cursor-col-resize" : ""}`}
+      className={`${className} ${editMode ? "select-none" : ""} whitespace-pre-wrap ${draggedHandle ? "cursor-col-resize" : ""}`}
       onMouseUp={handleMouseUp}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseUp}

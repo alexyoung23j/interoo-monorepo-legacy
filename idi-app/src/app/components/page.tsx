@@ -6,6 +6,10 @@ import QuoteTextField, {
   type HighlightReference,
 } from "../_components/reusable/QuoteTextField";
 import { mockHighlights, mockTranscriptBlob } from "../utils/mockData";
+import ValueTag from "../_components/reusable/ValueTag";
+import BasicTag from "../_components/reusable/BasicTag";
+import { DotsThree, Pencil, Trash } from "@phosphor-icons/react";
+import BasicPopover from "../_components/reusable/BasicPopover";
 
 const ComponentsPage: React.FC = () => {
   const [highlights, setHighlights] =
@@ -85,6 +89,23 @@ const ComponentsPage: React.FC = () => {
           />
         </div>
       </div>
+      <BasicTag className="flex gap-2">
+        My Attribute
+        <ValueTag value="Hello" />
+        <BasicPopover
+          trigger={<DotsThree />}
+          options={[
+            { text: "Edit this attribute", icon: <Pencil /> },
+            { text: "", isDivider: true },
+
+            {
+              text: "Delete this attribute",
+              icon: <Trash />,
+              color: "text-red-500",
+            },
+          ]}
+        />
+      </BasicTag>
     </SimpleLayout>
   );
 };
