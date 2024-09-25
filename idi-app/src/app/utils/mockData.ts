@@ -1,225 +1,437 @@
-import { FollowUpLevel, QuestionType } from "@shared/generated/client";
+import { FullTranscriptBlob } from "@shared/types";
 
-type MockQuestion = {
-  id: string;
-  title: string;
-  context: string;
-  shouldFollowUp: boolean;
-  followUpLevel: FollowUpLevel;
-  body: string;
-  studyId: string;
-  questionType: QuestionType;
-  questionOrder: number;
-  hasStimulus: boolean;
-  imageStimuli?: {
-    id: string;
-    bucketUrl: string;
-    title: string;
-    altText: string;
-  }[];
-  videoStimuli?: { id: string; url: string; type: string; title: string }[];
-  websiteStimuli?: { id: string; websiteUrl: string; title: string }[];
-  allowMultipleSelections?: boolean;
-  multipleChoiceOptions?: {
-    id: string;
-    optionText: string;
-    optionOrder: number;
-  }[];
-  lowRange?: number;
-  highRange?: number;
+export const mockTranscriptBlob: FullTranscriptBlob = {
+  metadata: {
+    model: "mock-model",
+    duration: 300,
+  },
+  transcript: {
+    words: [
+      {
+        word: "Artificial",
+        start_time: 0,
+        end_time: 0.5,
+        is_sentence_end: false,
+      },
+      {
+        word: "intelligence",
+        start_time: 0.5,
+        end_time: 1.0,
+        is_sentence_end: false,
+      },
+      { word: "has", start_time: 1.0, end_time: 1.2, is_sentence_end: false },
+      {
+        word: "revolutionized",
+        start_time: 1.2,
+        end_time: 2.0,
+        is_sentence_end: false,
+      },
+      {
+        word: "various",
+        start_time: 2.0,
+        end_time: 2.5,
+        is_sentence_end: false,
+      },
+      {
+        word: "industries.",
+        start_time: 2.5,
+        end_time: 3.0,
+        is_sentence_end: true,
+      },
+      { word: "From", start_time: 3.5, end_time: 3.7, is_sentence_end: false },
+      {
+        word: "healthcare",
+        start_time: 3.7,
+        end_time: 4.2,
+        is_sentence_end: false,
+      },
+      { word: "to", start_time: 4.2, end_time: 4.3, is_sentence_end: false },
+      {
+        word: "finance,",
+        start_time: 4.3,
+        end_time: 4.8,
+        is_sentence_end: false,
+      },
+      { word: "AI", start_time: 4.8, end_time: 5.0, is_sentence_end: false },
+      { word: "is", start_time: 5.0, end_time: 5.2, is_sentence_end: false },
+      {
+        word: "making",
+        start_time: 5.2,
+        end_time: 5.5,
+        is_sentence_end: false,
+      },
+      {
+        word: "significant",
+        start_time: 5.5,
+        end_time: 6.0,
+        is_sentence_end: false,
+      },
+      {
+        word: "strides.",
+        start_time: 6.0,
+        end_time: 6.5,
+        is_sentence_end: true,
+      },
+      { word: "In", start_time: 7.0, end_time: 7.2, is_sentence_end: false },
+      {
+        word: "healthcare,",
+        start_time: 7.2,
+        end_time: 7.8,
+        is_sentence_end: false,
+      },
+      { word: "AI", start_time: 7.8, end_time: 8.0, is_sentence_end: false },
+      {
+        word: "assists",
+        start_time: 8.0,
+        end_time: 8.5,
+        is_sentence_end: false,
+      },
+      { word: "in", start_time: 8.5, end_time: 8.7, is_sentence_end: false },
+      {
+        word: "diagnosis",
+        start_time: 8.7,
+        end_time: 9.2,
+        is_sentence_end: false,
+      },
+      { word: "and", start_time: 9.2, end_time: 9.4, is_sentence_end: false },
+      {
+        word: "treatment",
+        start_time: 9.4,
+        end_time: 9.9,
+        is_sentence_end: false,
+      },
+      {
+        word: "planning.",
+        start_time: 9.9,
+        end_time: 10.5,
+        is_sentence_end: true,
+      },
+      {
+        word: "Machine",
+        start_time: 11.0,
+        end_time: 11.5,
+        is_sentence_end: false,
+      },
+      {
+        word: "learning",
+        start_time: 11.5,
+        end_time: 12.0,
+        is_sentence_end: false,
+      },
+      {
+        word: "algorithms",
+        start_time: 12.0,
+        end_time: 12.7,
+        is_sentence_end: false,
+      },
+      { word: "can", start_time: 12.7, end_time: 12.9, is_sentence_end: false },
+      {
+        word: "analyze",
+        start_time: 12.9,
+        end_time: 13.4,
+        is_sentence_end: false,
+      },
+      {
+        word: "medical",
+        start_time: 13.4,
+        end_time: 13.9,
+        is_sentence_end: false,
+      },
+      {
+        word: "images",
+        start_time: 13.9,
+        end_time: 14.4,
+        is_sentence_end: false,
+      },
+      {
+        word: "with",
+        start_time: 14.4,
+        end_time: 14.6,
+        is_sentence_end: false,
+      },
+      {
+        word: "high",
+        start_time: 14.6,
+        end_time: 14.9,
+        is_sentence_end: false,
+      },
+      {
+        word: "accuracy.",
+        start_time: 14.9,
+        end_time: 15.5,
+        is_sentence_end: true,
+      },
+      { word: "In", start_time: 16.0, end_time: 16.2, is_sentence_end: false },
+      {
+        word: "finance,",
+        start_time: 16.2,
+        end_time: 16.7,
+        is_sentence_end: false,
+      },
+      { word: "AI", start_time: 16.7, end_time: 16.9, is_sentence_end: false },
+      {
+        word: "powers",
+        start_time: 16.9,
+        end_time: 17.4,
+        is_sentence_end: false,
+      },
+      {
+        word: "algorithmic",
+        start_time: 17.4,
+        end_time: 18.1,
+        is_sentence_end: false,
+      },
+      {
+        word: "trading",
+        start_time: 18.1,
+        end_time: 18.6,
+        is_sentence_end: false,
+      },
+      { word: "and", start_time: 18.6, end_time: 18.8, is_sentence_end: false },
+      {
+        word: "fraud",
+        start_time: 18.8,
+        end_time: 19.3,
+        is_sentence_end: false,
+      },
+      {
+        word: "detection.",
+        start_time: 19.3,
+        end_time: 20.0,
+        is_sentence_end: true,
+      },
+      {
+        word: "These",
+        start_time: 20.5,
+        end_time: 20.8,
+        is_sentence_end: false,
+      },
+      {
+        word: "applications",
+        start_time: 20.8,
+        end_time: 21.5,
+        is_sentence_end: false,
+      },
+      {
+        word: "have",
+        start_time: 21.5,
+        end_time: 21.7,
+        is_sentence_end: false,
+      },
+      {
+        word: "significantly",
+        start_time: 21.7,
+        end_time: 22.4,
+        is_sentence_end: false,
+      },
+      {
+        word: "improved",
+        start_time: 22.4,
+        end_time: 22.9,
+        is_sentence_end: false,
+      },
+      {
+        word: "efficiency",
+        start_time: 22.9,
+        end_time: 23.5,
+        is_sentence_end: false,
+      },
+      { word: "and", start_time: 23.5, end_time: 23.7, is_sentence_end: false },
+      {
+        word: "accuracy",
+        start_time: 23.7,
+        end_time: 24.2,
+        is_sentence_end: false,
+      },
+      { word: "in", start_time: 24.2, end_time: 24.4, is_sentence_end: false },
+      {
+        word: "financial",
+        start_time: 24.4,
+        end_time: 24.9,
+        is_sentence_end: false,
+      },
+      {
+        word: "operations.",
+        start_time: 24.9,
+        end_time: 25.5,
+        is_sentence_end: true,
+      },
+      {
+        word: "However,",
+        start_time: 26.0,
+        end_time: 26.5,
+        is_sentence_end: false,
+      },
+      { word: "the", start_time: 26.5, end_time: 26.7, is_sentence_end: false },
+      {
+        word: "rise",
+        start_time: 26.7,
+        end_time: 27.0,
+        is_sentence_end: false,
+      },
+      { word: "of", start_time: 27.0, end_time: 27.2, is_sentence_end: false },
+      { word: "AI", start_time: 27.2, end_time: 27.4, is_sentence_end: false },
+      {
+        word: "also",
+        start_time: 27.4,
+        end_time: 27.7,
+        is_sentence_end: false,
+      },
+      {
+        word: "brings",
+        start_time: 27.7,
+        end_time: 28.0,
+        is_sentence_end: false,
+      },
+      {
+        word: "challenges.",
+        start_time: 28.0,
+        end_time: 28.5,
+        is_sentence_end: true,
+      },
+      {
+        word: "Ethical",
+        start_time: 29.0,
+        end_time: 29.5,
+        is_sentence_end: false,
+      },
+      {
+        word: "concerns",
+        start_time: 29.5,
+        end_time: 30.0,
+        is_sentence_end: false,
+      },
+      { word: "and", start_time: 30.0, end_time: 30.2, is_sentence_end: false },
+      {
+        word: "potential",
+        start_time: 30.2,
+        end_time: 30.7,
+        is_sentence_end: false,
+      },
+      { word: "job", start_time: 30.7, end_time: 31.0, is_sentence_end: false },
+      {
+        word: "displacement",
+        start_time: 31.0,
+        end_time: 31.7,
+        is_sentence_end: false,
+      },
+      { word: "are", start_time: 31.7, end_time: 31.9, is_sentence_end: false },
+      {
+        word: "major",
+        start_time: 31.9,
+        end_time: 32.3,
+        is_sentence_end: false,
+      },
+      {
+        word: "issues",
+        start_time: 32.3,
+        end_time: 32.7,
+        is_sentence_end: false,
+      },
+      { word: "to", start_time: 32.7, end_time: 32.9, is_sentence_end: false },
+      {
+        word: "address.",
+        start_time: 32.9,
+        end_time: 33.5,
+        is_sentence_end: true,
+      },
+    ],
+    sentences: [
+      {
+        text: "Artificial intelligence has revolutionized various industries.",
+        start_time: 0,
+        end_time: 3.0,
+        start_word_index: 0,
+        end_word_index: 5,
+        is_paragraph_end: false,
+      },
+      {
+        text: "From healthcare to finance, AI is making significant strides.",
+        start_time: 3.5,
+        end_time: 6.5,
+        start_word_index: 6,
+        end_word_index: 14,
+        is_paragraph_end: false,
+      },
+      {
+        text: "In healthcare, AI assists in diagnosis and treatment planning.",
+        start_time: 7.0,
+        end_time: 10.5,
+        start_word_index: 15,
+        end_word_index: 23,
+        is_paragraph_end: true,
+      },
+      {
+        text: "Machine learning algorithms can analyze medical images with high accuracy.",
+        start_time: 11.0,
+        end_time: 15.5,
+        start_word_index: 24,
+        end_word_index: 33,
+        is_paragraph_end: false,
+      },
+      {
+        text: "In finance, AI powers algorithmic trading and fraud detection.",
+        start_time: 16.0,
+        end_time: 20.0,
+        start_word_index: 34,
+        end_word_index: 42,
+        is_paragraph_end: false,
+      },
+      {
+        text: "These applications have significantly improved efficiency and accuracy in financial operations.",
+        start_time: 20.5,
+        end_time: 25.5,
+        start_word_index: 43,
+        end_word_index: 54,
+        is_paragraph_end: false,
+      },
+      {
+        text: "However, the rise of AI also brings challenges.",
+        start_time: 26.0,
+        end_time: 28.5,
+        start_word_index: 55,
+        end_word_index: 62,
+        is_paragraph_end: false,
+      },
+      {
+        text: "Ethical concerns and potential job displacement are major issues to address.",
+        start_time: 29.0,
+        end_time: 33.5,
+        start_word_index: 63,
+        end_word_index: 74,
+        is_paragraph_end: true,
+      },
+    ],
+  },
 };
 
-const mockData: { questions: MockQuestion[] } = {
-  questions: [
-    {
-      id: "q1",
-      title: "Open-ended question with image stimulus",
-      context: "Please observe the image and answer the following question.",
-      shouldFollowUp: true,
-      followUpLevel: "AUTOMATIC",
-      body: "What emotions does this image evoke in you?",
-      studyId: "study1",
-      questionType: "OPEN_ENDED",
-      questionOrder: 1,
-      hasStimulus: true,
-      imageStimuli: [
-        {
-          id: "img1",
-          bucketUrl: "https://placehold.co/700x500",
-          title: "Serene Nature Scene",
-          altText: "A peaceful lake surrounded by mountains",
-        },
-        // {
-        //   id: "img2",
-        //   bucketUrl: "https://placehold.co/600x500",
-        //   title: "Serene Nature Scene this one ",
-        //   altText: "A peaceful lake surrounded by mountains",
-        // },
-        // {
-        //   id: "img2",
-        //   bucketUrl: "https://placehold.co/1000x1000",
-        //   title: "Serene Nature Scene",
-        //   altText: "A peaceful lake surrounded by mountains",
-        // },
-        // {
-        //   id: "img2",
-        //   bucketUrl: "https://placehold.co/1000x1000",
-        //   title: "Serene Nature Scene",
-        //   altText: "A peaceful lake surrounded by mountains",
-        // },
-      ],
-    },
-    {
-      id: "q2",
-      title: "Question with video stimulus",
-      context: "Watch the video and select the most appropriate answer.",
-      shouldFollowUp: false,
-      followUpLevel: "SURFACE",
-      body: "Which of the following best describes the main theme of the video?",
-      studyId: "study1",
-      questionType: "OPEN_ENDED",
-      questionOrder: 2,
-      hasStimulus: true,
-      videoStimuli: [
-        // {
-        //   id: "vid1",
-        //   url: "https://www.taxmann.com/emailer/images/CompaniesAct.mp4",
-        //   type: "UPLOADED",
-        //   title: "Product Demo Video",
-        // },
-        {
-          id: "vid12",
-          url: "https://www.youtube.com/watch?v=uATrIgT1tsM",
-          type: "EXTERNAL",
-          title: "Product Demo Video",
-        },
-      ],
-      allowMultipleSelections: false,
-
-      // multipleChoiceOptions: [
-      //   {
-      //     id: "opt1",
-      //     optionText: "Innovation",
-      //     optionOrder: 1,
-      //   },
-      //   {
-      //     id: "opt2",
-      //     optionText: "Sustainability",
-      //     optionOrder: 2,
-      //   },
-      //   {
-      //     id: "opt3",
-      //     optionText: "User Experience",
-      //     optionOrder: 3,
-      //   },
-      // ],
-    },
-    {
-      id: "q3",
-      title: "Range question with website stimulus",
-      context: "Explore the website and rate your experience.",
-      shouldFollowUp: true,
-      followUpLevel: "DEEP",
-      body: "On a scale of 1 to 10, how likely are you to recommend this website to a friend?",
-      studyId: "study1",
-      questionType: "RANGE",
-      questionOrder: 3,
-      hasStimulus: true,
-      websiteStimuli: [
-        {
-          id: "web1",
-          websiteUrl: "https://example.com",
-          title: "Example Website",
-        },
-        {
-          id: "web1",
-          websiteUrl: "https://example.com",
-          title: "Example Website 2 much longer",
-        },
-      ],
-      lowRange: 1,
-      highRange: 10,
-    },
-    {
-      id: "q4",
-      title: "Multiple choice question with multiple selections",
-      context: "Select all that apply.",
-      shouldFollowUp: false,
-      followUpLevel: "LIGHT",
-      body: "Which of the following features would you like to see in our product?",
-      studyId: "study1",
-      questionType: "MULTIPLE_CHOICE",
-      questionOrder: 4,
-      hasStimulus: false,
-      allowMultipleSelections: true,
-      multipleChoiceOptions: [
-        {
-          id: "opt4",
-          optionText: "Dark mode",
-          optionOrder: 1,
-        },
-        {
-          id: "opt5",
-          optionText: "Voice commands",
-          optionOrder: 2,
-        },
-        {
-          id: "opt6",
-          optionText: "Offline support",
-          optionOrder: 3,
-        },
-        {
-          id: "opt7",
-          optionText: "Cloud synchronization",
-          optionOrder: 4,
-        },
-        {
-          id: "opt8",
-          optionText: "Cloud synchronization",
-          optionOrder: 4,
-        },
-        {
-          id: "opt9",
-          optionText: "Cloud synchronization",
-          optionOrder: 4,
-        },
-        {
-          id: "opt10",
-          optionText: "Cloud synchronization",
-          optionOrder: 4,
-        },
-        {
-          id: "opt11",
-          optionText: "Cloud synchronization",
-          optionOrder: 4,
-        },
-      ],
-    },
-    {
-      id: "q5",
-      title: "Open-ended question without stimulus",
-      context: "Please provide your honest opinion.",
-      shouldFollowUp: true,
-      followUpLevel: "AUTOMATIC",
-      body: "What improvements would you suggest for our customer support process?",
-      studyId: "study1",
-      questionType: "OPEN_ENDED",
-      questionOrder: 5,
-      hasStimulus: false,
-    },
-    {
-      id: "q6",
-      title: "Range question",
-      context: "Explore the website and rate your experience.",
-      shouldFollowUp: true,
-      followUpLevel: "DEEP",
-      body: "On a scale of 1 to 10, how likely are you to recommend this website to a friend?",
-      studyId: "study1",
-      questionType: "RANGE",
-      questionOrder: 3,
-      hasStimulus: false,
-      lowRange: 1,
-      highRange: 5,
-    },
-  ],
-};
+export const mockHighlights = [
+  {
+    id: "1",
+    startWordIndex: 0,
+    endWordIndex: 20,
+    color: "#D5E0DA",
+    isActive: false,
+  },
+  {
+    id: "2",
+    startWordIndex: 15,
+    endWordIndex: 16,
+    color: "#90EE90",
+    isActive: false,
+  },
+  //   {
+  //     id: "3",
+  //     startWordIndex: 34,
+  //     endWordIndex: 35,
+  //     color: "#ADD8E6",
+  //     isActive: true,
+  //   },
+  //   {
+  //     id: "4",
+  //     startWordIndex: 55,
+  //     endWordIndex: 62,
+  //     color: "#FFA07A",
+  //     isActive: true,
+  //   },
+];
