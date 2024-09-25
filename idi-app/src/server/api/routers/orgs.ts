@@ -82,6 +82,9 @@ export const orgsRouter = createTRPCRouter({
         where: {
           organizationId: input.orgId,
         },
+        orderBy: {
+          updatedAt: "desc",
+        },
         include: {
           _count: {
             select: {

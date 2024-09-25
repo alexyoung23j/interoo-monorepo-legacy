@@ -6,6 +6,7 @@ import InnerSidebar from "./InnerSidebar";
 import { useSidebar } from "@/hooks/useSidebar";
 import { api } from "@/trpc/react";
 import { ClipLoader } from "react-spinners";
+import { StudyStatus } from "@shared/generated/client";
 
 export default function SidebarContainer({
   children,
@@ -38,7 +39,11 @@ export default function SidebarContainer({
             <InnerSidebar.TopContent study={study} />
           )}
           <div className="flex flex-grow overflow-hidden">
-            {shouldShowInnerSidebar && <InnerSidebar.SideContent />}
+            {shouldShowInnerSidebar && (
+              <InnerSidebar.SideContent
+                isDraft={study?.status === StudyStatus.DRAFT}
+              />
+            )}
             <div className="flex flex-grow overflow-hidden">
               <main
                 className={`w-full ${

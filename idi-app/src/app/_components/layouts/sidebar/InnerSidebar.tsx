@@ -4,7 +4,7 @@ import { usePathname, useParams, useRouter } from "next/navigation";
 import { INNER_SIDEBAR_ROUTES } from "./sidebarRoutes";
 import SidebarSection from "./SidebarSection";
 import { api } from "@/trpc/react";
-import { Study } from "@shared/generated/client";
+import { Study, StudyStatus } from "@shared/generated/client";
 import { Button } from "@/components/ui/button";
 import { TestTube } from "@phosphor-icons/react";
 
@@ -47,6 +47,7 @@ function TopContent({ study }: { study: Study }) {
       <Button
         className="flex gap-2 text-theme-off-white"
         onClick={handleTestStudy}
+        disabled={study?.status !== StudyStatus.PUBLISHED}
       >
         <TestTube className="text-theme-off-white" />
         Test Study
@@ -55,7 +56,7 @@ function TopContent({ study }: { study: Study }) {
   );
 }
 
-function SideContent() {
+function SideContent({ isDraft }: { isDraft: boolean }) {
   const pathname = usePathname();
   const params = useParams();
   const orgId = params.orgId as string;
@@ -70,11 +71,19 @@ function SideContent() {
             key={section.title ?? `section-${index}`}
             title={section.items ? section.title : undefined}
             items={
-              section.items ?? [{ title: section.title, path: section.path }]
+              section.items ?? [
+                {
+                  title: section.title,
+                  path: section.path,
+                  allowedWhenDraft: section.allowedWhenDraft,
+                },
+              ]
             }
+            allowedWhenDraft={section.allowedWhenDraft}
             currentPath={pathname}
             orgId={orgId}
             studyId={studyId}
+            isDraft={isDraft}
           />
         ))}
       </div>

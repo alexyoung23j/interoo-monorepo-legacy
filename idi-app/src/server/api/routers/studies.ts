@@ -209,4 +209,32 @@ export const studiesRouter = createTRPCRouter({
 
       return study;
     }),
+  createBlankStudy: privateProcedure
+    .input(z.object({ organizationId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const { organizationId } = input;
+
+      const currentDate = new Date();
+      const formattedDate = `${currentDate.getMonth() + 1}/${currentDate.getDate()}/${currentDate.getFullYear()}`;
+
+      const newStudy = await ctx.db.study.create({
+        data: {
+          organizationId,
+          title: `Untitled Draft (${formattedDate})`,
+          shortID: Math.random().toString(36).substring(2, 8),
+          targetLength: 0,
+          welcomeDescription: "",
+          termsAndConditions: "",
+          welcomeImageUrl: "",
+          studyBackground: "",
+          videoEnabled: false,
+          maxResponses: null,
+          status: StudyStatus.DRAFT,
+          reportingLanguage: Language.ENGLISH,
+          languages: [Language.ENGLISH],
+        },
+      });
+
+      return newStudy;
+    }),
 });

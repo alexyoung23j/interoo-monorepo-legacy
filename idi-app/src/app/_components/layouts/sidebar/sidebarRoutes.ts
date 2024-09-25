@@ -5,30 +5,60 @@ export const OUTER_SIDEBAR_ROUTES = [
 
 export const INNER_SIDEBAR_ROUTES = [
   {
+    title: "Setup",
+    items: [
+      {
+        title: "Overview",
+        path: "/org/[orgId]/study/[studyId]/setup/overview",
+        allowedWhenDraft: true,
+      },
+      {
+        title: "Questions",
+        path: "/org/[orgId]/study/[studyId]/analysis/approve-codes",
+        allowedWhenDraft: true,
+      },
+    ],
+    allowedWhenDraft: true,
+  },
+  {
     title: "Distribution",
     path: "/org/[orgId]/study/[studyId]/distribution",
+    allowedWhenDraft: false,
   },
-  { title: "Results", path: "/org/[orgId]/study/[studyId]/results" },
-  { title: "Interviews", path: "/org/[orgId]/study/[studyId]/interviews" },
+  {
+    title: "Results",
+    path: "/org/[orgId]/study/[studyId]/results",
+    allowedWhenDraft: false,
+  },
+  {
+    title: "Interviews",
+    path: "/org/[orgId]/study/[studyId]/interviews",
+    allowedWhenDraft: false,
+  },
   {
     title: "Analysis",
     items: [
       {
         title: "Codebook",
         path: "/org/[orgId]/study/[studyId]/analysis/codebook",
+        allowedWhenDraft: false,
       },
       {
         title: "Approve Codes",
         path: "/org/[orgId]/study/[studyId]/analysis/approve-codes",
+        allowedWhenDraft: false,
       },
       {
         title: "Themes",
         path: "/org/[orgId]/study/[studyId]/analysis/themes",
+        allowedWhenDraft: false,
       },
     ],
+    allowedWhenDraft: false,
   },
   {
     title: "Configuration",
     path: "/org/[orgId]/study/[studyId]/configuration",
+    allowedWhenDraft: false,
   },
 ];

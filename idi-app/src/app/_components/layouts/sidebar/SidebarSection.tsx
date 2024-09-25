@@ -6,6 +6,7 @@ import SidebarItem from "./SidebarItem";
 interface RouteItem {
   title: string;
   path: string;
+  allowedWhenDraft: boolean;
 }
 
 interface SidebarSectionProps {
@@ -14,6 +15,8 @@ interface SidebarSectionProps {
   currentPath: string;
   orgId: string;
   studyId?: string;
+  isDraft?: boolean;
+  allowedWhenDraft?: boolean;
 }
 
 export default function SidebarSection({
@@ -22,6 +25,8 @@ export default function SidebarSection({
   currentPath,
   orgId,
   studyId,
+  isDraft,
+  allowedWhenDraft,
 }: SidebarSectionProps) {
   const renderItem = (item: RouteItem) => {
     const itemPath = item.path
@@ -36,6 +41,7 @@ export default function SidebarSection({
         isActive={currentPath === itemPath}
         orgId={orgId}
         studyId={studyId}
+        isDraft={isDraft && !item.allowedWhenDraft}
       />
     );
   };
@@ -47,7 +53,11 @@ export default function SidebarSection({
   return (
     <div className="w-full">
       {title && (
-        <h3 className="text-theme-900 mb-1 flex items-center justify-between py-[6px] pl-2 text-sm font-medium">
+        <h3
+          className={`mb-1 flex items-center justify-between py-[6px] pl-2 text-sm font-medium text-theme-900 ${
+            !isDraft || (isDraft && allowedWhenDraft) ? "" : "opacity-50"
+          }`}
+        >
           {title}
           <CaretDown size={16} className="text-theme-900" />
         </h3>

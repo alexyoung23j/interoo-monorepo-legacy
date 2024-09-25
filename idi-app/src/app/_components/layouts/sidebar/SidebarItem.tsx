@@ -8,6 +8,7 @@ interface SidebarItemProps {
   isActive: boolean;
   orgId: string;
   studyId?: string;
+  isDraft?: boolean;
 }
 
 export default function SidebarItem({
@@ -16,16 +17,29 @@ export default function SidebarItem({
   isActive,
   orgId,
   studyId,
+  isDraft,
 }: SidebarItemProps) {
   const href = path
     .replace("[orgId]", orgId)
     .replace("[studyId]", studyId ?? "");
 
+  const baseClasses = "flex w-full p-2 text-sm font-medium";
+  const activeClasses =
+    "rounded-sm border border-theme-200 bg-theme-off-white shadow-standard";
+  const disabledClasses = "opacity-50 cursor-not-allowed";
+
+  const className = `
+    ${baseClasses}
+    ${isActive ? activeClasses : ""}
+    ${isDraft ? disabledClasses : "text-theme-900"}
+  `;
+
+  if (isDraft) {
+    return <div className={className}>{title}</div>;
+  }
+
   return (
-    <Link
-      href={href}
-      className={`text-theme-900 flex w-full p-2 text-sm font-medium ${isActive ? "bg-theme-off-white shadow-standard border-theme-200 rounded-sm border" : ""}`}
-    >
+    <Link href={href} className={className}>
       {title}
     </Link>
   );
