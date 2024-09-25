@@ -79,6 +79,9 @@ const ComponentsPage: React.FC = () => {
             highlight={editHighlight}
             className="text-theme-900"
             editMode={editMode}
+            onEditCursorReleased={(newHighlight) => {
+              setEditHighlight(newHighlight);
+            }}
           />
         </div>
       </div>

@@ -19,7 +19,7 @@ export type TranscriptRendererProps = {
   highlight: HighlightReference | null;
   className?: string;
   editMode?: boolean;
-  onSave?: (newHighlight: HighlightReference) => void;
+  onEditCursorReleased?: (newHighlight: HighlightReference) => void;
 };
 
 function HighlightedWord({
@@ -29,6 +29,7 @@ function HighlightedWord({
   isEnd,
   onMouseDown,
   dataIndex,
+  isDragging,
 }: {
   word: string;
   color: string;
@@ -36,6 +37,7 @@ function HighlightedWord({
   isEnd: boolean;
   onMouseDown: (position: "start" | "end") => void;
   dataIndex: number;
+  isDragging: boolean;
 }) {
   return (
     <span
@@ -49,14 +51,14 @@ function HighlightedWord({
       {word}
       {(isStart || isEnd) && (
         <span
-          className={`absolute h-4 w-2 cursor-ew-resize bg-theme-600 ${
-            isStart ? "left-0" : "right-0"
-          } top-1/2 -translate-y-1/2 transform`}
+          className={`absolute h-[130%] w-0.5 bg-theme-600 transition-all duration-150 ease-in-out hover:w-[3px] ${isStart ? "-left-0.5" : "-right-0.5"} top-1/2 -translate-y-1/2 transform ${isDragging ? "cursor-col-resize" : "cursor-ew-resize"} z-10`}
           onMouseDown={(e) => {
             e.preventDefault();
             onMouseDown(isStart ? "start" : "end");
           }}
-        />
+        >
+          <span className="absolute bottom-0 left-1/2 h-2 w-2 -translate-x-1/2 translate-y-full rounded-full bg-theme-600" />
+        </span>
       )}
     </span>
   );
@@ -67,7 +69,7 @@ export default function QuoteTextField({
   highlight,
   className = "",
   editMode = false,
-  onSave,
+  onEditCursorReleased,
 }: TranscriptRendererProps) {
   const [localHighlight, setLocalHighlight] =
     useState<HighlightReference | null>(highlight);
@@ -85,11 +87,11 @@ export default function QuoteTextField({
   }, []);
 
   const handleMouseUp = useCallback(() => {
-    if (draggedHandle && onSave && localHighlight) {
-      onSave(localHighlight);
+    if (draggedHandle && onEditCursorReleased && localHighlight) {
+      onEditCursorReleased(localHighlight);
     }
     setDraggedHandle(null);
-  }, [draggedHandle, onSave, localHighlight]);
+  }, [draggedHandle, onEditCursorReleased, localHighlight]);
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent) => {
@@ -177,6 +179,7 @@ export default function QuoteTextField({
               }
               onMouseDown={handleMouseDown}
               dataIndex={globalWordIndex}
+              isDragging={draggedHandle !== null}
             />,
           );
         } else {
@@ -196,12 +199,19 @@ export default function QuoteTextField({
     });
 
     return content;
-  }, [transcriptBlob, localHighlight, editMode, highlight, handleMouseDown]);
+  }, [
+    transcriptBlob,
+    localHighlight,
+    editMode,
+    highlight,
+    handleMouseDown,
+    draggedHandle,
+  ]);
 
   return (
     <div
       ref={containerRef}
-      className={`${className} select-none whitespace-pre-wrap`}
+      className={`${className} select-none whitespace-pre-wrap ${draggedHandle ? "cursor-col-resize" : ""}`}
       onMouseUp={handleMouseUp}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseUp}
