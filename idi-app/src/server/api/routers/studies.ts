@@ -69,10 +69,15 @@ export const studiesRouter = createTRPCRouter({
       z.object({
         studyId: z.string(),
         includeQuestions: z.boolean().optional(),
+        includeBoostedKeywords: z.boolean().optional(),
       }),
     )
     .query(async ({ ctx, input }) => {
-      const { studyId, includeQuestions = false } = input;
+      const {
+        studyId,
+        includeQuestions = false,
+        includeBoostedKeywords = false,
+      } = input;
 
       const study = await ctx.db.study.findUnique({
         where: { id: studyId },
@@ -105,6 +110,11 @@ export const studiesRouter = createTRPCRouter({
                     },
                   },
                 },
+              }
+            : {}),
+          ...(includeBoostedKeywords
+            ? {
+                boostedKeywords: true,
               }
             : {}),
         },
@@ -151,14 +161,31 @@ export const studiesRouter = createTRPCRouter({
         status: z.nativeEnum(StudyStatus).optional(),
         reportingLanguage: z.nativeEnum(Language).optional(),
         languages: z.array(z.nativeEnum(Language)).optional(),
+        boostedKeywords: z
+          .array(
+            z.object({
+              keyword: z.string(),
+              definition: z.string().optional(),
+            }),
+          )
+          .optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const { id, ...updateData } = input;
+      const { id, boostedKeywords, ...updateData } = input;
 
       const updatedStudy = await ctx.db.study.update({
         where: { id },
-        data: updateData,
+        data: {
+          ...updateData,
+          boostedKeywords: {
+            deleteMany: {},
+            create: boostedKeywords,
+          },
+        },
+        include: {
+          boostedKeywords: true,
+        },
       });
 
       return updatedStudy;

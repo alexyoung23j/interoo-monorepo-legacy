@@ -23,7 +23,7 @@ const BasicInput: React.FC<BasicInputProps> = ({
     <Input
       value={value ?? ""}
       onChange={handleChange}
-      className={`rounded-[3px] border-theme-100 bg-theme-off-white focus-visible:border-theme-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-theme-300 ${className ?? ""}`}
+      className={`rounded-[3px] border-theme-100 bg-theme-off-white shadow-standard focus-visible:border-theme-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-theme-300 ${className ?? ""}`}
       {...props}
     />
   );

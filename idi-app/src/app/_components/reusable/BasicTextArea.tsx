@@ -23,7 +23,7 @@ const BasicTextArea: React.FC<BasicTextAreaProps> = ({
     <Textarea
       value={value ?? ""}
       onChange={handleChange}
-      className={`rounded-[3px] border-theme-100 bg-theme-off-white focus:border-theme-300 focus:outline-none focus:ring-1 focus:ring-theme-200 [&:focus]:border-theme-300 [&:focus]:ring-1 [&:focus]:ring-theme-200 ${className ?? ""}`}
+      className={`rounded-[3px] border-theme-100 bg-theme-off-white shadow-standard focus:border-theme-300 focus:outline-none focus:ring-1 focus:ring-theme-200 [&:focus]:border-theme-300 [&:focus]:ring-1 [&:focus]:ring-theme-200 ${className ?? ""}`}
       {...props}
     />
   );
