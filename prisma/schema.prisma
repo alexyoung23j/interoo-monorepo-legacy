@@ -147,29 +147,33 @@ model WebsiteStimulus {
 }
 
 model Question {
-  id                      String                 @id @default(uuid())
-  title                   String
-  context                 String?
-  shouldFollowUp          Boolean
-  followUpLevel           FollowUpLevel          @default(AUTOMATIC)
-  body                    String?                @db.Text
-  studyId                 String
-  questionType            QuestionType
-  questionOrder           Int
-  hasStimulus             Boolean                @default(false)
-  websiteStimuli          WebsiteStimulus[]
-  imageStimuli            ImageStimulus[]
-  videoStimuli            VideoStimulus[]
-  createdAt               DateTime               @default(now())
-  updatedAt               DateTime               @default(now()) @updatedAt
-  study                   Study                  @relation(fields: [studyId], references: [id])
-  allowMultipleSelections Boolean                @default(false)
-  multipleChoiceOptions   MultipleChoiceOption[]
-  lowRange                Int?
-  highRange               Int?
-  interviews              InterviewSession[]
-  Response                Response[]
-  FollowUpQuestion        FollowUpQuestion[]
+  id                           String                         @id @default(uuid())
+  title                        String
+  context                      String?
+  shouldFollowUp               Boolean
+  followUpLevel                FollowUpLevel                  @default(AUTOMATIC)
+  body                         String?                        @db.Text
+  studyId                      String
+  questionType                 QuestionType
+  questionOrder                Int
+  hasStimulus                  Boolean                        @default(false)
+  websiteStimuli               WebsiteStimulus[]
+  imageStimuli                 ImageStimulus[]
+  videoStimuli                 VideoStimulus[]
+  createdAt                    DateTime                       @default(now())
+  updatedAt                    DateTime                       @default(now()) @updatedAt
+  study                        Study                          @relation(fields: [studyId], references: [id])
+  allowMultipleSelections      Boolean                        @default(false)
+  multipleChoiceOptions        MultipleChoiceOption[]
+  lowRange                     Int?
+  highRange                    Int?
+  interviews                   InterviewSession[]
+  Response                     Response[]
+  FollowUpQuestion             FollowUpQuestion[]
+  QuestionThemeAnalysisJob     QuestionThemeAnalysisJob[]
+  QuestionAttributeAnalysisJob QuestionAttributeAnalysisJob[]
+  ThemesOnQuestion             ThemesOnQuestion[]
+  AttributesOnQuestion         AttributesOnQuestion[]
 }
 
 model FollowUpQuestion {
@@ -210,9 +214,6 @@ model Response {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
-
-  ResponseThreadThemeAnalysisJob     ResponseThreadThemeAnalysisJob[]
-  ResponseThreadAttributeAnalysisJob ResponseThreadAttributeAnalysisJob[]
 
   Quote     Quote[]
   Favorites Favorite[]
@@ -266,9 +267,9 @@ model InterviewSession {
   participant       InterviewParticipant?
 
   // Analysis
-  InterviewSummaryJob InterviewSummaryJob[]
-  textSummary         String?               @db.Text
-  Favorites           Favorite[]
+  Favorites                    Favorite[]
+  QuestionThemeAnalysisJob     QuestionThemeAnalysisJob[]
+  QuestionAttributeAnalysisJob QuestionAttributeAnalysisJob[]
 }
 
 model InterviewParticipant {
@@ -300,33 +301,28 @@ enum JobStatus {
   FAILED
 }
 
-model InterviewSummaryJob {
-  id                 String           @id @default(uuid())
-  interviewSessionId String
-  interviewSession   InterviewSession @relation(fields: [interviewSessionId], references: [id])
-  status             JobStatus        @default(NOT_STARTED)
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
-}
-
-model ResponseThreadThemeAnalysisJob {
+model QuestionThemeAnalysisJob {
   id String @id @default(uuid())
 
-  // The response to the base question. Other responses in the thread are found by looking for follow up questions
-  baseResponse Response @relation(fields: [responseId], references: [id])
-  responseId   String
+  question   Question @relation(fields: [questionId], references: [id])
+  questionId String
+
+  interviewSession   InterviewSession @relation(fields: [interviewSessionId], references: [id])
+  interviewSessionId String
 
   status    JobStatus @default(NOT_STARTED)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 }
 
-model ResponseThreadAttributeAnalysisJob {
+model QuestionAttributeAnalysisJob {
   id String @id @default(uuid())
 
-  // The response to the base question. Other responses in the thread are found by looking for follow up questions
-  baseResponse Response @relation(fields: [responseId], references: [id])
-  responseId   String
+  question   Question @relation(fields: [questionId], references: [id])
+  questionId String
+
+  interviewSession   InterviewSession @relation(fields: [interviewSessionId], references: [id])
+  interviewSessionId String
 
   status    JobStatus @default(NOT_STARTED)
   createdAt DateTime  @default(now())
@@ -369,11 +365,24 @@ model QuotesOnTheme {
   updatedAt DateTime @updatedAt
 }
 
+model ThemesOnQuestion {
+  id String @id @default(uuid())
+
+  theme   Theme  @relation(fields: [themeId], references: [id])
+  themeId String
+
+  question   Question @relation(fields: [questionId], references: [id])
+  questionId String
+}
+
 model Theme {
   id String @id @default(uuid())
 
   study   Study  @relation(fields: [studyId], references: [id])
   studyId String
+
+  // Through table for association with questions
+  ThemesOnQuestion ThemesOnQuestion[]
 
   name        String
   description String?
@@ -396,8 +405,20 @@ model QuotesOnAttribute {
   attribute   Attribute @relation(fields: [attributeId], references: [id])
   attributeId String
 
+  attributeValue String? // The value of the attribute for this quote
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model AttributesOnQuestion {
+  id String @id @default(uuid())
+
+  attribute   Attribute @relation(fields: [attributeId], references: [id])
+  attributeId String
+
+  question   Question @relation(fields: [questionId], references: [id])
+  questionId String
 }
 
 model Attribute {
@@ -417,6 +438,9 @@ model Attribute {
 
   // Through table for association with quotes
   QuotesOnAttribute QuotesOnAttribute[]
+
+  // Through table for association with questions
+  AttributesOnQuestion AttributesOnQuestion[]
 }
 
 model Favorite {
