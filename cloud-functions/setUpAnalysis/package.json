@@ -1,8 +1,15 @@
 {
-    "main": "index.js",
-    "dependencies": {
-      "@google-cloud/functions-framework": "^3.0.0",
-      "google-auth-library": "^8.7.0",
-      "axios": "^0.27.2"
-    }
+  "scripts": {
+    "build": "tsc",
+    "deploy": "npm run build && gcloud functions deploy setUpAnalysis --gen2 --region=us-central1 --runtime=nodejs20 --trigger-http",
+    "dev": "npm run build && npx @google-cloud/functions-framework --target=setUpAnalysis",
+    "gcp-build": "npm run build"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "@google-cloud/functions-framework": "^3.0.0",
+    "axios": "^0.27.2",
+    "google-auth-library": "^8.7.0",
+    "typescript": "^5.6.2"
+  }
 }
