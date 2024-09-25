@@ -18,3 +18,5 @@ Generally, if text is dark, it should be using theme-900, and if text is white i
 When you write components, always explicitly use flexbox styling (with tailwind)
 
 ALWAYS WRITE THE ENTIRE FILE WHEN YOU CAN!!!!
+
+Always prefer using ?? over || when accessing values in JS/TS. This is because || will not work with null or undefined, while ?? will.

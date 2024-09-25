@@ -1,4 +1,10 @@
-import React, { useMemo, useState, useCallback } from "react";
+import React, {
+  useMemo,
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+} from "react";
 import type { FullTranscriptBlob } from "@shared/types";
 
 export type HighlightReference = {
@@ -21,15 +27,15 @@ function HighlightedWord({
   color,
   isStart,
   isEnd,
-  onDragStart,
-  onDragEnd,
+  onMouseDown,
+  dataIndex,
 }: {
   word: string;
   color: string;
   isStart: boolean;
   isEnd: boolean;
-  onDragStart?: () => void;
-  onDragEnd?: () => void;
+  onMouseDown: (position: "start" | "end") => void;
+  dataIndex: number;
 }) {
   return (
     <span
@@ -38,6 +44,7 @@ function HighlightedWord({
         backgroundColor: color,
         boxShadow: `0 0 0 3px ${color}`,
       }}
+      data-index={dataIndex}
     >
       {word}
       {(isStart || isEnd) && (
@@ -45,7 +52,10 @@ function HighlightedWord({
           className={`absolute h-4 w-2 cursor-ew-resize bg-theme-600 ${
             isStart ? "left-0" : "right-0"
           } top-1/2 -translate-y-1/2 transform`}
-          onMouseDown={isStart ? onDragStart : onDragEnd}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            onMouseDown(isStart ? "start" : "end");
+          }}
         />
       )}
     </span>
@@ -61,46 +71,84 @@ export default function QuoteTextField({
 }: TranscriptRendererProps) {
   const [localHighlight, setLocalHighlight] =
     useState<HighlightReference | null>(highlight);
-  const [isDragging, setIsDragging] = useState<"start" | "end" | null>(null);
+  const [draggedHandle, setDraggedHandle] = useState<"start" | "end" | null>(
+    null,
+  );
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const handleDragStart = useCallback(() => {
-    setIsDragging("start");
-  }, []);
+  useEffect(() => {
+    setLocalHighlight(highlight);
+  }, [highlight]);
 
-  const handleDragEnd = useCallback(() => {
-    setIsDragging("end");
+  const handleMouseDown = useCallback((position: "start" | "end") => {
+    setDraggedHandle(position);
   }, []);
 
   const handleMouseUp = useCallback(() => {
-    if (isDragging && onSave && localHighlight) {
+    if (draggedHandle && onSave && localHighlight) {
       onSave(localHighlight);
     }
-    setIsDragging(null);
-  }, [isDragging, onSave, localHighlight]);
+    setDraggedHandle(null);
+  }, [draggedHandle, onSave, localHighlight]);
 
   const handleMouseMove = useCallback(
-    (e: React.MouseEvent, globalWordIndex: number) => {
-      if (isDragging && localHighlight) {
-        setLocalHighlight((prev) => {
-          if (!prev) return null;
+    (e: React.MouseEvent) => {
+      if (!draggedHandle || !localHighlight || !containerRef.current) return;
+
+      const range = document.caretRangeFromPoint(e.clientX, e.clientY);
+      if (!range) return;
+
+      const node = range.startContainer;
+      let wordElement: HTMLElement | null = null;
+
+      if (node.nodeType === Node.TEXT_NODE && node.parentElement) {
+        wordElement = node.parentElement;
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        wordElement = node as HTMLElement;
+      }
+
+      const wordIndex = parseInt(
+        wordElement?.getAttribute("data-index") ?? "-1",
+      );
+      if (wordIndex === -1) return;
+
+      setLocalHighlight((prev) => {
+        if (!prev) return null;
+        let newStartIndex = prev.startWordIndex;
+        let newEndIndex = prev.endWordIndex;
+
+        if (draggedHandle === "start" && wordIndex <= prev.endWordIndex) {
+          newStartIndex = wordIndex;
+        } else if (
+          draggedHandle === "end" &&
+          wordIndex >= prev.startWordIndex
+        ) {
+          newEndIndex = wordIndex;
+        }
+
+        if (
+          newStartIndex !== prev.startWordIndex ||
+          newEndIndex !== prev.endWordIndex
+        ) {
           return {
             ...prev,
-            [isDragging === "start" ? "startWordIndex" : "endWordIndex"]:
-              globalWordIndex,
+            startWordIndex: newStartIndex,
+            endWordIndex: newEndIndex,
           };
-        });
-      }
+        }
+        return prev;
+      });
     },
-    [isDragging, localHighlight],
+    [draggedHandle, localHighlight],
   );
 
   const renderText = useMemo(() => {
-    if (!transcriptBlob.transcript) {
-      return null;
-    }
+    if (!transcriptBlob.transcript) return null;
 
     const { words, sentences } = transcriptBlob.transcript;
     const content: React.ReactNode[] = [];
+
+    const highlightToUse = editMode ? localHighlight : highlight;
 
     sentences.forEach((sentence, sentenceIndex) => {
       const sentenceWords = words.slice(
@@ -112,31 +160,28 @@ export default function QuoteTextField({
         const globalWordIndex = sentence.start_word_index + wordIndex;
 
         if (
-          localHighlight &&
-          globalWordIndex >= localHighlight.startWordIndex &&
-          globalWordIndex <= localHighlight.endWordIndex
+          highlightToUse &&
+          globalWordIndex >= highlightToUse.startWordIndex &&
+          globalWordIndex <= highlightToUse.endWordIndex
         ) {
           content.push(
             <HighlightedWord
-              key={`${localHighlight.id}-${globalWordIndex}`}
+              key={`${highlightToUse.id}-${globalWordIndex}`}
               word={word.word}
-              color={localHighlight.color}
+              color={highlightToUse.color}
               isStart={
-                globalWordIndex === localHighlight.startWordIndex && editMode
+                globalWordIndex === highlightToUse.startWordIndex && editMode
               }
               isEnd={
-                globalWordIndex === localHighlight.endWordIndex && editMode
+                globalWordIndex === highlightToUse.endWordIndex && editMode
               }
-              onDragStart={handleDragStart}
-              onDragEnd={handleDragEnd}
+              onMouseDown={handleMouseDown}
+              dataIndex={globalWordIndex}
             />,
           );
         } else {
           content.push(
-            <span
-              key={`word-${globalWordIndex}`}
-              onMouseMove={(e) => handleMouseMove(e, globalWordIndex)}
-            >
+            <span key={`word-${globalWordIndex}`} data-index={globalWordIndex}>
               {word.word}
             </span>,
           );
@@ -151,19 +196,15 @@ export default function QuoteTextField({
     });
 
     return content;
-  }, [
-    transcriptBlob,
-    localHighlight,
-    editMode,
-    handleDragStart,
-    handleDragEnd,
-    handleMouseMove,
-  ]);
+  }, [transcriptBlob, localHighlight, editMode, highlight, handleMouseDown]);
 
   return (
     <div
+      ref={containerRef}
       className={`${className} select-none whitespace-pre-wrap`}
       onMouseUp={handleMouseUp}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseUp}
     >
       {renderText}
     </div>
