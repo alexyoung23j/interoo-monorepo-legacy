@@ -264,4 +264,21 @@ export const studiesRouter = createTRPCRouter({
 
       return newStudy;
     }),
+  getStudyQuestions: privateProcedure
+    .input(z.object({ studyId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const { studyId } = input;
+
+      const questions = await ctx.db.question.findMany({
+        where: { studyId },
+        orderBy: { questionOrder: "asc" },
+        include: {
+          imageStimuli: true,
+          websiteStimuli: true,
+          videoStimuli: true,
+          multipleChoiceOptions: true,
+        },
+      });
+      return questions;
+    }),
 });

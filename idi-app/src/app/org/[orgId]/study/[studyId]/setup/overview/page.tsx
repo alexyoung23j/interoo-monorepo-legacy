@@ -16,12 +16,15 @@ import React, { useState, useEffect } from "react";
 import { Language, StudyStatus } from "@shared/generated/client";
 import { ClipLoader } from "react-spinners";
 import { BasicProgressBar } from "@/app/_components/reusable/BasicProgressBar";
+import { showErrorToast } from "@/app/utils/toastUtils";
+import { useRouter } from "next/navigation";
 
 export default function SetupOverviewPage({
   params,
 }: {
   params: { studyId: string };
 }) {
+  const router = useRouter();
   const { data: study, isLoading } = api.studies.getStudy.useQuery(
     {
       studyId: params.studyId,
@@ -126,10 +129,13 @@ export default function SetupOverviewPage({
           definition: entry.field2,
         })),
       });
+      router.push(
+        `/org/${study?.organizationId}/study/${study?.id}/setup/questions`,
+      );
       setHasUnsavedChanges(false);
-      // Handle successful save (e.g., show a success message, navigate to next page)
     } catch (error) {
       // Handle error (e.g., show error message)
+      showErrorToast("Failed to save study");
       console.error("Failed to save study:", error);
     }
   };
@@ -146,13 +152,13 @@ export default function SetupOverviewPage({
       <div className="flex flex-col gap-2">
         <div className="flex w-full flex-row items-center justify-between">
           <div className="text-lg font-medium text-theme-900">Study Setup</div>
-          <div className="text-sm text-theme-600">25% complete</div>
+          <div className="text-sm text-theme-600">75% complete</div>
         </div>
         <div className="text-sm text-theme-600">
           Create your study and get started distributing!
         </div>
       </div>
-      <BasicProgressBar value={25} />
+      <BasicProgressBar value={50} />
       <BasicCard className={`flex flex-col gap-6 p-6 shadow-standard`}>
         <div className="flex w-full flex-row items-center justify-between">
           <div className="text-lg text-theme-600">Overview</div>

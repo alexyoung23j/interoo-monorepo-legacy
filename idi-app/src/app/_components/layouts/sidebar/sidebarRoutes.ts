@@ -14,7 +14,7 @@ export const INNER_SIDEBAR_ROUTES = [
       },
       {
         title: "Questions",
-        path: "/org/[orgId]/study/[studyId]/analysis/approve-codes",
+        path: "/org/[orgId]/study/[studyId]/setup/questions",
         allowedWhenDraft: true,
       },
     ],
