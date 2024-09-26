@@ -6,7 +6,7 @@ import axios, { AxiosResponse } from 'axios';
 const auth = new GoogleAuth();
 
 // The URL of your summarize-interview function
-const targetAudience = 'https://us-central1-interoo-dev.cloudfunctions.net/summarize-interview';
+const targetAudience = `https://us-central1-interoo-${process.env.PROJECT ?? 'prod'}.cloudfunctions.net/summarizeInterview`;
 const url = targetAudience;
 
 interface RequestBody {
