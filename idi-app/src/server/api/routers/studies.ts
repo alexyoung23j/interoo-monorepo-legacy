@@ -337,7 +337,7 @@ export const studiesRouter = createTRPCRouter({
           if (isNew) {
             updatedQuestion = await prisma.question.create({
               data: {
-                ...questionData,
+                ...{ ...questionData, id: undefined },
                 studyId,
               },
             });
@@ -368,6 +368,7 @@ export const studiesRouter = createTRPCRouter({
                   },
                 });
               } else {
+                console.log("Creating new option", option);
                 // Create new option
                 return prisma.multipleChoiceOption.create({
                   data: {

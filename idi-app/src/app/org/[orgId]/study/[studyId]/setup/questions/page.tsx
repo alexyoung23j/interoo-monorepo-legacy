@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { api } from "@/trpc/react";
 import BasicCard from "@/app/_components/reusable/BasicCard";
 import { BasicProgressBar } from "@/app/_components/reusable/BasicProgressBar";
@@ -10,7 +10,11 @@ import QuestionSetupSection, {
 import { ClipLoader } from "react-spinners";
 import { Button } from "@/components/ui/button";
 import { Plus } from "@phosphor-icons/react";
-import { QuestionType, FollowUpLevel } from "@shared/generated/client";
+import {
+  QuestionType,
+  FollowUpLevel,
+  StudyStatus,
+} from "@shared/generated/client";
 import { showErrorToast, showSuccessToast } from "@/app/utils/toastUtils";
 
 export default function QuestionsPage({
@@ -18,6 +22,15 @@ export default function QuestionsPage({
 }: {
   params: { studyId: string };
 }) {
+  const { data: study } = api.studies.getStudy.useQuery(
+    {
+      studyId: params.studyId,
+      includeBoostedKeywords: true,
+    },
+    {
+      refetchOnWindowFocus: false,
+    },
+  );
   const { data: fetchedQuestions, isLoading } =
     api.studies.getStudyQuestions.useQuery({
       studyId: params.studyId,
@@ -28,6 +41,7 @@ export default function QuestionsPage({
 
   const [questions, setQuestions] = useState<LocalQuestion[]>([]);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [questionValidations, setQuestionValidations] = useState<boolean[]>([]);
 
   useEffect(() => {
     if (fetchedQuestions) {
@@ -55,6 +69,8 @@ export default function QuestionsPage({
     }
   }, [fetchedQuestions]);
 
+  console.log({ fetchedQuestions, questions });
+
   const handleQuestionChange = useCallback(
     (index: number, updatedQuestion: LocalQuestion) => {
       setQuestions((prevQuestions) => {
@@ -67,37 +83,98 @@ export default function QuestionsPage({
     [],
   );
 
-  const addNewQuestion = useCallback(() => {
+  const addNewQuestion = useCallback((index: number) => {
     const newQuestion: LocalQuestion = {
       id: `new-${Date.now()}`,
       title: "",
       body: "",
       questionType: QuestionType.OPEN_ENDED,
       followUpLevel: FollowUpLevel.AUTOMATIC,
-      shouldFollowUp: true,
+      shouldFollowUp: false,
       context: "",
-      questionOrder: questions.length,
+      questionOrder: index,
       hasStimulus: false,
       allowMultipleSelections: false,
       multipleChoiceOptions: [],
       isNew: true,
     };
-    setQuestions((prev) => [...prev, newQuestion]);
+    setQuestions((prev) => {
+      const newQuestions = [...prev];
+      newQuestions.splice(index, 0, newQuestion);
+      return newQuestions.map((q, i) => ({ ...q, questionOrder: i }));
+    });
     setHasUnsavedChanges(true);
-  }, [questions]);
+  }, []);
+
+  const handleQuestionValidationChange = useCallback(
+    (isValid: boolean, index: number) => {
+      setQuestionValidations((prev) => {
+        const newValidations = [...prev];
+        newValidations[index] = isValid;
+        return newValidations;
+      });
+    },
+    [],
+  );
+
+  const allQuestionsValid = useMemo(
+    () => questionValidations.every((isValid) => isValid),
+    [questionValidations],
+  );
+
+  const handleDeleteQuestion = useCallback(
+    (index: number) => {
+      if (
+        study?.status === StudyStatus.PUBLISHED &&
+        study?.completedInterviewsCount > 0
+      ) {
+        showErrorToast(
+          "You cannot delete questions after the study has been published and responses have been collected.",
+        );
+        return;
+      }
+
+      setQuestions((prevQuestions) => {
+        const newQuestions = prevQuestions.filter((_, i) => i !== index);
+        return newQuestions.map((q, i) => ({ ...q, questionOrder: i }));
+      });
+
+      // Update questionValidations when deleting a question
+      setQuestionValidations((prevValidations) => {
+        const newValidations = prevValidations.filter((_, i) => i !== index);
+        return newValidations;
+      });
+
+      setHasUnsavedChanges(true);
+    },
+    [study?.status, study?.completedInterviewsCount],
+  );
 
   const handleSaveQuestions = useCallback(async () => {
+    console.log({ questionValidations });
+    if (!allQuestionsValid) {
+      showErrorToast("Please fix errors in all questions before saving");
+      return;
+    }
+
     try {
-      await updateStudyQuestionsMutation.mutateAsync({
-        studyId: params.studyId,
-        questions: questions.map((q) => ({
-          ...q,
-          multipleChoiceOptions: q.multipleChoiceOptions?.map((option) => ({
+      const questionsToSave = questions.map((q, index) => ({
+        ...q,
+        questionOrder: index,
+        multipleChoiceOptions: q.multipleChoiceOptions?.map(
+          (option, optionIndex) => ({
             id: option.id,
             optionText: option.field1,
-            optionOrder: 0, // You might want to add proper ordering logic
-          })),
-        })),
+            optionOrder: optionIndex,
+          }),
+        ),
+      }));
+
+      console.log({ questionsToSave });
+
+      await updateStudyQuestionsMutation.mutateAsync({
+        studyId: params.studyId,
+        questions: questionsToSave,
       });
       setHasUnsavedChanges(false);
       showSuccessToast("Questions saved successfully");
@@ -105,7 +182,13 @@ export default function QuestionsPage({
       showErrorToast("Failed to save questions");
       console.error("Failed to save questions:", error);
     }
-  }, [questions, params.studyId, updateStudyQuestionsMutation]);
+  }, [
+    questions,
+    params.studyId,
+    updateStudyQuestionsMutation,
+    allQuestionsValid,
+    questionValidations,
+  ]);
 
   if (isLoading) {
     return (
@@ -139,28 +222,30 @@ export default function QuestionsPage({
           </div>
         </div>
         {questions.map((question, index) => (
-          <QuestionSetupSection
-            key={question.id ?? index}
-            question={question}
-            onChange={(updatedQuestion) =>
-              handleQuestionChange(index, updatedQuestion)
-            }
-            onValidationChange={() => {
-              // Implement validation logic if needed
-            }}
-          />
+          <React.Fragment key={question.id ?? index}>
+            <QuestionSetupSection
+              question={question}
+              onChange={(updatedQuestion) =>
+                handleQuestionChange(index, updatedQuestion)
+              }
+              onDelete={handleDeleteQuestion}
+              onValidationChange={handleQuestionValidationChange}
+              index={index}
+            />
+            <div className="flex w-full flex-row items-center justify-center">
+              <div
+                onClick={() => addNewQuestion(index + 1)}
+                className="flex w-fit cursor-pointer items-center gap-2 text-sm text-theme-700"
+              >
+                <Plus size={20} />
+                Insert Question
+              </div>
+            </div>
+          </React.Fragment>
         ))}
         <Button
-          onClick={addNewQuestion}
-          variant="unstyled"
-          className="mt-4 flex items-center gap-2"
-        >
-          <Plus size={20} />
-          Add New Question
-        </Button>
-        <Button
           onClick={handleSaveQuestions}
-          className="mt-4"
+          className="mt-4 text-theme-off-white"
           disabled={
             !hasUnsavedChanges || updateStudyQuestionsMutation.isPending
           }

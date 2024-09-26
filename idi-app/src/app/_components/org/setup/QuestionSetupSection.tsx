@@ -15,6 +15,8 @@ import {
   WebsiteStimulus,
 } from "@shared/generated/client";
 import { on } from "events";
+import BasicPopover from "../../reusable/BasicPopover";
+import { DotsThree, Trash } from "@phosphor-icons/react";
 
 export type LocalQuestion = {
   id?: string;
@@ -38,14 +40,19 @@ export type LocalQuestion = {
 
 type QuestionSetupSectionProps = {
   question: LocalQuestion;
-  onValidationChange: (isValid: boolean) => void;
+  onValidationChange: (isValid: boolean, questionIndex: number) => void;
   onChange: (updatedQuestion: LocalQuestion) => void;
+  onDelete: (questionIndex: number) => void;
+  index: number;
 };
 
 const QuestionSetupSection: React.FC<QuestionSetupSectionProps> = ({
   question,
   onValidationChange,
   onChange,
+  onDelete,
+
+  index,
 }) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const {
@@ -84,9 +91,9 @@ const QuestionSetupSection: React.FC<QuestionSetupSectionProps> = ({
     }
 
     setErrors(newErrors);
-    onValidationChange(isValid);
+    onValidationChange(isValid, index);
     return isValid;
-  }, [question, multipleChoiceOptions, onValidationChange]);
+  }, [question, multipleChoiceOptions, onValidationChange, index]);
 
   useEffect(() => {
     validateQuestion();
@@ -115,55 +122,82 @@ const QuestionSetupSection: React.FC<QuestionSetupSectionProps> = ({
     [onChange, question],
   );
 
+  const handleDelete = useCallback(() => {
+    onDelete(index);
+  }, [onDelete, index]);
+
   const renderOpenEndedFields = useMemo(
     () => (
       <>
         <BasicTitleSection
-          title="Follow Up Settings"
+          title="Should Follow Up"
+          subtitle="If you'd like the AI to ask follow ups, select yes."
           titleClassName="!font-medium"
           subtitleClassName="!font-normal"
         >
           <BasicSelect
-            options={Object.values(FollowUpLevel)
-              .filter((level) => level !== FollowUpLevel.AUTOMATIC)
-              .map((level) => ({
-                value: level,
-                label: (() => {
-                  switch (level) {
-                    case FollowUpLevel.SURFACE:
-                      return "Surface Level (1-2 questions)";
-                    case FollowUpLevel.LIGHT:
-                      return "Deeper Dive (2-3 questions)";
-                    case FollowUpLevel.DEEP:
-                      return "Comprehensive (3-5 questions)";
-                    default:
-                      return level;
-                  }
-                })(),
-              }))}
-            placeholder="Select follow up setting"
-            value={question.followUpLevel ?? ""}
-            onValueChange={handleSelectChange("followUpLevel")}
+            options={[
+              { value: "true", label: "Yes" },
+              { value: "false", label: "No" },
+            ]}
+            placeholder="Select follow up option"
+            value={question.shouldFollowUp ? "true" : "false"}
+            onValueChange={(value) =>
+              onChange({ ...question, shouldFollowUp: value === "true" })
+            }
           />
         </BasicTitleSection>
 
-        <BasicTitleSection
-          title="Context and Instructions"
-          subtitle="Include context to provide the AI with information about how to follow up, key areas of interest, goals of the question, etc. The quality of follow ups will be greatly enhanced by writing detailed question context."
-          titleClassName="!font-medium"
-          subtitleClassName="!font-normal"
-        >
-          <BasicTextArea
-            placeholder="Enter goals"
-            rows={6}
-            className="w-full"
-            value={question.context ?? ""}
-            onSetValue={handleInputChange("context")}
-          />
-        </BasicTitleSection>
+        {question.shouldFollowUp && (
+          <>
+            <BasicTitleSection
+              title="Follow Up Settings"
+              titleClassName="!font-medium"
+              subtitleClassName="!font-normal"
+            >
+              <BasicSelect
+                options={Object.values(FollowUpLevel)
+                  .filter((level) => level !== FollowUpLevel.AUTOMATIC)
+                  .map((level) => ({
+                    value: level,
+                    label: (() => {
+                      switch (level) {
+                        case FollowUpLevel.SURFACE:
+                          return "Surface Level (1-2 questions)";
+                        case FollowUpLevel.LIGHT:
+                          return "Deeper Dive (2-3 questions)";
+                        case FollowUpLevel.DEEP:
+                          return "Comprehensive (3-5 questions)";
+                        default:
+                          return level;
+                      }
+                    })(),
+                  }))}
+                placeholder="Select follow up setting"
+                value={question.followUpLevel ?? ""}
+                onValueChange={handleSelectChange("followUpLevel")}
+              />
+            </BasicTitleSection>
+
+            <BasicTitleSection
+              title="Context and Instructions"
+              subtitle="Include context to provide the AI with information about how to follow up, key areas of interest, goals of the question, etc. The quality of follow ups will be greatly enhanced by writing detailed question context."
+              titleClassName="!font-medium"
+              subtitleClassName="!font-normal"
+            >
+              <BasicTextArea
+                placeholder="Enter goals"
+                rows={6}
+                className="w-full"
+                value={question.context ?? ""}
+                onSetValue={handleInputChange("context")}
+              />
+            </BasicTitleSection>
+          </>
+        )}
       </>
     ),
-    [question, handleSelectChange, handleInputChange],
+    [question, handleSelectChange, handleInputChange, onChange],
   );
 
   const renderMultipleChoiceFields = useMemo(
@@ -199,8 +233,21 @@ const QuestionSetupSection: React.FC<QuestionSetupSectionProps> = ({
 
   return (
     <div className="flex flex-col gap-6 rounded-lg border border-theme-200 bg-theme-50 p-6">
-      <div className="text-lg font-medium text-theme-600">
-        {`Question ${(question.questionOrder ?? 0) + 1}`}
+      <div className="flex w-full flex-row items-center justify-between">
+        <div className="text-lg font-medium text-theme-600">
+          {`Question ${(question.questionOrder ?? 0) + 1}`}
+        </div>
+        <BasicPopover
+          trigger={<DotsThree size={20} />}
+          options={[
+            {
+              text: "Delete this question",
+              icon: <Trash />,
+              color: "text-red-500",
+              onClick: handleDelete,
+            },
+          ]}
+        />
       </div>
       <div className="h-[1px] w-full bg-theme-200" />
 

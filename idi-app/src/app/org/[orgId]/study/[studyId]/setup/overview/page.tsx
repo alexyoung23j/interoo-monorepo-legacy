@@ -183,7 +183,9 @@ export default function SetupOverviewPage({
           <div className="text-lg text-theme-600">Overview</div>
           <div className="text-xs">
             {hasUnsavedChanges ? (
-              <span className="font-semibold text-theme-700">Unsaved</span>
+              <span className="text-sm font-semibold text-theme-900">
+                Unsaved
+              </span>
             ) : (
               <span className="text-theme-500">Saved</span>
             )}
