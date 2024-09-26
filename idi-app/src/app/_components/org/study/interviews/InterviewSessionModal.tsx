@@ -291,7 +291,11 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
           <div className="h-[1px] w-full bg-theme-200 text-theme-900"></div>
           <div className="mb-4 text-sm text-theme-600">
             {interviewSession.summary && interviewSession.summary !== ""
-              ? interviewSession.summary
+              ? interviewSession.summary.split("\n").map((paragraph, index) => (
+                  <p key={index} className="mb-3 last:mb-0">
+                    {paragraph}
+                  </p>
+                ))
               : "AI powered summaries coming soon!"}
           </div>
 
