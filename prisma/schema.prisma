@@ -239,7 +239,7 @@ enum QuestionType {
 }
 
 model MultipleChoiceOption {
-  id          String     @id
+  id          String     @id @default(uuid())
   questionId  String
   optionText  String
   optionOrder Int

@@ -20,9 +20,9 @@ export type LocalQuestion = {
   id?: string;
   title: string;
   body?: string;
-  questionType: QuestionType | undefined;
-  followUpLevel: FollowUpLevel | undefined;
-  shouldFollowUp: boolean | undefined;
+  questionType: QuestionType;
+  followUpLevel: FollowUpLevel;
+  shouldFollowUp: boolean;
   context?: string;
   questionOrder: number;
   hasStimulus: boolean;
@@ -33,6 +33,7 @@ export type LocalQuestion = {
   videoStimuli?: VideoStimulus[];
   websiteStimuli?: WebsiteStimulus[];
   multipleChoiceOptions?: TextEntry[];
+  isNew?: boolean;
 };
 
 type QuestionSetupSectionProps = {
@@ -52,9 +53,13 @@ const QuestionSetupSection: React.FC<QuestionSetupSectionProps> = ({
     addEntry,
     removeEntry,
     updateEntries,
-  } = useTextEntries(question.multipleChoiceOptions ?? [], (newEntries) => {
-    onChange({ ...question, multipleChoiceOptions: newEntries });
-  });
+  } = useTextEntries(
+    question.multipleChoiceOptions ?? [],
+    false,
+    (newEntries) => {
+      onChange({ ...question, multipleChoiceOptions: newEntries });
+    },
+  );
 
   const validateQuestion = useCallback(() => {
     const newErrors: Record<string, string> = {};

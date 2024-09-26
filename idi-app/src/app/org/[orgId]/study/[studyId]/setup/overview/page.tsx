@@ -70,6 +70,7 @@ export default function SetupOverviewPage({
 
   const { entries, addEntry, removeEntry, updateEntries } = useTextEntries(
     initialEntries,
+    true,
     handleEntriesChange,
   );
 

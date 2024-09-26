@@ -3,6 +3,7 @@ import { useState, useCallback, useEffect } from "react";
 
 export const useTextEntries = (
   initialEntries: TextEntry[] = [],
+  showField2 = false,
   onChange?: (entries: TextEntry[]) => void,
 ) => {
   const [entries, setEntries] = useState<TextEntry[]>(initialEntries);
@@ -15,14 +16,14 @@ export const useTextEntries = (
     const newEntry: TextEntry = {
       id: Date.now().toString(),
       field1: "",
-      field2: "",
+      field2: showField2 ? "" : undefined,
     };
     setEntries((prevEntries) => {
       const newEntries = [...prevEntries, newEntry];
       onChange?.(newEntries);
       return newEntries;
     });
-  }, [onChange]);
+  }, [onChange, showField2]);
 
   const removeEntry = useCallback(
     (id: string) => {

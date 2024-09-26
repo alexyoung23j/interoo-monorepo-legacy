@@ -13,6 +13,8 @@ import {
   Study,
   StudyStatus,
   Response,
+  FollowUpLevel,
+  QuestionType,
 } from "@shared/generated/client";
 import { FastForwardCircle } from "@phosphor-icons/react/dist/ssr";
 import { ExtendedStudy } from "@/app/_components/org/study/results/ResultsPageComponent";
@@ -280,5 +282,132 @@ export const studiesRouter = createTRPCRouter({
         },
       });
       return questions;
+    }),
+  updateStudyQuestions: privateProcedure
+    .input(
+      z.object({
+        studyId: z.string(),
+        questions: z.array(
+          z.object({
+            id: z.string().optional(),
+            title: z.string(),
+            context: z.string().optional(),
+            shouldFollowUp: z.boolean(),
+            followUpLevel: z.nativeEnum(FollowUpLevel),
+            body: z.string().optional(),
+            questionType: z.nativeEnum(QuestionType),
+            questionOrder: z.number(),
+            hasStimulus: z.boolean(),
+            allowMultipleSelections: z.boolean().optional(),
+            lowRange: z.number().optional(),
+            highRange: z.number().optional(),
+            multipleChoiceOptions: z
+              .array(
+                z.object({
+                  id: z.string().optional(),
+                  optionText: z.string(),
+                }),
+              )
+              .optional(),
+            isNew: z.boolean().optional(),
+          }),
+        ),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { studyId, questions } = input;
+
+      return await ctx.db.$transaction(async (prisma) => {
+        const existingQuestionIds = questions
+          .filter((q) => !q.isNew && q.id)
+          .map((q) => q.id!);
+
+        await prisma.question.deleteMany({
+          where: {
+            studyId,
+            id: { notIn: existingQuestionIds },
+          },
+        });
+
+        for (const question of questions) {
+          const { isNew, multipleChoiceOptions, ...questionData } = question;
+
+          let updatedQuestion: Question | null = null;
+
+          if (isNew) {
+            updatedQuestion = await prisma.question.create({
+              data: {
+                ...questionData,
+                studyId,
+              },
+            });
+          } else if (question.id) {
+            updatedQuestion = await prisma.question.update({
+              where: { id: question.id },
+              data: questionData,
+            });
+          }
+
+          if (updatedQuestion && multipleChoiceOptions) {
+            const existingOptions = await prisma.multipleChoiceOption.findMany({
+              where: { questionId: updatedQuestion.id },
+            });
+
+            const optionUpdates = multipleChoiceOptions.map((option, index) => {
+              const existingOption = existingOptions.find(
+                (eo) => eo.id === option.id,
+              );
+
+              if (existingOption) {
+                // Update existing option
+                return prisma.multipleChoiceOption.update({
+                  where: { id: existingOption.id },
+                  data: {
+                    optionText: option.optionText,
+                    optionOrder: index,
+                  },
+                });
+              } else {
+                // Create new option
+                return prisma.multipleChoiceOption.create({
+                  data: {
+                    optionText: option.optionText,
+                    optionOrder: index,
+                    question: {
+                      connect: { id: updatedQuestion.id },
+                    },
+                  },
+                });
+              }
+            });
+
+            // Delete options that are no longer present
+            const optionIdsToKeep = multipleChoiceOptions
+              .map((o) => o.id)
+              .filter((id): id is string => id !== undefined);
+
+            const deleteRemovedOptions = prisma.multipleChoiceOption.deleteMany(
+              {
+                where: {
+                  questionId: updatedQuestion.id,
+                  id: { notIn: optionIdsToKeep },
+                },
+              },
+            );
+
+            await Promise.all([...optionUpdates, deleteRemovedOptions]);
+          }
+        }
+
+        return prisma.question.findMany({
+          where: { studyId },
+          include: {
+            multipleChoiceOptions: {
+              orderBy: { optionOrder: "asc" },
+            },
+          },
+          orderBy: { questionOrder: "asc" },
+        });
+      });
     }),
 });
