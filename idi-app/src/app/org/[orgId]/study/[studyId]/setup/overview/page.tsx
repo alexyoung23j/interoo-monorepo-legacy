@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { useTextEntries } from "@/hooks/useTextEntries";
 import { api } from "@/trpc/react";
 import { ArrowRight } from "@phosphor-icons/react";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Language, StudyStatus } from "@shared/generated/client";
 import { ClipLoader } from "react-spinners";
 import { BasicProgressBar } from "@/app/_components/reusable/BasicProgressBar";
@@ -43,8 +43,8 @@ export default function SetupOverviewPage({
     welcomeDescription: "",
     termsAndConditions: "",
     videoEnabled: false,
-    targetLength: 0,
-    maxResponses: 0,
+    targetLength: null as number | null,
+    maxResponses: null as number | null,
   });
 
   const [errors, setErrors] = useState({
@@ -54,7 +54,24 @@ export default function SetupOverviewPage({
 
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  const { entries, addEntry, removeEntry, updateEntries } = useTextEntries();
+  const initialEntries = useMemo(
+    () =>
+      study?.boostedKeywords?.map((kw) => ({
+        field1: kw.keyword,
+        field2: kw.definition ?? "",
+        id: kw.id,
+      })) ?? [],
+    [study?.boostedKeywords],
+  );
+
+  const handleEntriesChange = useCallback((newEntries: TextEntry[]) => {
+    setHasUnsavedChanges(true);
+  }, []);
+
+  const { entries, addEntry, removeEntry, updateEntries } = useTextEntries(
+    initialEntries,
+    handleEntriesChange,
+  );
 
   useEffect(() => {
     if (study) {
@@ -64,42 +81,36 @@ export default function SetupOverviewPage({
         welcomeDescription: study.welcomeDescription ?? "",
         termsAndConditions: study.termsAndConditions ?? "",
         videoEnabled: study.videoEnabled ?? false,
-        targetLength: study.targetLength ?? 0,
-        maxResponses: study.maxResponses ?? 0,
+        targetLength: study.targetLength ?? null,
+        maxResponses: study.maxResponses ?? null,
       });
-      updateEntries(
-        study.boostedKeywords?.map((kw) => ({
-          field1: kw.keyword,
-          field2: kw.definition ?? "",
-          id: kw.id,
-        })) ?? [],
-      );
       setHasUnsavedChanges(false);
     }
-  }, [study, updateEntries]);
+  }, [study]);
 
-  const handleInputChange = (name: string) => (value: string) => {
-    setFormData((prev) => {
-      if (name === "targetLength" || name === "maxResponses") {
-        const numValue = parseInt(value, 10);
-        return { ...prev, [name]: isNaN(numValue) ? 0 : numValue };
-      }
-      return { ...prev, [name]: value };
-    });
-    setHasUnsavedChanges(true);
-  };
+  const handleInputChange = useCallback(
+    (name: string) => (value: string) => {
+      setFormData((prev) => {
+        if (name === "targetLength" || name === "maxResponses") {
+          const numValue = value === "" ? null : parseInt(value, 10);
+          return {
+            ...prev,
+            [name]: isNaN(numValue!) ? null : numValue,
+          };
+        }
+        return { ...prev, [name]: value };
+      });
+      setHasUnsavedChanges(true);
+    },
+    [],
+  );
 
-  const handleSelectChange = (value: string) => {
+  const handleSelectChange = useCallback((value: string) => {
     setFormData((prev) => ({ ...prev, videoEnabled: value === "true" }));
     setHasUnsavedChanges(true);
-  };
+  }, []);
 
-  const handleTextEntryChange = (newEntries: TextEntry[]) => {
-    updateEntries(newEntries);
-    setHasUnsavedChanges(true);
-  };
-
-  const validateForm = () => {
+  const validateForm = useCallback(() => {
     let isValid = true;
     const newErrors = { title: "", videoEnabled: "" };
 
@@ -115,9 +126,9 @@ export default function SetupOverviewPage({
 
     setErrors(newErrors);
     return isValid;
-  };
+  }, [formData.title, formData.videoEnabled]);
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     if (!validateForm()) return;
 
     try {
@@ -134,11 +145,18 @@ export default function SetupOverviewPage({
       );
       setHasUnsavedChanges(false);
     } catch (error) {
-      // Handle error (e.g., show error message)
       showErrorToast("Failed to save study");
       console.error("Failed to save study:", error);
     }
-  };
+  }, [
+    formData,
+    entries,
+    params.studyId,
+    router,
+    study,
+    updateStudyMutation,
+    validateForm,
+  ]);
 
   if (isLoading)
     return (
@@ -262,7 +280,7 @@ export default function SetupOverviewPage({
             entries={entries}
             onAdd={addEntry}
             onRemove={removeEntry}
-            onChange={handleTextEntryChange}
+            onChange={updateEntries}
             addText="Add new entry"
             field1Placeholder="Enter keyword"
             field2Placeholder="Enter definition (optional)"
@@ -277,9 +295,9 @@ export default function SetupOverviewPage({
           <BasicInput
             type="number"
             name="targetLength"
-            value={formData.targetLength.toString()}
+            value={formData.targetLength?.toString() ?? ""}
             onSetValue={handleInputChange("targetLength")}
-            placeholder="set a value"
+            placeholder="-"
           />
         </BasicTitleSection>
         <BasicTitleSection
@@ -291,9 +309,9 @@ export default function SetupOverviewPage({
           <BasicInput
             type="number"
             name="maxResponses"
-            value={formData.maxResponses.toString()}
+            value={formData.maxResponses?.toString() ?? ""}
             onSetValue={handleInputChange("maxResponses")}
-            placeholder="set a value"
+            placeholder="-"
           />
         </BasicTitleSection>
         <Button

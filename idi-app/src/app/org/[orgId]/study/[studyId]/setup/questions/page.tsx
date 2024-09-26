@@ -7,6 +7,7 @@ import { BasicProgressBar } from "@/app/_components/reusable/BasicProgressBar";
 import QuestionSetupSection, {
   LocalQuestion,
 } from "@/app/_components/org/setup/QuestionSetupSection";
+import { ClipLoader } from "react-spinners";
 
 export default function QuestionsPage({
   params,
@@ -35,7 +36,12 @@ export default function QuestionsPage({
         allowMultipleSelections: q.allowMultipleSelections,
         lowRange: q.lowRange ?? undefined,
         highRange: q.highRange ?? undefined,
-        multipleChoiceOptions: [],
+        multipleChoiceOptions:
+          q.multipleChoiceOptions.map((option) => ({
+            id: option.id,
+            field1: option.optionText,
+            field2: undefined,
+          })) ?? [],
       }));
       setQuestions(localQuestions);
     }
@@ -53,7 +59,11 @@ export default function QuestionsPage({
   );
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex h-full items-center justify-center bg-theme-off-white">
+        <ClipLoader size={50} color="grey" loading={true} />
+      </div>
+    );
   }
 
   return (
@@ -79,7 +89,9 @@ export default function QuestionsPage({
             onChange={(updatedQuestion) =>
               handleQuestionChange(index, updatedQuestion)
             }
-            onValidationChange={() => {}}
+            onValidationChange={() => {
+              //
+            }}
           />
         ))}
       </BasicCard>

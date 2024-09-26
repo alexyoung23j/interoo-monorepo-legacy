@@ -45,21 +45,16 @@ const TextEntryGroup: React.FC<TextEntryGroupProps> = ({
       {entries.map((entry) => (
         <div key={entry.id} className="flex w-full flex-row items-center gap-2">
           <div className="flex flex-1 flex-row gap-2">
-            <div className="flex flex-row items-center gap-2">
-              <BasicInput
-                value={entry.field1 ?? ""}
-                onSetValue={(value) =>
-                  handleSetValue(entry.id, "field1", value)
-                }
-                placeholder={field1Placeholder}
-                className="flex-1"
-              />
-              {entry.field1Percentage !== undefined && (
-                <div className="text-sm text-theme-600">
-                  {entry.field1Percentage}%
-                </div>
-              )}
-            </div>
+            <BasicInput
+              value={entry.field1 ?? ""}
+              onSetValue={(value) => handleSetValue(entry.id, "field1", value)}
+              placeholder={field1Placeholder}
+              className={`${
+                entry.field2 !== undefined
+                  ? `w-[${entry.field1Percentage ?? 25}%]`
+                  : "w-full flex-1"
+              }`}
+            />
             {entry.field2 !== undefined && (
               <BasicInput
                 value={entry.field2 ?? ""}
