@@ -14,7 +14,7 @@ import { googleAuth } from "../index";
 const router = Router();
 
 export async function triggerAnalysisJobsSetup(interviewSessionId: string): Promise<void> {
-  const targetAudience = "https://us-central1-interoo-dev.cloudfunctions.net/analysis-jobs-setup";
+  const targetAudience = `https://us-central1-${process.env.GOOGLE_CLOUD_PROJECT_ID}.cloudfunctions.net/setUpAnalysis`;
   const url = targetAudience;
 
   try {
