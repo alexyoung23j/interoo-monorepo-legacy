@@ -205,10 +205,7 @@ export default function QuestionsPage({
 
   const handleDeleteQuestion = useCallback(
     (index: number) => {
-      if (
-        study?.status === StudyStatus.PUBLISHED &&
-        study?.completedInterviewsCount > 0
-      ) {
+      if (study?.status === StudyStatus.PUBLISHED) {
         showErrorToast(
           "You cannot delete questions after the study has been published and responses have been collected.",
         );
@@ -228,7 +225,7 @@ export default function QuestionsPage({
 
       setHasUnsavedChanges(true);
     },
-    [study?.status, study?.completedInterviewsCount],
+    [study?.status],
   );
 
   const handleSaveQuestions = useCallback(async () => {

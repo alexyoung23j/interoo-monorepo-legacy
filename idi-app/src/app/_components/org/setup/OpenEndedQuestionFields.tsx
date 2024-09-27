@@ -271,6 +271,7 @@ const OpenEndedQuestionFields: React.FC<OpenEndedQuestionFieldsProps> = ({
       {question.hasStimulus && question.stimulusType === "Videos" && (
         <BasicTitleSection
           title="Video Stimuli"
+          subtitle="Add videos to present the user with context for your question. Limit to 2 videos."
           titleClassName="!font-medium"
           subtitleClassName="!font-normal"
         >
@@ -293,6 +294,7 @@ const OpenEndedQuestionFields: React.FC<OpenEndedQuestionFieldsProps> = ({
       {question.hasStimulus && question.stimulusType === "Websites" && (
         <BasicTitleSection
           title="Website Stimuli"
+          subtitle="Add websites to present the user with context for your question."
           titleClassName="!font-medium"
           subtitleClassName="!font-normal"
         >

@@ -41,6 +41,7 @@ export default function SetupOverviewPage({
   const updateStudyMutation = api.studies.updateStudy.useMutation();
   const deleteStudyMutation = api.studies.deleteStudy.useMutation();
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -146,23 +147,13 @@ export default function SetupOverviewPage({
           definition: entry.field2,
         })),
       });
-      router.push(
-        `/org/${study?.organizationId}/study/${study?.id}/setup/questions`,
-      );
+
       setHasUnsavedChanges(false);
     } catch (error) {
       showErrorToast("Failed to save study");
       console.error("Failed to save study:", error);
     }
-  }, [
-    formData,
-    entries,
-    params.studyId,
-    router,
-    study,
-    updateStudyMutation,
-    validateForm,
-  ]);
+  }, [formData, entries, params.studyId, updateStudyMutation, validateForm]);
 
   if (isLoading)
     return (
@@ -173,6 +164,46 @@ export default function SetupOverviewPage({
 
   return (
     <div className="flex h-full flex-col gap-10 overflow-y-auto bg-theme-off-white p-9">
+      <BasicConfirmationModal
+        isOpen={showSaveConfirmation}
+        onOpenChange={setShowSaveConfirmation}
+        title="Save these study details?"
+        confirmButtonText={
+          study?.status === StudyStatus.DRAFT
+            ? "Save and continue"
+            : "Save and update"
+        }
+        cancelButtonText="Cancel"
+        body={
+          <div>
+            {updateStudyMutation.isPending && (
+              <div className="flex items-center justify-center py-4">
+                <ClipLoader size={20} color="grey" />
+              </div>
+            )}
+          </div>
+        }
+        onCancel={() => {
+          setShowSaveConfirmation(false);
+        }}
+        onConfirm={async () => {
+          try {
+            await handleSave();
+            if (study?.status === StudyStatus.DRAFT) {
+              router.push(
+                `/org/${study?.organizationId}/study/${study?.id}/setup/questions`,
+              );
+            } else {
+              router.push(
+                `/org/${study?.organizationId}/study/${study?.id}/results`,
+              );
+            }
+          } catch (error) {
+            showErrorToast("Failed to delete draft");
+            console.error("Failed to delete draft:", error);
+          }
+        }}
+      />
       <BasicConfirmationModal
         isOpen={showDeleteConfirmation}
         onOpenChange={setShowDeleteConfirmation}
@@ -198,6 +229,7 @@ export default function SetupOverviewPage({
             await deleteStudyMutation.mutateAsync({
               studyId: params.studyId,
             });
+
             router.push(`/org/${study?.organizationId}/studies`);
           } catch (error) {
             showErrorToast("Failed to delete draft");
@@ -381,10 +413,14 @@ export default function SetupOverviewPage({
         </BasicTitleSection>
         <Button
           className="mt-4 flex gap-2 text-theme-off-white"
-          onClick={handleSave}
+          onClick={() => setShowSaveConfirmation(true)}
           disabled={updateStudyMutation.isPending || !hasUnsavedChanges}
         >
-          {updateStudyMutation.isPending ? "Saving..." : "Save and continue"}
+          {updateStudyMutation.isPending
+            ? "Saving..."
+            : study?.status === StudyStatus.DRAFT
+              ? "Save and continue"
+              : "Save and update"}
           <ArrowRight className="text-theme-off-white" />
         </Button>
         {(errors.title || errors.videoEnabled) && (
