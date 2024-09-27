@@ -211,7 +211,8 @@ const handleNoFollowUp = async (
       where: { id: requestData.interviewSessionId },
       data: {
         status: InterviewSessionStatus.COMPLETED,
-        elapsedTime: elapsedTimeMs
+        elapsedTime: elapsedTimeMs,
+        lastUpdatedTime: new Date().toISOString(),
       }
     });
     triggerAnalysisJobsSetup(requestData.interviewSessionId);

@@ -114,10 +114,15 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
 
   const calculateElapsedTime = (
     session: InterviewSession & { study: Study },
+    responses: ExtendedResponse[],
   ) => {
-    const elapsedTime =
-      new Date(session.lastUpdatedTime!).getTime() -
-      new Date(session.startTime!).getTime();
+    if (responses.length === 0) return 0;
+
+    const firstResponseTime = new Date(
+      responses[0]!.createdAt ?? session.startTime,
+    ).getTime();
+    const lastResponseTime = new Date(session.lastUpdatedTime!).getTime();
+    const elapsedTime = lastResponseTime - firstResponseTime;
 
     if (session.study.targetLength !== null) {
       const maxTime = session.study.targetLength * 1.25 * 60 * 1000; // Convert minutes to milliseconds
@@ -127,7 +132,11 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
     }
   };
 
-  const totalTime = formatElapsedTime(calculateElapsedTime(interviewSession));
+  const totalTime = useMemo(() => {
+    return formatElapsedTime(
+      calculateElapsedTime(interviewSession, filteredResponses),
+    );
+  }, [interviewSession, filteredResponses]);
 
   const currentResponseMediaUrl =
     mediaUrls[selectedResponseId ?? ""]?.signedUrl;

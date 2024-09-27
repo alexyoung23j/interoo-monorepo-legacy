@@ -5,6 +5,7 @@ import {
   InterviewSession,
   InterviewSessionStatus,
   Study,
+  Response,
 } from "@shared/generated/client";
 import SplitScreenLayout from "@/app/_components/layouts/org/SplitScreenLayout";
 import BasicHeaderCard from "@/app/_components/reusable/BasicHeaderCard";
@@ -61,7 +62,7 @@ const InterviewPageComponent: React.FC<InterviewPageComponentProps> = ({
     );
 
   const [selectedInterview, setSelectedInterview] = useState<
-    (InterviewSession & { study: Study }) | null
+    (InterviewSession & { study: Study; responses: Response[] }) | null
   >(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -100,11 +101,11 @@ const InterviewPageComponent: React.FC<InterviewPageComponentProps> = ({
   ];
 
   const calculateElapsedTime = (
-    session: InterviewSession & { study: Study },
+    session: InterviewSession & { study: Study; responses: Response[] },
   ) => {
     const elapsedTime =
       new Date(session.lastUpdatedTime!).getTime() -
-      new Date(session.startTime!).getTime();
+      new Date(session.responses[0]?.createdAt ?? session.startTime!).getTime();
 
     if (session.study.targetLength !== null) {
       const maxTime = session.study.targetLength * 1.25 * 60 * 1000; // Convert minutes to milliseconds

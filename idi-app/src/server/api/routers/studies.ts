@@ -180,6 +180,15 @@ export const studiesRouter = createTRPCRouter({
         include: {
           participant: true,
           study: true,
+          responses: {
+            orderBy: { createdAt: "asc" },
+            take: 1,
+            where: {
+              fastTranscribedText: {
+                not: "",
+              },
+            },
+          },
         },
         orderBy: { startTime: "desc" },
       });
