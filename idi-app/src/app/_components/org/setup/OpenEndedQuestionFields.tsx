@@ -1,9 +1,9 @@
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import BasicSelect from "@/app/_components/reusable/BasicSelect";
 import BasicTextArea from "@/app/_components/reusable/BasicTextArea";
 import BasicTitleSection from "@/app/_components/reusable/BasicTitleSection";
 import BasicInput from "@/app/_components/reusable/BasicInput";
-import { FollowUpLevel } from "@shared/generated/client";
+import { FollowUpLevel, VideoStimulusType } from "@shared/generated/client";
 import type {
   LocalQuestion,
   LocalImageStimulus,
@@ -14,6 +14,9 @@ import BasicDropZone from "../../reusable/BasicDropZone";
 import Image from "next/image";
 import { useSignedReadUrls } from "@/hooks/useSignedReadUrls";
 import { useParams } from "next/navigation";
+import { X } from "@phosphor-icons/react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 
 type OpenEndedQuestionFieldsProps = {
   question: LocalQuestion;
@@ -27,6 +30,45 @@ const OpenEndedQuestionFields: React.FC<OpenEndedQuestionFieldsProps> = ({
   onChange,
 }) => {
   const { studyId, orgId } = useParams<{ studyId: string; orgId: string }>();
+  const [selectedStimulus, setSelectedStimulus] = useState<{
+    type: "image" | "video";
+    url: string;
+    altText?: string | null;
+    title?: string | null;
+    videoType?: VideoStimulusType;
+  } | null>(null);
+
+  const renderModalContent = () => {
+    if (!selectedStimulus) return null;
+
+    if (selectedStimulus.type === "image") {
+      return (
+        <img
+          src={selectedStimulus.url}
+          alt={selectedStimulus.altText ?? "Image"}
+          className="max-h-[80vh] w-full max-w-full object-contain"
+        />
+      );
+    } else if (selectedStimulus.type === "video") {
+      if (selectedStimulus.videoType === VideoStimulusType.UPLOADED) {
+        return (
+          <video
+            src={selectedStimulus.url}
+            controls
+            className="max-h-[80vh] w-auto"
+          />
+        );
+      } else {
+        return (
+          <iframe
+            src={selectedStimulus.url}
+            className="aspect-video w-full max-w-[80vw]"
+            allowFullScreen
+          />
+        );
+      }
+    }
+  };
 
   const handleImageUpload = useCallback(
     (url: string) => {
@@ -115,6 +157,18 @@ const OpenEndedQuestionFields: React.FC<OpenEndedQuestionFieldsProps> = ({
         ...question,
         hasStimulus: value !== "None",
         stimulusType: value as "None" | "Images" | "Videos" | "Websites",
+      });
+    },
+    [onChange, question],
+  );
+
+  const handleRemoveStimulus = useCallback(
+    (type: "image" | "video", index: number) => {
+      onChange({
+        ...question,
+        [`${type}Stimuli`]: question[`${type}Stimuli`].filter(
+          (_, i) => i !== index,
+        ),
       });
     },
     [onChange, question],
@@ -232,37 +286,66 @@ const OpenEndedQuestionFields: React.FC<OpenEndedQuestionFieldsProps> = ({
       {question.hasStimulus && question.stimulusType === "Images" && (
         <BasicTitleSection
           title="Image Stimuli"
+          subtitle="Add images to present the user with context for your question. Limit to 2 images."
           titleClassName="!font-medium"
           subtitleClassName="!font-normal"
         >
-          {question.imageStimuli.map((stimulus, index) => (
-            <div key={index} className="mb-4 flex flex-col gap-2">
-              <div className="relative h-40 w-full">
-                <Image
-                  src={signedUrlsData?.signedUrls[stimulus.bucketUrl] ?? ""}
-                  alt={stimulus.altText ?? "Uploaded image"}
-                  layout="fill"
-                  objectFit="contain"
+          <div className="mb-4 flex flex-wrap gap-4">
+            {question.imageStimuli.map((stimulus, index) => (
+              <div key={index} className="flex w-full items-center gap-2">
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <div className="relative min-h-24 min-w-24 cursor-pointer rounded-md shadow-md">
+                      <Image
+                        src={
+                          signedUrlsData?.signedUrls[stimulus.bucketUrl] ?? ""
+                        }
+                        alt={stimulus.title ?? "Uploaded image"}
+                        layout="fill"
+                        objectFit="cover"
+                        className="rounded-md shadow-sm"
+                        onClick={() =>
+                          setSelectedStimulus({
+                            type: "image",
+                            url:
+                              signedUrlsData?.signedUrls[stimulus.bucketUrl] ??
+                              "",
+                            altText: stimulus.altText,
+                            title: stimulus.title,
+                          })
+                        }
+                      />
+                    </div>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-[90vw] border-none bg-transparent p-0 shadow-none md:w-fit md:min-w-[80vw] md:px-10 md:pt-14">
+                    <div className="flex flex-col items-center justify-center">
+                      {renderModalContent()}
+                      {selectedStimulus?.title && (
+                        <div className="mt-2 p-4 text-center text-lg text-theme-off-white">
+                          {selectedStimulus.title}
+                        </div>
+                      )}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+                <BasicInput
+                  type="text"
+                  placeholder="Image label (optional)"
+                  value={stimulus.title ?? ""}
+                  onSetValue={(value) =>
+                    handleStimulusChange("image", index, "title", value)
+                  }
                 />
+                <Button
+                  variant="unstyled"
+                  size="icon"
+                  onClick={() => handleRemoveStimulus("image", index)}
+                >
+                  <X />
+                </Button>
               </div>
-              <BasicInput
-                type="text"
-                placeholder="Image title"
-                value={stimulus.title ?? ""}
-                onSetValue={(value) =>
-                  handleStimulusChange("image", index, "title", value)
-                }
-              />
-              <BasicInput
-                type="text"
-                placeholder="Alt text"
-                value={stimulus.altText ?? ""}
-                onSetValue={(value) =>
-                  handleStimulusChange("image", index, "altText", value)
-                }
-              />
-            </div>
-          ))}
+            ))}
+          </div>
           {question.imageStimuli.length < MAX_STIMULI && (
             <BasicDropZone
               uploadMessage="Click or drag image files to upload"
@@ -280,23 +363,44 @@ const OpenEndedQuestionFields: React.FC<OpenEndedQuestionFieldsProps> = ({
           titleClassName="!font-medium"
           subtitleClassName="!font-normal"
         >
-          {question.videoStimuli.map((stimulus, index) => (
-            <div key={index} className="mb-4 flex flex-col gap-2">
-              <video
-                src={signedUrlsData?.signedUrls[stimulus.url] ?? ""}
-                controls
-                className="max-h-40 w-full"
-              />
-              <BasicInput
-                type="text"
-                placeholder="Video title"
-                value={stimulus.title ?? ""}
-                onSetValue={(value) =>
-                  handleStimulusChange("video", index, "title", value)
-                }
-              />
-            </div>
-          ))}
+          <div className="flex flex-wrap gap-4">
+            {question.videoStimuli.map((stimulus, index) => (
+              <div key={index} className="relative w-64">
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <video
+                      src={signedUrlsData?.signedUrls[stimulus.url] ?? ""}
+                      className="w-full cursor-pointer rounded"
+                      onClick={() =>
+                        setSelectedStimulus({
+                          type: "video",
+                          url: signedUrlsData?.signedUrls[stimulus.url] ?? "",
+                          title: stimulus.title,
+                          videoType: stimulus.type,
+                        })
+                      }
+                    />
+                  </DialogTrigger>
+                  <DialogContent className="max-w-[90vw] border-none bg-transparent p-0 shadow-none md:w-fit md:min-w-[80vw] md:px-10 md:pt-14">
+                    <div className="flex flex-col items-center justify-center">
+                      {renderModalContent()}
+                      {selectedStimulus?.title && (
+                        <div className="mt-2 p-4 text-center text-lg text-theme-off-white">
+                          {selectedStimulus.title}
+                        </div>
+                      )}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+                <button
+                  onClick={() => handleRemoveStimulus("video", index)}
+                  className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-theme-900 text-theme-off-white"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
           {question.videoStimuli.length < MAX_STIMULI && (
             <BasicDropZone
               uploadMessage="Click or drag video files to upload"
