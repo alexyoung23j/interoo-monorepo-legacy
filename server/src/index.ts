@@ -17,6 +17,7 @@ import { getCurrentQuestionMetadataRoute } from "./routes/getCurrentQuestionMeta
 import { getMediaSignedUrlRoute } from "./routes/getSignedUrlForMediaView";
 import { convertAndDownloadMediaRoute } from "./routes/convertAndDownloadMedia";
 import { createStudyDataExportRoute } from "./routes/createStudyDataExport";
+import { getSignedUploadUrlRoute } from "./routes/getSignedUploadUrl";
 
 // Configuration and Setup
 const rootDir = path.resolve(__dirname, "../..");
@@ -98,6 +99,8 @@ app.use("/api/get-current-question-metadata", getCurrentQuestionMetadataRoute);
 app.use("/api/get-signed-urls-for-media-view", getMediaSignedUrlRoute);
 app.use("/api/convert-and-download", convertAndDownloadMediaRoute);
 app.use("/api/create-study-data-export", createStudyDataExportRoute);
+app.use("/api/get-signed-upload-url", getSignedUploadUrlRoute);
+
 
 // Server Startup
 const startServer = () => {

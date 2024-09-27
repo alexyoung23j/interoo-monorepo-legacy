@@ -52,30 +52,75 @@ export default function QuestionsPage({
         questionType: q.questionType,
         followUpLevel: q.followUpLevel,
         shouldFollowUp: q.shouldFollowUp,
+        hasStimulus: q.hasStimulus,
         context: q.context ?? undefined,
         questionOrder: q.questionOrder,
-        hasStimulus: q.hasStimulus,
         allowMultipleSelections: q.allowMultipleSelections,
         lowRange: q.lowRange ?? undefined,
         highRange: q.highRange ?? undefined,
+        stimulusType: q.hasStimulus
+          ? q.imageStimuli.length > 0
+            ? "Images"
+            : q.videoStimuli.length > 0
+              ? "Videos"
+              : q.websiteStimuli.length > 0
+                ? "Websites"
+                : "None"
+          : "None",
         multipleChoiceOptions:
-          q.multipleChoiceOptions.map((option) => ({
+          q.multipleChoiceOptions?.map((option) => ({
             id: option.id,
             field1: option.optionText,
             field2: undefined,
+          })) ?? [],
+        imageStimuli:
+          q.imageStimuli?.map((stimulus) => ({
+            id: stimulus.id,
+            bucketUrl: stimulus.bucketUrl,
+            title: stimulus.title ?? undefined,
+            altText: stimulus.altText ?? undefined,
+          })) ?? [],
+        videoStimuli:
+          q.videoStimuli?.map((stimulus) => ({
+            id: stimulus.id,
+            url: stimulus.url,
+            type: stimulus.type,
+            title: stimulus.title ?? undefined,
+          })) ?? [],
+        websiteStimuli:
+          q.websiteStimuli?.map((stimulus) => ({
+            id: stimulus.id,
+            websiteUrl: stimulus.websiteUrl,
+            title: stimulus.title ?? undefined,
           })) ?? [],
       }));
       setQuestions(localQuestions);
     }
   }, [fetchedQuestions]);
 
-  console.log({ fetchedQuestions, questions });
+  console.log({ questions });
 
   const handleQuestionChange = useCallback(
     (index: number, updatedQuestion: LocalQuestion) => {
       setQuestions((prevQuestions) => {
         const newQuestions = [...prevQuestions];
-        newQuestions[index] = updatedQuestion;
+        const questionToUpdate = { ...updatedQuestion };
+
+        // Logic to unset other stimulus types when one is set
+        if (questionToUpdate.hasStimulus) {
+          if (questionToUpdate.stimulusType === "Images") {
+            questionToUpdate.videoStimuli = [];
+            questionToUpdate.websiteStimuli = [];
+          } else if (questionToUpdate.stimulusType === "Videos") {
+            questionToUpdate.imageStimuli = [];
+            questionToUpdate.websiteStimuli = [];
+          } else if (questionToUpdate.stimulusType === "Websites") {
+            questionToUpdate.imageStimuli = [];
+            questionToUpdate.videoStimuli = [];
+          }
+        }
+
+        newQuestions[index] = questionToUpdate;
         return newQuestions;
       });
       setHasUnsavedChanges(true);
@@ -89,13 +134,16 @@ export default function QuestionsPage({
       title: "",
       body: "",
       questionType: QuestionType.OPEN_ENDED,
-      followUpLevel: FollowUpLevel.AUTOMATIC,
+      followUpLevel: FollowUpLevel.SURFACE,
       shouldFollowUp: false,
+      hasStimulus: false,
       context: "",
       questionOrder: index,
-      hasStimulus: false,
       allowMultipleSelections: false,
       multipleChoiceOptions: [],
+      imageStimuli: [],
+      videoStimuli: [],
+      websiteStimuli: [],
       isNew: true,
     };
     setQuestions((prev) => {
@@ -170,8 +218,6 @@ export default function QuestionsPage({
         ),
       }));
 
-      console.log({ questionsToSave });
-
       await updateStudyQuestionsMutation.mutateAsync({
         studyId: params.studyId,
         questions: questionsToSave,
@@ -243,6 +289,17 @@ export default function QuestionsPage({
             </div>
           </React.Fragment>
         ))}
+        {questions.length === 0 && (
+          <div className="flex w-full flex-row items-center justify-center">
+            <div
+              onClick={() => addNewQuestion(0)}
+              className="flex w-fit cursor-pointer items-center gap-2 text-sm text-theme-700"
+            >
+              <Plus size={20} />
+              Insert Question
+            </div>
+          </div>
+        )}
         <Button
           onClick={handleSaveQuestions}
           className="mt-4 text-theme-off-white"

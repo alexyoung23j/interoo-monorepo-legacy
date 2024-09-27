@@ -123,7 +123,7 @@ model ImageStimulus {
   title      String?
   altText    String?
   questionId String
-  question   Question @relation(fields: [questionId], references: [id])
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
 }
 
 model VideoStimulus {
@@ -132,7 +132,7 @@ model VideoStimulus {
   type       VideoStimulusType
   title      String?
   questionId String
-  question   Question          @relation(fields: [questionId], references: [id])
+  question   Question          @relation(fields: [questionId], references: [id], onDelete: Cascade)
 }
 
 model WebsiteStimulus {
@@ -140,7 +140,7 @@ model WebsiteStimulus {
   websiteUrl String
   title      String?
   questionId String
-  question   Question @relation(fields: [questionId], references: [id])
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
 }
 
 model Question {
@@ -243,7 +243,7 @@ model MultipleChoiceOption {
   questionId  String
   optionText  String
   optionOrder Int
-  question    Question   @relation(fields: [questionId], references: [id])
+  question    Question   @relation(fields: [questionId], references: [id], onDelete: Cascade)
   response    Response[]
 }
 

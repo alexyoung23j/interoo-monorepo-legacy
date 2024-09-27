@@ -309,6 +309,29 @@ export const studiesRouter = createTRPCRouter({
                 }),
               )
               .optional(),
+            imageStimuli: z.array(
+              z.object({
+                id: z.string().optional(),
+                bucketUrl: z.string(),
+                title: z.string().optional(),
+                altText: z.string().optional(),
+              }),
+            ),
+            videoStimuli: z.array(
+              z.object({
+                id: z.string().optional(),
+                url: z.string(),
+                type: z.enum(["UPLOADED", "EXTERNAL"]),
+                title: z.string().optional(),
+              }),
+            ),
+            websiteStimuli: z.array(
+              z.object({
+                id: z.string().optional(),
+                websiteUrl: z.string(),
+                title: z.string().optional(),
+              }),
+            ),
             isNew: z.boolean().optional(),
           }),
         ),
@@ -316,6 +339,8 @@ export const studiesRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const { studyId, questions } = input;
+
+      console.log({ questions });
 
       return await ctx.db.$transaction(async (prisma) => {
         const existingQuestionIds = questions
@@ -330,7 +355,14 @@ export const studiesRouter = createTRPCRouter({
         });
 
         for (const question of questions) {
-          const { isNew, multipleChoiceOptions, ...questionData } = question;
+          const {
+            isNew,
+            multipleChoiceOptions,
+            imageStimuli,
+            videoStimuli,
+            websiteStimuli,
+            ...questionData
+          } = question;
 
           let updatedQuestion: Question | null = null;
 
@@ -348,55 +380,82 @@ export const studiesRouter = createTRPCRouter({
             });
           }
 
-          if (updatedQuestion && multipleChoiceOptions) {
+          if (updatedQuestion) {
+            // Handle image stimuli
+            await prisma.imageStimulus.deleteMany({
+              where: { questionId: updatedQuestion.id },
+            });
+            await prisma.imageStimulus.createMany({
+              data: imageStimuli.map((stimulus) => ({
+                ...stimulus,
+                questionId: updatedQuestion.id,
+              })),
+            });
+
+            // Handle video stimuli
+            await prisma.videoStimulus.deleteMany({
+              where: { questionId: updatedQuestion.id },
+            });
+            await prisma.videoStimulus.createMany({
+              data: videoStimuli.map((stimulus) => ({
+                ...stimulus,
+                questionId: updatedQuestion.id,
+              })),
+            });
+
+            // Handle website stimuli
+            await prisma.websiteStimulus.deleteMany({
+              where: { questionId: updatedQuestion.id },
+            });
+            await prisma.websiteStimulus.createMany({
+              data: websiteStimuli.map((stimulus) => ({
+                ...stimulus,
+                questionId: updatedQuestion.id,
+              })),
+            });
+
             const existingOptions = await prisma.multipleChoiceOption.findMany({
               where: { questionId: updatedQuestion.id },
             });
 
-            const optionUpdates = multipleChoiceOptions.map((option, index) => {
+            const optionIdsToKeep: string[] = [];
+
+            for (const [index, option] of multipleChoiceOptions?.entries() ??
+              []) {
               const existingOption = existingOptions.find(
                 (eo) => eo.id === option.id,
               );
 
               if (existingOption) {
                 // Update existing option
-                return prisma.multipleChoiceOption.update({
+                const updatedOption = await prisma.multipleChoiceOption.update({
                   where: { id: existingOption.id },
                   data: {
                     optionText: option.optionText,
                     optionOrder: index,
                   },
                 });
+                optionIdsToKeep.push(updatedOption.id);
               } else {
-                console.log("Creating new option", option);
                 // Create new option
-                return prisma.multipleChoiceOption.create({
+                const newOption = await prisma.multipleChoiceOption.create({
                   data: {
                     optionText: option.optionText,
                     optionOrder: index,
-                    question: {
-                      connect: { id: updatedQuestion.id },
-                    },
+                    questionId: updatedQuestion.id,
                   },
                 });
+                optionIdsToKeep.push(newOption.id);
               }
-            });
+            }
 
             // Delete options that are no longer present
-            const optionIdsToKeep = multipleChoiceOptions
-              .map((o) => o.id)
-              .filter((id): id is string => id !== undefined);
-
-            const deleteRemovedOptions = prisma.multipleChoiceOption.deleteMany(
-              {
-                where: {
-                  questionId: updatedQuestion.id,
-                  id: { notIn: optionIdsToKeep },
-                },
+            await prisma.multipleChoiceOption.deleteMany({
+              where: {
+                questionId: updatedQuestion.id,
+                id: { notIn: optionIdsToKeep },
               },
-            );
-
-            await Promise.all([...optionUpdates, deleteRemovedOptions]);
+            });
           }
         }
 
@@ -406,6 +465,9 @@ export const studiesRouter = createTRPCRouter({
             multipleChoiceOptions: {
               orderBy: { optionOrder: "asc" },
             },
+            imageStimuli: true,
+            videoStimuli: true,
+            websiteStimuli: true,
           },
           orderBy: { questionOrder: "asc" },
         });

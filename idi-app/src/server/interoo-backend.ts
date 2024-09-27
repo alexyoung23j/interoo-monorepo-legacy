@@ -66,3 +66,44 @@ export const createStudyDataExport = async ({
   // eslint-disable-next-line @typescript-eslint/no-unsafe-return
   return response.data;
 };
+
+// Used by Dropzone
+export const getSignedUploadUrl = async ({
+  filePath,
+  contentType,
+  token,
+}: {
+  filePath: string;
+  contentType: string;
+  token: string;
+}) => {
+  const response = await axios.post(
+    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/get-signed-upload-url`,
+    {
+      filePath,
+      contentType,
+    },
+    {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  );
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+  return response.data;
+};
+
+export const uploadFileToSignedUrl = async ({
+  signedUrl,
+  file,
+  contentType,
+}: {
+  signedUrl: string;
+  file: File;
+  contentType: string;
+}) => {
+  await axios.put(signedUrl, file, {
+    headers: { "Content-Type": contentType },
+  });
+};

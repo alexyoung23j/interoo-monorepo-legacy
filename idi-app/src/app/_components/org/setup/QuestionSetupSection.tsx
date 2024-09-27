@@ -1,12 +1,7 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import BasicInput from "@/app/_components/reusable/BasicInput";
 import BasicSelect from "@/app/_components/reusable/BasicSelect";
-import BasicTextArea from "@/app/_components/reusable/BasicTextArea";
 import BasicTitleSection from "@/app/_components/reusable/BasicTitleSection";
-import TextEntryGroup, {
-  TextEntry,
-} from "@/app/_components/reusable/TextEntryGroup";
-import { useTextEntries } from "@/hooks/useTextEntries";
 import {
   QuestionType,
   FollowUpLevel,
@@ -14,9 +9,31 @@ import {
   VideoStimulus,
   WebsiteStimulus,
 } from "@shared/generated/client";
-import { on } from "events";
 import BasicPopover from "../../reusable/BasicPopover";
 import { DotsThree, Trash } from "@phosphor-icons/react";
+import OpenEndedQuestionFields from "./OpenEndedQuestionFields";
+import MultipleChoiceQuestionFields from "./MultipleChoiceQuestionFields";
+import { TextEntry } from "@/app/_components/reusable/TextEntryGroup";
+
+export type LocalImageStimulus = {
+  id?: string;
+  bucketUrl: string;
+  title?: string;
+  altText?: string;
+};
+
+export type LocalVideoStimulus = {
+  id?: string;
+  url: string;
+  type: "UPLOADED" | "EXTERNAL";
+  title?: string;
+};
+
+export type LocalWebsiteStimulus = {
+  id?: string;
+  websiteUrl: string;
+  title?: string;
+};
 
 export type LocalQuestion = {
   id?: string;
@@ -28,12 +45,13 @@ export type LocalQuestion = {
   context?: string;
   questionOrder: number;
   hasStimulus: boolean;
+  stimulusType?: "None" | "Images" | "Videos" | "Websites";
   allowMultipleSelections?: boolean;
   lowRange?: number;
   highRange?: number;
-  imageStimuli?: ImageStimulus[];
-  videoStimuli?: VideoStimulus[];
-  websiteStimuli?: WebsiteStimulus[];
+  imageStimuli: LocalImageStimulus[];
+  videoStimuli: LocalVideoStimulus[];
+  websiteStimuli: LocalWebsiteStimulus[];
   multipleChoiceOptions?: TextEntry[];
   isNew?: boolean;
 };
@@ -51,22 +69,9 @@ const QuestionSetupSection: React.FC<QuestionSetupSectionProps> = ({
   onValidationChange,
   onChange,
   onDelete,
-
   index,
 }) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const {
-    entries: multipleChoiceOptions,
-    addEntry,
-    removeEntry,
-    updateEntries,
-  } = useTextEntries(
-    question.multipleChoiceOptions ?? [],
-    false,
-    (newEntries) => {
-      onChange({ ...question, multipleChoiceOptions: newEntries });
-    },
-  );
 
   const validateQuestion = useCallback(() => {
     const newErrors: Record<string, string> = {};
@@ -82,18 +87,10 @@ const QuestionSetupSection: React.FC<QuestionSetupSectionProps> = ({
       isValid = false;
     }
 
-    if (
-      question.questionType === QuestionType.MULTIPLE_CHOICE &&
-      multipleChoiceOptions.length < 2
-    ) {
-      newErrors.multipleChoiceOptions = "At least two options are required";
-      isValid = false;
-    }
-
     setErrors(newErrors);
     onValidationChange(isValid, index);
     return isValid;
-  }, [question, multipleChoiceOptions, onValidationChange, index]);
+  }, [question, onValidationChange, index]);
 
   useEffect(() => {
     validateQuestion();
@@ -108,11 +105,9 @@ const QuestionSetupSection: React.FC<QuestionSetupSectionProps> = ({
 
   const handleSelectChange = useCallback(
     (field: keyof LocalQuestion) => (value: string) => {
-      let typedValue: QuestionType | FollowUpLevel | undefined;
+      let typedValue: QuestionType | undefined;
       if (field === "questionType") {
         typedValue = value as QuestionType;
-      } else if (field === "followUpLevel") {
-        typedValue = value as FollowUpLevel;
       } else {
         return;
       }
@@ -125,111 +120,6 @@ const QuestionSetupSection: React.FC<QuestionSetupSectionProps> = ({
   const handleDelete = useCallback(() => {
     onDelete(index);
   }, [onDelete, index]);
-
-  const renderOpenEndedFields = useMemo(
-    () => (
-      <>
-        <BasicTitleSection
-          title="Should Follow Up"
-          subtitle="If you'd like the AI to ask follow ups, select yes."
-          titleClassName="!font-medium"
-          subtitleClassName="!font-normal"
-        >
-          <BasicSelect
-            options={[
-              { value: "true", label: "Yes" },
-              { value: "false", label: "No" },
-            ]}
-            placeholder="Select follow up option"
-            value={question.shouldFollowUp ? "true" : "false"}
-            onValueChange={(value) =>
-              onChange({ ...question, shouldFollowUp: value === "true" })
-            }
-          />
-        </BasicTitleSection>
-
-        {question.shouldFollowUp && (
-          <>
-            <BasicTitleSection
-              title="Follow Up Settings"
-              titleClassName="!font-medium"
-              subtitleClassName="!font-normal"
-            >
-              <BasicSelect
-                options={Object.values(FollowUpLevel)
-                  .filter((level) => level !== FollowUpLevel.AUTOMATIC)
-                  .map((level) => ({
-                    value: level,
-                    label: (() => {
-                      switch (level) {
-                        case FollowUpLevel.SURFACE:
-                          return "Surface Level (1-2 questions)";
-                        case FollowUpLevel.LIGHT:
-                          return "Deeper Dive (2-3 questions)";
-                        case FollowUpLevel.DEEP:
-                          return "Comprehensive (3-5 questions)";
-                        default:
-                          return level;
-                      }
-                    })(),
-                  }))}
-                placeholder="Select follow up setting"
-                value={question.followUpLevel ?? ""}
-                onValueChange={handleSelectChange("followUpLevel")}
-              />
-            </BasicTitleSection>
-
-            <BasicTitleSection
-              title="Context and Instructions"
-              subtitle="Include context to provide the AI with information about how to follow up, key areas of interest, goals of the question, etc. The quality of follow ups will be greatly enhanced by writing detailed question context."
-              titleClassName="!font-medium"
-              subtitleClassName="!font-normal"
-            >
-              <BasicTextArea
-                placeholder="Enter goals"
-                rows={6}
-                className="w-full"
-                value={question.context ?? ""}
-                onSetValue={handleInputChange("context")}
-              />
-            </BasicTitleSection>
-          </>
-        )}
-      </>
-    ),
-    [question, handleSelectChange, handleInputChange, onChange],
-  );
-
-  const renderMultipleChoiceFields = useMemo(
-    () => (
-      <BasicTitleSection
-        title="Multiple Choice Options"
-        titleClassName="!font-medium"
-        subtitleClassName="!font-normal"
-      >
-        <TextEntryGroup
-          entries={multipleChoiceOptions}
-          onRemove={removeEntry}
-          onAdd={addEntry}
-          addText="Add Option"
-          onChange={updateEntries}
-          field1Placeholder="Enter option"
-        />
-        {errors.multipleChoiceOptions && (
-          <div className="mt-1 text-sm text-red-500">
-            {errors.multipleChoiceOptions}
-          </div>
-        )}
-      </BasicTitleSection>
-    ),
-    [
-      multipleChoiceOptions,
-      errors.multipleChoiceOptions,
-      removeEntry,
-      addEntry,
-      updateEntries,
-    ],
-  );
 
   return (
     <div className="flex flex-col gap-6 rounded-lg border border-theme-200 bg-theme-50 p-6">
@@ -297,12 +187,16 @@ const QuestionSetupSection: React.FC<QuestionSetupSectionProps> = ({
         )}
       </BasicTitleSection>
 
-      {question.questionType === QuestionType.OPEN_ENDED &&
-        renderOpenEndedFields}
-      {question.questionType === QuestionType.MULTIPLE_CHOICE &&
-        renderMultipleChoiceFields}
-
-      {/* Add more fields as needed */}
+      {question.questionType === QuestionType.OPEN_ENDED && (
+        <OpenEndedQuestionFields question={question} onChange={onChange} />
+      )}
+      {question.questionType === QuestionType.MULTIPLE_CHOICE && (
+        <MultipleChoiceQuestionFields
+          question={question}
+          onChange={onChange}
+          errors={errors}
+        />
+      )}
     </div>
   );
 };
