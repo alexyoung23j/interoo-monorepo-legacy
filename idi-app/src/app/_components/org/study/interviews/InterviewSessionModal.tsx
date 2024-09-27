@@ -194,6 +194,20 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
       });
   };
 
+  const copySummary = (event: React.MouseEvent) => {
+    event.stopPropagation();
+    if (interviewSession.summary) {
+      navigator.clipboard
+        .writeText(interviewSession.summary)
+        .then(() => {
+          showSuccessToast("Summary copied to clipboard");
+        })
+        .catch((err) => {
+          console.error("Failed to copy summary: ", err);
+        });
+    }
+  };
+
   const handleDownloadWrapper = async (event: React.MouseEvent) => {
     event.stopPropagation();
     try {
@@ -282,34 +296,69 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
               className="flex items-center gap-1"
               variant="secondary"
               size="sm"
-              onClick={copyInterviewThread}
+              onClick={copySummary}
             >
-              {`Copy Interview Thread`}{" "}
-              <CopySimple size={16} className="text-theme-900" />
+              Copy Summary <CopySimple size={16} className="text-theme-900" />
             </Button>
           </div>
           <div className="h-[1px] w-full bg-theme-200 text-theme-900"></div>
           <div className="mb-4 text-sm text-theme-600">
-            {interviewSession.summary && interviewSession.summary !== ""
-              ? interviewSession.summary.split("\n").map((paragraph, index) => (
-                  <p key={index} className="mb-3 last:mb-0">
-                    {paragraph}
-                  </p>
-                ))
-              : "AI powered summaries coming soon!"}
+            {interviewSession.summary && interviewSession.summary !== "" ? (
+              <>
+                {interviewSession.summary
+                  .split("\n")
+                  .map((line, index, array) => {
+                    if (index === 0) {
+                      // Preamble
+                      return (
+                        <p key={index} className="mb-3">
+                          {line}
+                        </p>
+                      );
+                    } else if (index === array.length - 1) {
+                      // Conclusion
+                      return (
+                        <p key={index} className="mt-3">
+                          {line}
+                        </p>
+                      );
+                    } else if (line.startsWith("- ")) {
+                      // Bullet point
+                      return (
+                        <li key={index} className="mb-2 ml-5">
+                          {line.substring(2)}
+                        </li>
+                      );
+                    } else if (line.trim() === "") {
+                      // Empty line, likely separating sections
+                      return null;
+                    } else {
+                      // Any other line (shouldn't occur given the prompt, but just in case)
+                      return (
+                        <p key={index} className="mb-2">
+                          {line}
+                        </p>
+                      );
+                    }
+                  })}
+              </>
+            ) : (
+              "Summary has not been generated yet. Check back soon!"
+            )}
           </div>
 
           <div className="flex w-full items-center justify-between gap-3">
             <h2 className="text-lg font-semibold">Responses</h2>
             <div className="flex items-center gap-2">
-              <div className="text-xs font-light text-theme-600">
-                Show Follow Ups
-              </div>
-              <Switch
-                className="data-[state=checked]:bg-theme-500"
-                checked={showFollowUps}
-                onCheckedChange={(checked) => setShowFollowUps(checked)}
-              />
+              <Button
+                className="flex items-center gap-1"
+                variant="secondary"
+                size="sm"
+                onClick={copyInterviewThread}
+              >
+                Copy Interview Thread{" "}
+                <CopySimple size={16} className="text-theme-900" />
+              </Button>
             </div>
           </div>
           <div className="h-[1px] w-full bg-theme-200 text-theme-900"></div>

@@ -231,7 +231,27 @@ async function generateSummary(interviewOverview: string): Promise<string> {
 
 {interviewOverview}
 
-Provide a concise summary that captures the key points and insights from the participant's responses. Focus on the main themes, notable opinions, and any patterns or trends in the responses.`);
+Provide a summary in the following format:
+
+1. A short preamble (1-2 sentences) introducing the overall context of the interview.
+2. A list of 3-15 bullet points capturing key insights, notable opinions, and main themes from the participant's responses. Each bullet point should start with "- " (hyphen followed by a space).
+3. A brief conclusion (1-2 sentences) summarizing the most important takeaways.
+
+Format your response as follows:
+- The preamble should be a single paragraph.
+- Each bullet point should be on a new line, starting with "- ".
+- The conclusion should be a single paragraph on a new line after the bullet points.
+
+Ensure that each section (preamble, bullet points, and conclusion) is separated by a single blank line.
+
+Example format:
+Preamble text here...
+
+- Bullet point 1
+- Bullet point 2
+- Bullet point 3
+
+Conclusion text here...`);
 
   const chain = RunnableSequence.from([prompt, model]);
 

@@ -26,8 +26,8 @@ export const showWarningToast = (message: string) => {
 
 export const showSuccessToast = (message: string) => {
   toast.success(message, {
-    position: "top-right",
-    autoClose: 2000,
+    position: "bottom-right",
+    autoClose: 1000,
     hideProgressBar: false,
     closeOnClick: true,
     pauseOnHover: true,
