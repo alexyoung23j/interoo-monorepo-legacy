@@ -2,12 +2,14 @@
 
 import TitleLayout from "@/app/_components/layouts/org/TitleLayout";
 import { Button } from "@/components/ui/button";
-import { Plus } from "@phosphor-icons/react";
-import { Study } from "@shared/generated/client";
-import React, { useMemo } from "react";
+import { DotsThree, Plus } from "@phosphor-icons/react";
+import { Study, StudyStatus } from "@shared/generated/client";
+import React, { useMemo, useState } from "react";
 import CardTable from "../../reusable/CardTable";
 import BasicTag from "../../reusable/BasicTag";
 import { useRouter } from "next/navigation";
+import { api } from "@/trpc/react";
+import { ClipLoader } from "react-spinners";
 
 const columns = [
   { key: "name", header: "Study Name", width: "65%" },
@@ -26,12 +28,17 @@ export default function StudiesPageComponent({
   })[];
   orgId: string;
 }) {
+  const router = useRouter();
+  const [isCreatingBlankStudy, setIsCreatingBlankStudy] = useState(false);
+  const createBlankStudyMutation = api.studies.createBlankStudy.useMutation();
+
   const formattedData = useMemo(() => {
     return studies.map((study) => ({
       id: study.id,
-      name: <div className="text-theme-700 font-semibold">{study.title}</div>,
+      isDraft: study.status === StudyStatus.DRAFT,
+      name: <div className="font-semibold text-theme-700">{study.title}</div>,
       lastUpdated: (
-        <div className="text-theme-700 text-xs">
+        <div className="text-xs text-theme-700">
           {new Date(study.mostRecentUpdate).toLocaleDateString("en-US", {
             year: "numeric",
             month: "short",
@@ -40,7 +47,7 @@ export default function StudiesPageComponent({
         </div>
       ),
       responses: (
-        <div className="text-theme-700 text-xs">
+        <div className="text-xs text-theme-700">
           {study.completedInterviewsCount}
         </div>
       ),
@@ -54,14 +61,26 @@ export default function StudiesPageComponent({
     }));
   }, [studies]);
 
-  const router = useRouter();
-
   return (
     <TitleLayout
       title="Studies"
       rightElement={
-        <Button className="text-theme-off-white flex cursor-not-allowed gap-2">
-          <Plus className="text-theme-off-white" />
+        <Button
+          className="flex gap-2 text-theme-off-white"
+          onClick={async () => {
+            setIsCreatingBlankStudy(true);
+            const newStudy = await createBlankStudyMutation.mutateAsync({
+              organizationId: orgId,
+            });
+            setIsCreatingBlankStudy(false);
+            router.push(`/org/${orgId}/study/${newStudy.id}/setup/overview`);
+          }}
+        >
+          {isCreatingBlankStudy ? (
+            <ClipLoader size={16} color="white" />
+          ) : (
+            <Plus className="text-theme-off-white" />
+          )}
           Create New
         </Button>
       }
@@ -71,7 +90,11 @@ export default function StudiesPageComponent({
           data={formattedData}
           columns={columns}
           onRowClick={(row) => {
-            router.push(`/org/${orgId}/study/${row.id}/distribution`);
+            if (row.isDraft) {
+              router.push(`/org/${orgId}/study/${row.id}/setup/overview`);
+            } else {
+              router.push(`/org/${orgId}/study/${row.id}/distribution`);
+            }
           }}
           tableClassName="w-full"
         />

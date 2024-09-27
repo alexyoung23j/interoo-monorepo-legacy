@@ -117,7 +117,7 @@ export function calculateTranscribeAndGenerateNextQuestionRequest({
   const estimateFollowUpsForQuestion = (question: Question): number => {
     switch (question.followUpLevel) {
       case FollowUpLevel.AUTOMATIC:
-        return 3;
+        return 2;
       case FollowUpLevel.SURFACE:
         return 1;
       case FollowUpLevel.LIGHT:

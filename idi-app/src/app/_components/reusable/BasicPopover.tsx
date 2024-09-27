@@ -25,8 +25,8 @@ const BasicPopover: React.FC<BasicPopoverProps> = ({ trigger, options }) => {
       <PopoverTrigger asChild className="cursor-pointer">
         {trigger}
       </PopoverTrigger>
-      <PopoverContent className="w-auto px-2 py-2">
-        <div className="flex flex-col">
+      <PopoverContent className="w-auto px-2 py-2" align="end">
+        <div className="flex flex-col outline-none">
           {options.map((option, index) => (
             <React.Fragment key={index}>
               {option.isDivider ? (
@@ -35,7 +35,7 @@ const BasicPopover: React.FC<BasicPopoverProps> = ({ trigger, options }) => {
                 <button
                   onClick={option.onClick}
                   className={cn(
-                    "flex flex-row items-center justify-between gap-4 rounded-sm px-2 py-2 text-sm transition-colors hover:bg-theme-50",
+                    "flex flex-row items-center justify-between gap-4 rounded-sm px-2 py-2 text-sm outline-none transition-colors hover:bg-theme-50",
                     option.color ?? "text-theme-900",
                   )}
                 >

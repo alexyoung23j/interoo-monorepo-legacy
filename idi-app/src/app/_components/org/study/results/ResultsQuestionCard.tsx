@@ -28,7 +28,7 @@ interface ResultsQuestionCardProps {
 const getFollowUpLevelAverage = (level: FollowUpLevel): number => {
   switch (level) {
     case FollowUpLevel.AUTOMATIC:
-      return 3;
+      return 2;
     case FollowUpLevel.SURFACE:
       return 1;
     case FollowUpLevel.LIGHT:

@@ -38,6 +38,7 @@ const config = {
       "placehold.co",
       "www.taxmann.com",
       "https://kpgpsbovjhjvnskyaydv.supabase.co",
+      "storage.googleapis.com",
     ],
   },
 };

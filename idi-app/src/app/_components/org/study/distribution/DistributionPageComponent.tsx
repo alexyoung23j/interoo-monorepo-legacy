@@ -1,4 +1,5 @@
 "use client";
+import BasicInput from "@/app/_components/reusable/BasicInput";
 import { BasicLinkCopy } from "@/app/_components/reusable/BasicLinkCopy";
 import BasicTitleSection from "@/app/_components/reusable/BasicTitleSection";
 import { showErrorToast, showSuccessToast } from "@/app/utils/toastUtils";
@@ -77,12 +78,13 @@ const DistributionPageComponent: React.FC<DistributionPageComponentProps> = ({
         number has been reached."
       >
         <div className="flex max-w-72 items-center gap-4">
-          <Input
+          <BasicInput
             type="number"
             placeholder="enter number"
-            value={maxParticipants?.toString() ?? ""}
-            onChange={(e) => {
-              setMaxParticipants(parseInt(e.target.value));
+            value={maxParticipants ?? ""}
+            onSetValue={(value) => {
+              const parsedValue = parseInt(value);
+              setMaxParticipants(isNaN(parsedValue) ? null : parsedValue);
               setHasChangedMaxParticipants(true);
             }}
             disabled={study?.status === StudyStatus.PUBLISHED}

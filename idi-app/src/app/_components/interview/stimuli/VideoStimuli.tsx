@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { ArrowLeft, ArrowRight } from "@phosphor-icons/react";
 import { VideoStimulusType } from "@shared/generated/client";
 import { Button } from "@/components/ui/button";
+import { useSignedReadUrls } from "@/hooks/useSignedReadUrls";
 
 interface VideoStimuliProps {
   videoStimuli?: {
@@ -13,6 +14,18 @@ interface VideoStimuliProps {
 
 export const VideoStimuli: React.FC<VideoStimuliProps> = ({ videoStimuli }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+
+  const uploadedVideoPaths = useMemo(
+    () =>
+      videoStimuli
+        ?.filter((video) => video.type === VideoStimulusType.UPLOADED)
+        ?.map((video) => video.url),
+    [videoStimuli],
+  );
+
+  const { data: signedUrlsData } = useSignedReadUrls({
+    filePaths: uploadedVideoPaths ?? [],
+  });
 
   if (!videoStimuli || videoStimuli.length === 0) return null;
 
@@ -37,23 +50,28 @@ export const VideoStimuli: React.FC<VideoStimuliProps> = ({ videoStimuli }) => {
       return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
     };
 
+    const videoUrl =
+      video.type === VideoStimulusType.UPLOADED
+        ? (signedUrlsData?.signedUrls[video.url] ?? video.url)
+        : video.url;
+
     return (
       <div
         key={index}
         className="flex h-full w-[60%] flex-col items-center justify-center"
       >
         {video.type === VideoStimulusType.UPLOADED ? (
-          <video src={video.url} className="aspect-video flex-grow" controls />
+          <video src={videoUrl} className="aspect-video flex-grow" controls />
         ) : (
           <iframe
-            src={getYouTubeEmbedUrl(video.url)}
+            src={getYouTubeEmbedUrl(videoUrl)}
             className="aspect-video flex-grow"
             allowFullScreen
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           />
         )}
         {video.title && (
-          <div className="text-theme-900 mt-1 text-center text-sm">
+          <div className="mt-1 text-center text-sm text-theme-900">
             {video.title}
           </div>
         )}
@@ -67,7 +85,7 @@ export const VideoStimuli: React.FC<VideoStimuliProps> = ({ videoStimuli }) => {
       <div className="hidden h-full min-h-[35vh] w-full items-center justify-center gap-4 md:flex">
         {videoStimuli.length > 1 && (
           <div onClick={handlePrev} className="cursor-pointer">
-            <ArrowLeft size={24} />
+            <ArrowLeft size={24} className="text-theme-900" />
           </div>
         )}
         {videoStimuli.map(
@@ -77,7 +95,7 @@ export const VideoStimuli: React.FC<VideoStimuliProps> = ({ videoStimuli }) => {
         )}
         {videoStimuli.length > 1 && (
           <div onClick={handleNext} className="cursor-pointer">
-            <ArrowRight size={24} />
+            <ArrowRight size={24} className="text-theme-900" />
           </div>
         )}
       </div>
