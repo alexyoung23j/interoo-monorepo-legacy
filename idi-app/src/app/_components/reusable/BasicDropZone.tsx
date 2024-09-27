@@ -18,8 +18,7 @@ interface BasicDropZoneProps {
 }
 
 interface SignedUrlResponse {
-  signedUrl: string;
-  longLivedReadUrl: string;
+  uploadUrl: string;
 }
 
 const BasicDropZone: React.FC<BasicDropZoneProps> = ({
@@ -54,22 +53,28 @@ const BasicDropZone: React.FC<BasicDropZoneProps> = ({
           } = await supabase.auth.getSession();
           if (!session) throw new Error("No active session");
 
+          console.log("filePath", filePath, session.access_token);
+
           // Get signed URL
-          const { signedUrl, longLivedReadUrl } = (await getSignedUploadUrl({
+          const { uploadUrl } = (await getSignedUploadUrl({
             filePath: `${filePath}/${file.name}`,
             contentType: file.type,
             token: session.access_token,
           })) as SignedUrlResponse;
 
+          console.log("uploadUrl", uploadUrl);
+
           // Upload file
           await uploadFileToSignedUrl({
-            signedUrl,
+            signedUrl: uploadUrl,
             file,
             contentType: file.type,
           });
 
+          console.log("uploaded file");
+
           // Call onCompleted callback with the file path
-          onCompleted(longLivedReadUrl);
+          onCompleted(`${filePath}/${file.name}`);
         } catch (error) {
           console.error(
             "Error uploading file:",

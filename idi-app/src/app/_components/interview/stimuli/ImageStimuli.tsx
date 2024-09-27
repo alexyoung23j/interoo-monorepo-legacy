@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { ArrowLeft, ArrowRight } from "@phosphor-icons/react";
 import { StimulusModal } from "./StimulusModal";
+import { useSignedReadUrls } from "@/hooks/useSignedReadUrls";
 
 interface ImageStimuliProps {
   imageStimuli?: {
@@ -12,6 +13,11 @@ interface ImageStimuliProps {
 
 export const ImageStimuli: React.FC<ImageStimuliProps> = ({ imageStimuli }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const filePaths = useMemo(
+    () => imageStimuli?.map((image) => image.bucketUrl) ?? [],
+    [imageStimuli],
+  );
+  const { data: signedUrlsData } = useSignedReadUrls({ filePaths });
 
   if (!imageStimuli || imageStimuli.length === 0) return null;
 
@@ -32,7 +38,8 @@ export const ImageStimuli: React.FC<ImageStimuliProps> = ({ imageStimuli }) => {
             key={index}
             stimulus={{
               type: "image",
-              url: image.bucketUrl,
+              url:
+                signedUrlsData?.signedUrls[image.bucketUrl] ?? image.bucketUrl,
               altText: image.altText,
               title: image.title,
             }}
@@ -40,12 +47,15 @@ export const ImageStimuli: React.FC<ImageStimuliProps> = ({ imageStimuli }) => {
               <div className="h-full w-full cursor-pointer flex-col items-center justify-start">
                 <div className="flex h-full w-full flex-col items-center justify-start">
                   <img
-                    src={image.bucketUrl}
+                    src={
+                      signedUrlsData?.signedUrls[image.bucketUrl] ??
+                      image.bucketUrl
+                    }
                     alt={image.altText ?? `Image ${index + 1}`}
                     className="max-h-[84%] w-auto object-contain"
                   />
                   {image.title && (
-                    <div className="mt-1 text-center text-sm text-neutral-500">
+                    <div className="mt-1 text-center text-sm text-theme-900">
                       {image.title}
                     </div>
                   )}
@@ -62,21 +72,30 @@ export const ImageStimuli: React.FC<ImageStimuliProps> = ({ imageStimuli }) => {
           <ArrowLeft
             size={24}
             onClick={handlePrev}
-            className="cursor-pointer"
+            className="cursor-pointer text-theme-900"
             weight="bold"
           />
         )}
         <StimulusModal
           stimulus={{
             type: "image",
-            url: imageStimuli[currentIndex]?.bucketUrl ?? "",
+            url:
+              signedUrlsData?.signedUrls[
+                imageStimuli[currentIndex]?.bucketUrl ?? ""
+              ] ??
+              imageStimuli[currentIndex]?.bucketUrl ??
+              "",
             altText: imageStimuli[currentIndex]?.altText,
             title: imageStimuli[currentIndex]?.title,
           }}
           trigger={
             <div className="flex h-full max-h-80 w-full flex-col items-center justify-start">
               <img
-                src={imageStimuli[currentIndex]?.bucketUrl}
+                src={
+                  signedUrlsData?.signedUrls[
+                    imageStimuli[currentIndex]?.bucketUrl ?? ""
+                  ] ?? imageStimuli[currentIndex]?.bucketUrl
+                }
                 alt={
                   imageStimuli[currentIndex]?.altText ??
                   `Image ${currentIndex + 1}`
@@ -84,7 +103,7 @@ export const ImageStimuli: React.FC<ImageStimuliProps> = ({ imageStimuli }) => {
                 className="flex h-full max-h-[24rem] w-auto cursor-pointer object-contain"
               />
               {imageStimuli[currentIndex]?.title && (
-                <div className="mt-1 text-center text-sm text-neutral-500">
+                <div className="mt-1 text-center text-sm text-theme-900">
                   {imageStimuli[currentIndex]?.title}
                 </div>
               )}
@@ -96,7 +115,7 @@ export const ImageStimuli: React.FC<ImageStimuliProps> = ({ imageStimuli }) => {
             size={24}
             weight="bold"
             onClick={handleNext}
-            className="cursor-pointer"
+            className="cursor-pointer text-theme-900"
           />
         )}
       </div>

@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 import BasicSelect from "@/app/_components/reusable/BasicSelect";
 import BasicTextArea from "@/app/_components/reusable/BasicTextArea";
 import BasicTitleSection from "@/app/_components/reusable/BasicTitleSection";
@@ -12,6 +12,8 @@ import type {
 } from "./QuestionSetupSection";
 import BasicDropZone from "../../reusable/BasicDropZone";
 import Image from "next/image";
+import { useSignedReadUrls } from "@/hooks/useSignedReadUrls";
+import { useParams } from "next/navigation";
 
 type OpenEndedQuestionFieldsProps = {
   question: LocalQuestion;
@@ -24,6 +26,8 @@ const OpenEndedQuestionFields: React.FC<OpenEndedQuestionFieldsProps> = ({
   question,
   onChange,
 }) => {
+  const { studyId, orgId } = useParams<{ studyId: string; orgId: string }>();
+
   const handleImageUpload = useCallback(
     (url: string) => {
       if (question.imageStimuli.length >= MAX_STIMULI) return;
@@ -115,6 +119,17 @@ const OpenEndedQuestionFields: React.FC<OpenEndedQuestionFieldsProps> = ({
     },
     [onChange, question],
   );
+
+  const stimuliPaths = useMemo(() => {
+    return [
+      ...question.imageStimuli.map((s) => s.bucketUrl),
+      ...question.videoStimuli.map((s) => s.url),
+    ];
+  }, [question.imageStimuli, question.videoStimuli]);
+
+  const { data: signedUrlsData } = useSignedReadUrls({
+    filePaths: stimuliPaths,
+  });
 
   return (
     <>
@@ -224,7 +239,7 @@ const OpenEndedQuestionFields: React.FC<OpenEndedQuestionFieldsProps> = ({
             <div key={index} className="mb-4 flex flex-col gap-2">
               <div className="relative h-40 w-full">
                 <Image
-                  src={stimulus.bucketUrl}
+                  src={signedUrlsData?.signedUrls[stimulus.bucketUrl] ?? ""}
                   alt={stimulus.altText ?? "Uploaded image"}
                   layout="fill"
                   objectFit="contain"
@@ -252,7 +267,7 @@ const OpenEndedQuestionFields: React.FC<OpenEndedQuestionFieldsProps> = ({
             <BasicDropZone
               uploadMessage="Click or drag image files to upload"
               allowedFileTypes={["image/jpeg", "image/png"]}
-              filePath={`studies/${question.id}/images`}
+              filePath={`uploaded_asssets/${orgId}/${studyId}/${question.id}/images`}
               onCompleted={handleImageUpload}
             />
           )}
@@ -267,7 +282,11 @@ const OpenEndedQuestionFields: React.FC<OpenEndedQuestionFieldsProps> = ({
         >
           {question.videoStimuli.map((stimulus, index) => (
             <div key={index} className="mb-4 flex flex-col gap-2">
-              <video src={stimulus.url} controls className="max-h-40 w-full" />
+              <video
+                src={signedUrlsData?.signedUrls[stimulus.url] ?? ""}
+                controls
+                className="max-h-40 w-full"
+              />
               <BasicInput
                 type="text"
                 placeholder="Video title"
@@ -281,8 +300,8 @@ const OpenEndedQuestionFields: React.FC<OpenEndedQuestionFieldsProps> = ({
           {question.videoStimuli.length < MAX_STIMULI && (
             <BasicDropZone
               uploadMessage="Click or drag video files to upload"
-              allowedFileTypes={["video/mp4", "video/webm"]}
-              filePath={`studies/${question.id}/videos`}
+              allowedFileTypes={["video/mp4", "video/webm", "video/quicktime"]}
+              filePath={`uploaded_asssets/${orgId}/${studyId}/${question.id}/videos`}
               onCompleted={handleVideoUpload}
             />
           )}

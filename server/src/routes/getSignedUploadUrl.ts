@@ -23,14 +23,7 @@ const getSignedUploadUrl = async (req: Request<{}, {}, SignedUrlRequest>, res: R
       contentType: contentType,
     });
 
-    // Generate a long-lived signed URL for reading the file
-    const [longLivedReadUrl] = await bucket.file(filePath).getSignedUrl({
-      version: 'v4',
-      action: 'read',
-      expires: Date.now() + 1000 * 60 * 60 * 24 * 365 * 10, // URL expires in 10 years TODO: figure out how to do this properly
-    });
-
-    res.json({ uploadUrl, longLivedReadUrl });
+    res.json({ uploadUrl });
 
   } catch (error) {
     console.error('Error generating URLs:', error instanceof Error ? error.message : String(error));

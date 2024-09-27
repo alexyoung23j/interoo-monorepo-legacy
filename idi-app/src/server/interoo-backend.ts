@@ -107,3 +107,24 @@ export const uploadFileToSignedUrl = async ({
     headers: { "Content-Type": contentType },
   });
 };
+
+export const getSignedReadUrl = async ({
+  filePath,
+  token,
+}: {
+  filePath: string;
+  token: string;
+}) => {
+  const response = await axios.post(
+    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/getSignedReadUrl`,
+    { filePath },
+    {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  );
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+  return response.data;
+};
