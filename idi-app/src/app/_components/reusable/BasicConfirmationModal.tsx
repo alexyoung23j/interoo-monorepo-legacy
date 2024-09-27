@@ -40,7 +40,7 @@ const BasicConfirmationModal: React.FC<BasicConfirmationModalProps> = ({
 }) => {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="flex flex-col border border-theme-200 bg-theme-50">
+      <DialogContent className="flex flex-col border border-theme-200 bg-theme-off-white">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold text-theme-900">
             {title}

@@ -4,29 +4,22 @@ import TextEntryGroup, {
   TextEntry,
 } from "@/app/_components/reusable/TextEntryGroup";
 import { useTextEntries } from "@/hooks/useTextEntries";
-import { LocalQuestion } from "./QuestionSetupSection";
 
 type MultipleChoiceQuestionFieldsProps = {
-  question: LocalQuestion;
-  onChange: (updatedQuestion: LocalQuestion) => void;
-  errors: Record<string, string>;
+  options: TextEntry[];
+  onChange: (updatedOptions: TextEntry[]) => void;
+  error?: string;
 };
 
 const MultipleChoiceQuestionFields: React.FC<
   MultipleChoiceQuestionFieldsProps
-> = ({ question, onChange, errors }) => {
+> = ({ options, onChange, error }) => {
   const {
     entries: multipleChoiceOptions,
     addEntry,
     removeEntry,
     updateEntries,
-  } = useTextEntries(
-    question.multipleChoiceOptions ?? [],
-    false,
-    (newEntries) => {
-      onChange({ ...question, multipleChoiceOptions: newEntries });
-    },
-  );
+  } = useTextEntries(options, false, onChange);
 
   return (
     <BasicTitleSection
@@ -42,11 +35,7 @@ const MultipleChoiceQuestionFields: React.FC<
         onChange={updateEntries}
         field1Placeholder="Enter option"
       />
-      {errors.multipleChoiceOptions && (
-        <div className="mt-1 text-sm text-red-500">
-          {errors.multipleChoiceOptions}
-        </div>
-      )}
+      {error && <div className="mt-1 text-sm text-red-500">{error}</div>}
     </BasicTitleSection>
   );
 };

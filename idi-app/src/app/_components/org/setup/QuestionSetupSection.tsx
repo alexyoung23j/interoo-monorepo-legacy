@@ -88,6 +88,16 @@ const QuestionSetupSection: React.FC<QuestionSetupSectionProps> = ({
       isValid = false;
     }
 
+    if (question.questionType === QuestionType.MULTIPLE_CHOICE) {
+      if (
+        !question.multipleChoiceOptions ||
+        question.multipleChoiceOptions.length < 2
+      ) {
+        newErrors.multipleChoiceOptions = "At least 2 options are required";
+        isValid = false;
+      }
+    }
+
     setErrors(newErrors);
     onValidationChange(isValid, index);
     return isValid;
@@ -121,6 +131,13 @@ const QuestionSetupSection: React.FC<QuestionSetupSectionProps> = ({
   const handleDelete = useCallback(() => {
     onDelete(index);
   }, [onDelete, index]);
+
+  const handleMultipleChoiceChange = useCallback(
+    (updatedOptions: TextEntry[]) => {
+      onChange({ ...question, multipleChoiceOptions: updatedOptions });
+    },
+    [onChange, question],
+  );
 
   return (
     <div className="flex flex-col gap-6 rounded-sm border border-theme-200 bg-theme-50 p-6 shadow-standard">
@@ -171,7 +188,7 @@ const QuestionSetupSection: React.FC<QuestionSetupSectionProps> = ({
               label: (() => {
                 switch (type) {
                   case QuestionType.OPEN_ENDED:
-                    return "Open-Ended";
+                    return "Open Ended (Free Response)";
                   case QuestionType.MULTIPLE_CHOICE:
                     return "Multiple Choice";
                   default:
@@ -193,9 +210,9 @@ const QuestionSetupSection: React.FC<QuestionSetupSectionProps> = ({
       )}
       {question.questionType === QuestionType.MULTIPLE_CHOICE && (
         <MultipleChoiceQuestionFields
-          question={question}
-          onChange={onChange}
-          errors={errors}
+          options={question.multipleChoiceOptions ?? []}
+          onChange={handleMultipleChoiceChange}
+          error={errors.multipleChoiceOptions}
         />
       )}
     </div>

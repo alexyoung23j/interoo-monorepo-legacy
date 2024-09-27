@@ -331,7 +331,7 @@ const buildAlwaysFollowUpPrompt = () => {
 export const getFollowUpLevelRange = (level: string): [number, number] => {
   switch (level.toUpperCase()) {
     case FollowUpLevel.AUTOMATIC:
-      return [2, 4];
+      return [1, 3];
     case FollowUpLevel.SURFACE:
       return [1, 1];
     case FollowUpLevel.LIGHT:

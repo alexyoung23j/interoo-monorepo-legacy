@@ -27,7 +27,7 @@ export default function QuestionsPage({
   params: { studyId: string };
 }) {
   const router = useRouter();
-  const { data: study } = api.studies.getStudy.useQuery(
+  const { data: study, refetch: refetchStudy } = api.studies.getStudy.useQuery(
     {
       studyId: params.studyId,
       includeBoostedKeywords: true,
@@ -39,7 +39,7 @@ export default function QuestionsPage({
   const {
     data: fetchedQuestions,
     isLoading,
-    refetch,
+    refetch: refetchQuestions,
   } = api.studies.getStudyQuestions.useQuery({
     studyId: params.studyId,
   });
@@ -130,6 +130,8 @@ export default function QuestionsPage({
       setQuestions([defaultQuestion]);
     }
   }, [fetchedQuestions]);
+
+  console.log({ questions });
 
   const handleQuestionChange = useCallback(
     (index: number, updatedQuestion: LocalQuestion) => {
@@ -230,11 +232,6 @@ export default function QuestionsPage({
   );
 
   const handleSaveQuestions = useCallback(async () => {
-    if (!allQuestionsValid) {
-      showErrorToast("Please fix errors in all questions before saving");
-      return;
-    }
-
     try {
       const questionsToSave = questions.map((q, index) => ({
         ...q,
@@ -257,12 +254,7 @@ export default function QuestionsPage({
       showErrorToast("Failed to save questions");
       console.error("Failed to save questions:", error);
     }
-  }, [
-    questions,
-    params.studyId,
-    updateStudyQuestionsMutation,
-    allQuestionsValid,
-  ]);
+  }, [questions, params.studyId, updateStudyQuestionsMutation]);
 
   if (isLoading) {
     return (
@@ -278,7 +270,7 @@ export default function QuestionsPage({
         isOpen={showPublishConfirmation}
         onOpenChange={setShowPublishConfirmation}
         title="Save and publish this study?"
-        subtitle="This allows you to start distributing your study."
+        subtitle="This allows you to start distributing your study. Note that after publishing, you cannot delete questions as this would result in corrupted response data."
         confirmButtonText="Save and Publish"
         cancelButtonText="Save draft"
         body={
@@ -308,7 +300,6 @@ export default function QuestionsPage({
               id: params.studyId,
               status: StudyStatus.PUBLISHED,
             });
-            setShowPublishConfirmation(false);
             showSuccessToast("Study published successfully");
             router.push(
               `/org/${study?.organizationId}/study/${study?.id}/distribution`,
@@ -345,8 +336,10 @@ export default function QuestionsPage({
             await updateStudyMutation.mutateAsync({
               id: params.studyId,
             });
-            setShowUpdateConfirmation(false);
             showSuccessToast("Study updated successfully");
+            router.push(
+              `/org/${study?.organizationId}/study/${study?.id}/results`,
+            );
           } catch (error) {
             showErrorToast("Failed to update study");
             console.error("Failed to update study:", error);
@@ -456,6 +449,13 @@ export default function QuestionsPage({
         ))}
         <Button
           onClick={async () => {
+            if (!allQuestionsValid) {
+              showErrorToast(
+                "Please fix errors in all questions before saving",
+              );
+              return;
+            }
+
             if (study?.status === StudyStatus.DRAFT) {
               setShowPublishConfirmation(true);
             } else {
@@ -464,12 +464,16 @@ export default function QuestionsPage({
           }}
           className="mt-4 text-theme-off-white"
           disabled={
-            !hasUnsavedChanges || updateStudyQuestionsMutation.isPending
+            (!hasUnsavedChanges && study?.status === StudyStatus.PUBLISHED) ||
+            updateStudyQuestionsMutation.isPending ||
+            !allQuestionsValid
           }
         >
           {updateStudyQuestionsMutation.isPending
             ? "Saving..."
-            : "Save Questions"}
+            : study?.status === StudyStatus.PUBLISHED
+              ? "Update Study"
+              : "Save or Publish"}
         </Button>
       </div>
     </div>

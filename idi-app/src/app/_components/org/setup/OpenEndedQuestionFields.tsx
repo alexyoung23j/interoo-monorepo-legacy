@@ -176,23 +176,23 @@ const OpenEndedQuestionFields: React.FC<OpenEndedQuestionFieldsProps> = ({
             subtitleClassName="!font-normal"
           >
             <BasicSelect
-              options={Object.values(FollowUpLevel)
-                .filter((level) => level !== FollowUpLevel.AUTOMATIC)
-                .map((level) => ({
-                  value: level,
-                  label: (() => {
-                    switch (level) {
-                      case FollowUpLevel.SURFACE:
-                        return "Surface Level (1-2 questions)";
-                      case FollowUpLevel.LIGHT:
-                        return "Deeper Dive (2-3 questions)";
-                      case FollowUpLevel.DEEP:
-                        return "Comprehensive (3-5 questions)";
-                      default:
-                        return level;
-                    }
-                  })(),
-                }))}
+              options={Object.values(FollowUpLevel).map((level) => ({
+                value: level,
+                label: (() => {
+                  switch (level) {
+                    case FollowUpLevel.SURFACE:
+                      return "Surface Level (1-2 questions)";
+                    case FollowUpLevel.LIGHT:
+                      return "Deeper Dive (2-3 questions)";
+                    case FollowUpLevel.DEEP:
+                      return "Comprehensive (3-5 questions)";
+                    case FollowUpLevel.AUTOMATIC:
+                      return "Let the AI decide (1-3 questions)";
+                    default:
+                      return level;
+                  }
+                })(),
+              }))}
               placeholder="Select follow up setting"
               value={question.followUpLevel ?? ""}
               onValueChange={handleSelectChange("followUpLevel")}

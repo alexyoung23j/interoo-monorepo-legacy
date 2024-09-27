@@ -339,8 +339,6 @@ export const studiesRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { studyId, questions } = input;
 
-      console.log({ questions });
-
       return await ctx.db.$transaction(async (prisma) => {
         const existingQuestionIds = questions
           .filter((q) => !q.isNew && q.id)
@@ -367,7 +365,9 @@ export const studiesRouter = createTRPCRouter({
           const updatedQuestionData = {
             ...questionData,
             hasStimulus:
-              multipleChoiceOptions && multipleChoiceOptions.length > 0
+              question.questionType === QuestionType.MULTIPLE_CHOICE &&
+              multipleChoiceOptions &&
+              multipleChoiceOptions.length > 0
                 ? false
                 : questionData.hasStimulus,
           };
@@ -389,7 +389,11 @@ export const studiesRouter = createTRPCRouter({
           }
 
           if (updatedQuestion) {
-            if (multipleChoiceOptions && multipleChoiceOptions.length > 0) {
+            if (
+              question.questionType === QuestionType.MULTIPLE_CHOICE &&
+              multipleChoiceOptions &&
+              multipleChoiceOptions.length > 0
+            ) {
               // Handle multiple choice options
               const existingOptions =
                 await prisma.multipleChoiceOption.findMany({

@@ -25,7 +25,7 @@ const BasicPopover: React.FC<BasicPopoverProps> = ({ trigger, options }) => {
       <PopoverTrigger asChild className="cursor-pointer">
         {trigger}
       </PopoverTrigger>
-      <PopoverContent className="w-auto px-2 py-2">
+      <PopoverContent className="w-auto px-2 py-2" align="end">
         <div className="flex flex-col outline-none">
           {options.map((option, index) => (
             <React.Fragment key={index}>
