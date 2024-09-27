@@ -2,7 +2,7 @@
 
 import TitleLayout from "@/app/_components/layouts/org/TitleLayout";
 import { Button } from "@/components/ui/button";
-import { Plus } from "@phosphor-icons/react";
+import { DotsThree, Plus } from "@phosphor-icons/react";
 import { Study, StudyStatus } from "@shared/generated/client";
 import React, { useMemo, useState } from "react";
 import CardTable from "../../reusable/CardTable";

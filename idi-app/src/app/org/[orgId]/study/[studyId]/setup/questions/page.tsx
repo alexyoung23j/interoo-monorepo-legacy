@@ -9,7 +9,7 @@ import QuestionSetupSection, {
 } from "@/app/_components/org/setup/QuestionSetupSection";
 import { ClipLoader } from "react-spinners";
 import { Button } from "@/components/ui/button";
-import { Plus } from "@phosphor-icons/react";
+import { DotsThree, Plus, Trash } from "@phosphor-icons/react";
 import {
   QuestionType,
   FollowUpLevel,
@@ -19,6 +19,7 @@ import { showErrorToast, showSuccessToast } from "@/app/utils/toastUtils";
 import BasicConfirmationModal from "@/app/_components/reusable/BasicConfirmationModal";
 import BasicTag from "@/app/_components/reusable/BasicTag";
 import { useRouter } from "next/navigation";
+import BasicPopover from "@/app/_components/reusable/BasicPopover";
 
 export default function QuestionsPage({
   params,
@@ -35,23 +36,28 @@ export default function QuestionsPage({
       refetchOnWindowFocus: false,
     },
   );
-  const { data: fetchedQuestions, isLoading } =
-    api.studies.getStudyQuestions.useQuery({
-      studyId: params.studyId,
-    });
+  const {
+    data: fetchedQuestions,
+    isLoading,
+    refetch,
+  } = api.studies.getStudyQuestions.useQuery({
+    studyId: params.studyId,
+  });
 
   const updateStudyQuestionsMutation =
     api.studies.updateStudyQuestions.useMutation();
   const updateStudyMutation = api.studies.updateStudy.useMutation();
+  const deleteStudyMutation = api.studies.deleteStudy.useMutation();
 
   const [questions, setQuestions] = useState<LocalQuestion[]>([]);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [questionValidations, setQuestionValidations] = useState<boolean[]>([]);
   const [showPublishConfirmation, setShowPublishConfirmation] = useState(false);
   const [showUpdateConfirmation, setShowUpdateConfirmation] = useState(false);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
 
   useEffect(() => {
-    if (fetchedQuestions) {
+    if (fetchedQuestions && fetchedQuestions.length > 0) {
       const localQuestions: LocalQuestion[] = fetchedQuestions.map((q) => ({
         id: q.id,
         title: q.title,
@@ -102,6 +108,26 @@ export default function QuestionsPage({
           })) ?? [],
       }));
       setQuestions(localQuestions);
+    } else {
+      // Create a default question if there are no fetched questions
+      const defaultQuestion: LocalQuestion = {
+        id: `new-${Date.now()}`,
+        title: "",
+        body: "",
+        questionType: QuestionType.OPEN_ENDED,
+        followUpLevel: FollowUpLevel.SURFACE,
+        shouldFollowUp: false,
+        hasStimulus: false,
+        context: "",
+        questionOrder: 0,
+        allowMultipleSelections: false,
+        multipleChoiceOptions: [],
+        imageStimuli: [],
+        videoStimuli: [],
+        websiteStimuli: [],
+        isNew: true,
+      };
+      setQuestions([defaultQuestion]);
     }
   }, [fetchedQuestions]);
 
@@ -327,10 +353,42 @@ export default function QuestionsPage({
           }
         }}
       />
+      <BasicConfirmationModal
+        isOpen={showDeleteConfirmation}
+        onOpenChange={setShowDeleteConfirmation}
+        title="Delete this draft?"
+        subtitle="This action cannot be undone."
+        confirmButtonText="Delete Draft"
+        confirmButtonColor="!bg-red-500"
+        cancelButtonText="Cancel"
+        body={
+          <div>
+            {deleteStudyMutation.isPending && (
+              <div className="flex items-center justify-center py-4">
+                <ClipLoader size={20} color="grey" />
+              </div>
+            )}
+          </div>
+        }
+        onCancel={() => {
+          setShowDeleteConfirmation(false);
+        }}
+        onConfirm={async () => {
+          try {
+            await deleteStudyMutation.mutateAsync({
+              studyId: params.studyId,
+            });
+            router.push(`/org/${study?.organizationId}/studies`);
+          } catch (error) {
+            showErrorToast("Failed to delete draft");
+            console.error("Failed to delete draft:", error);
+          }
+        }}
+      />
       <div className="flex flex-col gap-2">
         <div className="flex w-full flex-row items-center justify-between">
           <div className="text-lg font-medium text-theme-900">Study Setup</div>
-          <div className="text-sm text-theme-600">
+          <div className="flex items-center gap-2 text-sm text-theme-600">
             {study?.status === StudyStatus.DRAFT ? (
               <BasicTag>Draft</BasicTag>
             ) : (
@@ -338,7 +396,25 @@ export default function QuestionsPage({
                 Published
               </BasicTag>
             )}
-          </div>{" "}
+            {study?.status === StudyStatus.DRAFT && (
+              <BasicPopover
+                trigger={
+                  <DotsThree
+                    className="cursor-pointer text-theme-900"
+                    size={20}
+                  />
+                }
+                options={[
+                  {
+                    text: "Delete this draft",
+                    icon: <Trash />,
+                    color: "text-red-500",
+                    onClick: () => setShowDeleteConfirmation(true),
+                  },
+                ]}
+              />
+            )}
+          </div>
         </div>
         <div className="text-sm text-theme-600">
           Create your study and get started distributing!
@@ -378,17 +454,6 @@ export default function QuestionsPage({
             </div>
           </React.Fragment>
         ))}
-        {questions.length === 0 && (
-          <div className="flex w-full flex-row items-center justify-center">
-            <div
-              onClick={() => addNewQuestion(0)}
-              className="flex w-fit cursor-pointer items-center gap-2 text-sm text-theme-700"
-            >
-              <Plus size={20} />
-              Insert Question
-            </div>
-          </div>
-        )}
         <Button
           onClick={async () => {
             if (study?.status === StudyStatus.DRAFT) {

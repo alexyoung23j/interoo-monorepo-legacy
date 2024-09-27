@@ -35,6 +35,11 @@ function TopContent({ study }: { study: Study }) {
       window.open(`/study/${study.shortID}?testMode=true`, "_blank");
     }
   };
+
+  const isSetupPage = pathname.includes("/setup/");
+  const isButtonDisabled =
+    study?.status !== StudyStatus.PUBLISHED || isSetupPage;
+
   return (
     <div className="flex w-full items-center justify-between bg-theme-50 p-4">
       <h2 className="text-xl font-semibold text-theme-900">
@@ -47,7 +52,7 @@ function TopContent({ study }: { study: Study }) {
       <Button
         className="flex gap-2 text-theme-off-white"
         onClick={handleTestStudy}
-        disabled={study?.status !== StudyStatus.PUBLISHED}
+        disabled={isButtonDisabled}
       >
         <TestTube className="text-theme-off-white" />
         Test Study

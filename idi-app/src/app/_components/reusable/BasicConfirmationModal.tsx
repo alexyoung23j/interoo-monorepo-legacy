@@ -21,13 +21,7 @@ interface BasicConfirmationModalProps {
   showSave?: boolean;
   confirmButtonText?: string;
   cancelButtonText?: string;
-  saveButtonColor?:
-    | "default"
-    | "destructive"
-    | "outline"
-    | "secondary"
-    | "ghost"
-    | "link";
+  confirmButtonColor?: string;
 }
 
 const BasicConfirmationModal: React.FC<BasicConfirmationModalProps> = ({
@@ -42,7 +36,7 @@ const BasicConfirmationModal: React.FC<BasicConfirmationModalProps> = ({
   showSave = true,
   confirmButtonText = "Confirm",
   cancelButtonText = "Cancel",
-  saveButtonColor = "default",
+  confirmButtonColor = "bg-theme-600",
 }) => {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -72,7 +66,7 @@ const BasicConfirmationModal: React.FC<BasicConfirmationModalProps> = ({
             <Button
               variant="default"
               onClick={onConfirm}
-              className="bg-theme-600 text-theme-off-white hover:bg-theme-700"
+              className={`${confirmButtonColor} bg-theme-600 text-theme-off-white`}
             >
               {confirmButtonText}
             </Button>

@@ -99,7 +99,7 @@ model BoostedKeyword {
   keyword    String
   definition String?
   studyId    String
-  study      Study   @relation(fields: [studyId], references: [id])
+  study      Study   @relation(fields: [studyId], references: [id], onDelete: Cascade)
 }
 
 enum StudyStatus {

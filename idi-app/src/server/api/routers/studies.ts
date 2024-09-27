@@ -250,8 +250,7 @@ export const studiesRouter = createTRPCRouter({
         data: {
           organizationId,
           title: `Untitled Draft (${formattedDate})`,
-          shortID: Math.random().toString(36).substring(2, 8),
-          targetLength: 0,
+          shortID: Math.random().toString(36).substring(2, 10),
           welcomeDescription: "",
           termsAndConditions: "",
           welcomeImageUrl: "",
@@ -565,6 +564,25 @@ export const studiesRouter = createTRPCRouter({
           },
           orderBy: { questionOrder: "asc" },
         });
+      });
+    }),
+  deleteStudy: privateProcedure
+    .input(z.object({ studyId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const { studyId } = input;
+
+      return await ctx.db.$transaction(async (prisma) => {
+        // Delete all questions associated with the study
+        await prisma.question.deleteMany({
+          where: { studyId },
+        });
+
+        // Delete the study itself
+        const deletedStudy = await prisma.study.delete({
+          where: { id: studyId },
+        });
+
+        return deletedStudy;
       });
     }),
 });

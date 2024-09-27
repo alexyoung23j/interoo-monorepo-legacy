@@ -11,7 +11,7 @@ import TextEntryGroup, {
 import { Button } from "@/components/ui/button";
 import { useTextEntries } from "@/hooks/useTextEntries";
 import { api } from "@/trpc/react";
-import { ArrowRight } from "@phosphor-icons/react";
+import { ArrowRight, DotsThree, Trash } from "@phosphor-icons/react";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Language, StudyStatus } from "@shared/generated/client";
 import { ClipLoader } from "react-spinners";
@@ -19,6 +19,8 @@ import { BasicProgressBar } from "@/app/_components/reusable/BasicProgressBar";
 import { showErrorToast } from "@/app/utils/toastUtils";
 import { useRouter } from "next/navigation";
 import BasicTag from "@/app/_components/reusable/BasicTag";
+import BasicPopover from "@/app/_components/reusable/BasicPopover";
+import BasicConfirmationModal from "@/app/_components/reusable/BasicConfirmationModal";
 
 export default function SetupOverviewPage({
   params,
@@ -37,6 +39,8 @@ export default function SetupOverviewPage({
   );
 
   const updateStudyMutation = api.studies.updateStudy.useMutation();
+  const deleteStudyMutation = api.studies.deleteStudy.useMutation();
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -169,16 +173,66 @@ export default function SetupOverviewPage({
 
   return (
     <div className="flex h-full flex-col gap-10 overflow-y-auto bg-theme-off-white p-9">
+      <BasicConfirmationModal
+        isOpen={showDeleteConfirmation}
+        onOpenChange={setShowDeleteConfirmation}
+        title="Delete this draft?"
+        subtitle="This action cannot be undone."
+        confirmButtonText="Delete Draft"
+        confirmButtonColor="!bg-red-500"
+        cancelButtonText="Cancel"
+        body={
+          <div>
+            {deleteStudyMutation.isPending && (
+              <div className="flex items-center justify-center py-4">
+                <ClipLoader size={20} color="grey" />
+              </div>
+            )}
+          </div>
+        }
+        onCancel={() => {
+          setShowDeleteConfirmation(false);
+        }}
+        onConfirm={async () => {
+          try {
+            await deleteStudyMutation.mutateAsync({
+              studyId: params.studyId,
+            });
+            router.push(`/org/${study?.organizationId}/studies`);
+          } catch (error) {
+            showErrorToast("Failed to delete draft");
+            console.error("Failed to delete draft:", error);
+          }
+        }}
+      />
       <div className="flex flex-col gap-2">
         <div className="flex w-full flex-row items-center justify-between">
           <div className="text-lg font-medium text-theme-900">Study Setup</div>
-          <div className="text-sm text-theme-600">
+          <div className="flex items-center gap-2 text-sm text-theme-600">
             {study?.status === StudyStatus.DRAFT ? (
               <BasicTag>Draft</BasicTag>
             ) : (
               <BasicTag color="bg-[#CEDBD3]" borderColor="border-[#427356]">
                 Published
               </BasicTag>
+            )}
+            {study?.status === StudyStatus.DRAFT && (
+              <BasicPopover
+                trigger={
+                  <DotsThree
+                    className="cursor-pointer text-theme-900"
+                    size={20}
+                  />
+                }
+                options={[
+                  {
+                    text: "Delete this draft",
+                    icon: <Trash />,
+                    color: "text-red-500",
+                    onClick: () => setShowDeleteConfirmation(true),
+                  },
+                ]}
+              />
             )}
           </div>
         </div>

@@ -206,7 +206,7 @@ const OpenEndedQuestionFields: React.FC<OpenEndedQuestionFieldsProps> = ({
             subtitleClassName="!font-normal"
           >
             <BasicTextArea
-              placeholder="Enter goals"
+              placeholder="Enter goals, instructions, context, etc."
               rows={6}
               className="w-full"
               value={question.context ?? ""}
