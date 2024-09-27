@@ -30,7 +30,7 @@ const WebsiteStimuliSection: React.FC<WebsiteStimuliSectionProps> = ({
           <div className="flex flex-1 flex-row gap-2">
             <BasicInput
               type="text"
-              placeholder="Enter Url"
+              placeholder="Enter Url (https://...)"
               value={stimulus.websiteUrl ?? ""}
               onSetValue={(value) =>
                 onStimulusChange(index, "websiteUrl", value)

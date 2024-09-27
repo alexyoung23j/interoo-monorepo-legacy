@@ -256,7 +256,7 @@ export default function QuestionsPage({
         </div>
       </div>
       <BasicProgressBar value={75} />
-      <BasicCard className="flex flex-col gap-6 p-6 shadow-standard">
+      <div className="flex flex-col gap-6">
         <div className="flex w-full flex-row items-center justify-between">
           <div className="text-lg text-theme-600">Questions</div>
           <div className="text-xs">
@@ -311,7 +311,7 @@ export default function QuestionsPage({
             ? "Saving..."
             : "Save Questions"}
         </Button>
-      </BasicCard>
+      </div>
     </div>
   );
 }

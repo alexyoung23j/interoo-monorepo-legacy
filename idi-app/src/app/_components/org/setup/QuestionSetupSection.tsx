@@ -122,7 +122,7 @@ const QuestionSetupSection: React.FC<QuestionSetupSectionProps> = ({
   }, [onDelete, index]);
 
   return (
-    <div className="flex flex-col gap-6 rounded-lg border border-theme-200 bg-theme-50 p-6">
+    <div className="flex flex-col gap-6 rounded-sm border border-theme-200 bg-theme-50 p-6 shadow-standard">
       <div className="flex w-full flex-row items-center justify-between">
         <div className="text-lg font-medium text-theme-600">
           {`Question ${(question.questionOrder ?? 0) + 1}`}
