@@ -125,7 +125,7 @@ const OpenEndedQuestionFields: React.FC<OpenEndedQuestionFieldsProps> = ({
   );
 
   const handleRemoveStimulus = useCallback(
-    (type: "image" | "video", index: number) => {
+    (type: "image" | "video" | "website", index: number) => {
       onChange({
         ...question,
         [`${type}Stimuli`]: question[`${type}Stimuli`].filter(
@@ -302,6 +302,7 @@ const OpenEndedQuestionFields: React.FC<OpenEndedQuestionFieldsProps> = ({
             onStimulusChange={(index, field, value) =>
               handleStimulusChange("website", index, field, value)
             }
+            onRemoveStimulus={(index) => handleRemoveStimulus("website", index)}
           />
         </BasicTitleSection>
       )}

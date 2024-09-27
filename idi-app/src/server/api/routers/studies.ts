@@ -364,12 +364,13 @@ export const studiesRouter = createTRPCRouter({
             ...questionData
           } = question;
 
-          // Set hasStimulus to false if multipleChoiceOptions are present
+          // Set hasStimulus to false if multipleChoiceOptions are present and not empty
           const updatedQuestionData = {
             ...questionData,
-            hasStimulus: multipleChoiceOptions
-              ? false
-              : questionData.hasStimulus,
+            hasStimulus:
+              multipleChoiceOptions && multipleChoiceOptions.length > 0
+                ? false
+                : questionData.hasStimulus,
           };
 
           let updatedQuestion: Question | null = null;
@@ -389,18 +390,8 @@ export const studiesRouter = createTRPCRouter({
           }
 
           if (updatedQuestion) {
-            if (multipleChoiceOptions) {
-              // Delete all stimuli if multipleChoiceOptions are present
-              await prisma.imageStimulus.deleteMany({
-                where: { questionId: updatedQuestion.id },
-              });
-              await prisma.videoStimulus.deleteMany({
-                where: { questionId: updatedQuestion.id },
-              });
-              await prisma.websiteStimulus.deleteMany({
-                where: { questionId: updatedQuestion.id },
-              });
-
+            if (multipleChoiceOptions && multipleChoiceOptions.length > 0) {
+              // Handle multiple choice options
               const existingOptions =
                 await prisma.multipleChoiceOption.findMany({
                   where: { questionId: updatedQuestion.id },
@@ -444,41 +435,117 @@ export const studiesRouter = createTRPCRouter({
                   id: { notIn: optionIdsToKeep },
                 },
               });
-            } else {
-              // Handle image stimuli
+
+              // Delete all stimuli if multipleChoiceOptions are present
               await prisma.imageStimulus.deleteMany({
                 where: { questionId: updatedQuestion.id },
               });
-              await prisma.imageStimulus.createMany({
-                data: imageStimuli.map((stimulus) => ({
-                  ...stimulus,
-                  questionId: updatedQuestion.id,
-                })),
-              });
-
-              // Handle video stimuli
               await prisma.videoStimulus.deleteMany({
                 where: { questionId: updatedQuestion.id },
               });
-              await prisma.videoStimulus.createMany({
-                data: videoStimuli.map((stimulus) => ({
-                  ...stimulus,
-                  questionId: updatedQuestion.id,
-                })),
-              });
-
-              // Handle website stimuli
               await prisma.websiteStimulus.deleteMany({
                 where: { questionId: updatedQuestion.id },
               });
-              await prisma.websiteStimulus.createMany({
-                data: websiteStimuli.map((stimulus) => ({
-                  ...stimulus,
+            } else {
+              // Handle stimuli
+              // Image stimuli
+              const existingImageStimuli = await prisma.imageStimulus.findMany({
+                where: { questionId: updatedQuestion.id },
+              });
+              const imageIdsToKeep: string[] = [];
+
+              for (const stimulus of imageStimuli) {
+                const existingStimulus = existingImageStimuli.find(
+                  (es) => es.id === stimulus.id,
+                );
+
+                if (existingStimulus) {
+                  const updatedStimulus = await prisma.imageStimulus.update({
+                    where: { id: existingStimulus.id },
+                    data: { ...stimulus, questionId: updatedQuestion.id },
+                  });
+                  imageIdsToKeep.push(updatedStimulus.id);
+                } else {
+                  const newStimulus = await prisma.imageStimulus.create({
+                    data: { ...stimulus, questionId: updatedQuestion.id },
+                  });
+                  imageIdsToKeep.push(newStimulus.id);
+                }
+              }
+
+              await prisma.imageStimulus.deleteMany({
+                where: {
                   questionId: updatedQuestion.id,
-                })),
+                  id: { notIn: imageIdsToKeep },
+                },
               });
 
-              // Delete all multiple choice options
+              // Video stimuli
+              const existingVideoStimuli = await prisma.videoStimulus.findMany({
+                where: { questionId: updatedQuestion.id },
+              });
+              const videoIdsToKeep: string[] = [];
+
+              for (const stimulus of videoStimuli) {
+                const existingStimulus = existingVideoStimuli.find(
+                  (es) => es.id === stimulus.id,
+                );
+
+                if (existingStimulus) {
+                  const updatedStimulus = await prisma.videoStimulus.update({
+                    where: { id: existingStimulus.id },
+                    data: { ...stimulus, questionId: updatedQuestion.id },
+                  });
+                  videoIdsToKeep.push(updatedStimulus.id);
+                } else {
+                  const newStimulus = await prisma.videoStimulus.create({
+                    data: { ...stimulus, questionId: updatedQuestion.id },
+                  });
+                  videoIdsToKeep.push(newStimulus.id);
+                }
+              }
+
+              await prisma.videoStimulus.deleteMany({
+                where: {
+                  questionId: updatedQuestion.id,
+                  id: { notIn: videoIdsToKeep },
+                },
+              });
+
+              // Website stimuli
+              const existingWebsiteStimuli =
+                await prisma.websiteStimulus.findMany({
+                  where: { questionId: updatedQuestion.id },
+                });
+              const websiteIdsToKeep: string[] = [];
+
+              for (const stimulus of websiteStimuli) {
+                const existingStimulus = existingWebsiteStimuli.find(
+                  (es) => es.id === stimulus.id,
+                );
+
+                if (existingStimulus) {
+                  const updatedStimulus = await prisma.websiteStimulus.update({
+                    where: { id: existingStimulus.id },
+                    data: { ...stimulus, questionId: updatedQuestion.id },
+                  });
+                  websiteIdsToKeep.push(updatedStimulus.id);
+                } else {
+                  const newStimulus = await prisma.websiteStimulus.create({
+                    data: { ...stimulus, questionId: updatedQuestion.id },
+                  });
+                  websiteIdsToKeep.push(newStimulus.id);
+                }
+              }
+
+              await prisma.websiteStimulus.deleteMany({
+                where: {
+                  questionId: updatedQuestion.id,
+                  id: { notIn: websiteIdsToKeep },
+                },
+              });
+
+              // Delete all multiple choice options if no multipleChoiceOptions are present
               await prisma.multipleChoiceOption.deleteMany({
                 where: { questionId: updatedQuestion.id },
               });
