@@ -18,6 +18,7 @@ import { ClipLoader } from "react-spinners";
 import { BasicProgressBar } from "@/app/_components/reusable/BasicProgressBar";
 import { showErrorToast } from "@/app/utils/toastUtils";
 import { useRouter } from "next/navigation";
+import BasicTag from "@/app/_components/reusable/BasicTag";
 
 export default function SetupOverviewPage({
   params,
@@ -171,13 +172,20 @@ export default function SetupOverviewPage({
       <div className="flex flex-col gap-2">
         <div className="flex w-full flex-row items-center justify-between">
           <div className="text-lg font-medium text-theme-900">Study Setup</div>
-          <div className="text-sm text-theme-600">75% complete</div>
+          <div className="text-sm text-theme-600">
+            {study?.status === StudyStatus.DRAFT ? (
+              <BasicTag>Draft</BasicTag>
+            ) : (
+              <BasicTag color="bg-[#CEDBD3]" borderColor="border-[#427356]">
+                Published
+              </BasicTag>
+            )}
+          </div>
         </div>
         <div className="text-sm text-theme-600">
           Create your study and get started distributing!
         </div>
       </div>
-      <BasicProgressBar value={50} />
       <BasicCard className={`flex flex-col gap-6 p-6 shadow-standard`}>
         <div className="flex w-full flex-row items-center justify-between">
           <div className="text-lg text-theme-600">Overview</div>
@@ -320,7 +328,7 @@ export default function SetupOverviewPage({
         <Button
           className="mt-4 flex gap-2 text-theme-off-white"
           onClick={handleSave}
-          disabled={updateStudyMutation.isPending}
+          disabled={updateStudyMutation.isPending || !hasUnsavedChanges}
         >
           {updateStudyMutation.isPending ? "Saving..." : "Save and continue"}
           <ArrowRight className="text-theme-off-white" />

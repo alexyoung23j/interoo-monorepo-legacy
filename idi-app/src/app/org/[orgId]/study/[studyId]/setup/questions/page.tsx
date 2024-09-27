@@ -16,12 +16,16 @@ import {
   StudyStatus,
 } from "@shared/generated/client";
 import { showErrorToast, showSuccessToast } from "@/app/utils/toastUtils";
+import BasicConfirmationModal from "@/app/_components/reusable/BasicConfirmationModal";
+import BasicTag from "@/app/_components/reusable/BasicTag";
+import { useRouter } from "next/navigation";
 
 export default function QuestionsPage({
   params,
 }: {
   params: { studyId: string };
 }) {
+  const router = useRouter();
   const { data: study } = api.studies.getStudy.useQuery(
     {
       studyId: params.studyId,
@@ -38,10 +42,13 @@ export default function QuestionsPage({
 
   const updateStudyQuestionsMutation =
     api.studies.updateStudyQuestions.useMutation();
+  const updateStudyMutation = api.studies.updateStudy.useMutation();
 
   const [questions, setQuestions] = useState<LocalQuestion[]>([]);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [questionValidations, setQuestionValidations] = useState<boolean[]>([]);
+  const [showPublishConfirmation, setShowPublishConfirmation] = useState(false);
+  const [showUpdateConfirmation, setShowUpdateConfirmation] = useState(false);
 
   useEffect(() => {
     if (fetchedQuestions) {
@@ -97,8 +104,6 @@ export default function QuestionsPage({
       setQuestions(localQuestions);
     }
   }, [fetchedQuestions]);
-
-  console.log({ questions });
 
   const handleQuestionChange = useCallback(
     (index: number, updatedQuestion: LocalQuestion) => {
@@ -199,7 +204,6 @@ export default function QuestionsPage({
   );
 
   const handleSaveQuestions = useCallback(async () => {
-    console.log({ questionValidations });
     if (!allQuestionsValid) {
       showErrorToast("Please fix errors in all questions before saving");
       return;
@@ -223,7 +227,6 @@ export default function QuestionsPage({
         questions: questionsToSave,
       });
       setHasUnsavedChanges(false);
-      showSuccessToast("Questions saved successfully");
     } catch (error) {
       showErrorToast("Failed to save questions");
       console.error("Failed to save questions:", error);
@@ -233,7 +236,6 @@ export default function QuestionsPage({
     params.studyId,
     updateStudyQuestionsMutation,
     allQuestionsValid,
-    questionValidations,
   ]);
 
   if (isLoading) {
@@ -246,16 +248,103 @@ export default function QuestionsPage({
 
   return (
     <div className="flex h-full flex-col gap-10 overflow-y-auto bg-theme-off-white p-9">
+      <BasicConfirmationModal
+        isOpen={showPublishConfirmation}
+        onOpenChange={setShowPublishConfirmation}
+        title="Save and publish this study?"
+        subtitle="This allows you to start distributing your study."
+        confirmButtonText="Save and Publish"
+        cancelButtonText="Save draft"
+        body={
+          <div>
+            {(updateStudyQuestionsMutation.isPending ||
+              updateStudyMutation.isPending) && (
+              <div className="flex items-center justify-center py-4">
+                <ClipLoader size={20} color="grey" />
+              </div>
+            )}
+          </div>
+        }
+        onCancel={async () => {
+          try {
+            await handleSaveQuestions();
+            setShowPublishConfirmation(false);
+            showSuccessToast("Draft saved successfully");
+          } catch (error) {
+            showErrorToast("Failed to save study");
+            console.error("Failed to save study:", error);
+          }
+        }}
+        onConfirm={async () => {
+          try {
+            await handleSaveQuestions();
+            await updateStudyMutation.mutateAsync({
+              id: params.studyId,
+              status: StudyStatus.PUBLISHED,
+            });
+            setShowPublishConfirmation(false);
+            showSuccessToast("Study published successfully");
+            router.push(
+              `/org/${study?.organizationId}/study/${study?.id}/distribution`,
+            );
+          } catch (error) {
+            showErrorToast("Failed to publish study");
+            console.error("Failed to publish study:", error);
+          }
+        }}
+      />
+      <BasicConfirmationModal
+        isOpen={showUpdateConfirmation}
+        onOpenChange={setShowUpdateConfirmation}
+        title="Update this published study?"
+        subtitle="Note that this may result in inconsistent responses across participants if you have already started distributing your study."
+        confirmButtonText="Update"
+        cancelButtonText="Cancel"
+        body={
+          <div>
+            {(updateStudyQuestionsMutation.isPending ||
+              updateStudyMutation.isPending) && (
+              <div className="flex items-center justify-center py-4">
+                <ClipLoader size={20} color="grey" />
+              </div>
+            )}
+          </div>
+        }
+        onCancel={async () => {
+          setShowUpdateConfirmation(false);
+        }}
+        onConfirm={async () => {
+          try {
+            await handleSaveQuestions();
+            await updateStudyMutation.mutateAsync({
+              id: params.studyId,
+            });
+            setShowUpdateConfirmation(false);
+            showSuccessToast("Study updated successfully");
+          } catch (error) {
+            showErrorToast("Failed to update study");
+            console.error("Failed to update study:", error);
+          }
+        }}
+      />
       <div className="flex flex-col gap-2">
         <div className="flex w-full flex-row items-center justify-between">
           <div className="text-lg font-medium text-theme-900">Study Setup</div>
-          <div className="text-sm text-theme-600">75% complete</div>
+          <div className="text-sm text-theme-600">
+            {study?.status === StudyStatus.DRAFT ? (
+              <BasicTag>Draft</BasicTag>
+            ) : (
+              <BasicTag color="bg-[#CEDBD3]" borderColor="border-[#427356]">
+                Published
+              </BasicTag>
+            )}
+          </div>{" "}
         </div>
         <div className="text-sm text-theme-600">
           Create your study and get started distributing!
         </div>
+        <div className="mt-4 h-[1px] w-full bg-theme-200" />
       </div>
-      <BasicProgressBar value={75} />
       <div className="flex flex-col gap-6">
         <div className="flex w-full flex-row items-center justify-between">
           <div className="text-lg text-theme-600">Questions</div>
@@ -301,7 +390,13 @@ export default function QuestionsPage({
           </div>
         )}
         <Button
-          onClick={handleSaveQuestions}
+          onClick={async () => {
+            if (study?.status === StudyStatus.DRAFT) {
+              setShowPublishConfirmation(true);
+            } else {
+              setShowUpdateConfirmation(true);
+            }
+          }}
           className="mt-4 text-theme-off-white"
           disabled={
             !hasUnsavedChanges || updateStudyQuestionsMutation.isPending

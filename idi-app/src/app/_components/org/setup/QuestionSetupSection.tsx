@@ -14,6 +14,7 @@ import { DotsThree, Trash } from "@phosphor-icons/react";
 import OpenEndedQuestionFields from "./OpenEndedQuestionFields";
 import MultipleChoiceQuestionFields from "./MultipleChoiceQuestionFields";
 import { TextEntry } from "@/app/_components/reusable/TextEntryGroup";
+import BasicTextArea from "../../reusable/BasicTextArea";
 
 export type LocalImageStimulus = {
   id?: string;
@@ -146,11 +147,11 @@ const QuestionSetupSection: React.FC<QuestionSetupSectionProps> = ({
         titleClassName="!font-medium"
         subtitleClassName="!font-normal"
       >
-        <BasicInput
-          type="text"
+        <BasicTextArea
           placeholder="Enter question"
           value={question.title}
           onSetValue={handleInputChange("title")}
+          rows={2}
         />
         {errors.title && (
           <div className="mt-1 text-sm text-red-500">{errors.title}</div>
