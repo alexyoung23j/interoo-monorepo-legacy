@@ -1,27 +1,4 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -34,25 +11,63 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
+var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
-const functions = __importStar(require("@google-cloud/functions-framework"));
+exports.setUpAnalysis = void 0;
+const client_1 = require("@prisma/client");
 const google_auth_library_1 = require("google-auth-library");
 const axios_1 = __importDefault(require("axios"));
+// Initialize Prisma Client
+const prisma = new client_1.PrismaClient();
 // Create a new GoogleAuth client
 const auth = new google_auth_library_1.GoogleAuth();
 // The URL of your summarize-interview function
-const targetAudience = 'https://us-central1-interoo-dev.cloudfunctions.net/summarize-interview';
+const targetAudience = `https://us-central1-interoo-${(_a = process.env.PROJECT) !== null && _a !== void 0 ? _a : 'prod'}.cloudfunctions.net/summarizeInterview`;
 const url = targetAudience;
-functions.http('setUpAnalysis', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const setUpAnalysis = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { interviewSessionId } = req.body;
     if (!interviewSessionId) {
         res.status(400).send('Missing interviewSessionId in request body');
         return;
     }
     try {
-        // Stub: Setup Supabase tables for future jobs
-        console.log(`Setting up Supabase tables for interview session: ${interviewSessionId}`);
-        // Your Supabase setup code would go here
+        // Fetch the study and questions using Prisma
+        const interviewSession = yield prisma.interviewSession.findUnique({
+            where: { id: interviewSessionId },
+            include: {
+                study: {
+                    include: {
+                        questions: true
+                    }
+                }
+            }
+        });
+        if (!interviewSession) {
+            throw new Error(`Interview session not found: ${interviewSessionId}`);
+        }
+        const { study } = interviewSession;
+        // Create analysis job rows in a single transaction
+        yield prisma.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
+            for (const question of study.questions) {
+                yield tx.questionThemeAnalysisJob.create({
+                    data: {
+                        studyId: study.id,
+                        questionId: question.id,
+                        interviewSessionId: interviewSessionId,
+                        status: 'NOT_STARTED',
+                    }
+                });
+                yield tx.questionAttributeAnalysisJob.create({
+                    data: {
+                        studyId: study.id,
+                        questionId: question.id,
+                        interviewSessionId: interviewSessionId,
+                        status: 'NOT_STARTED',
+                    }
+                });
+            }
+        }));
+        console.log(`Analysis jobs created for interview session: ${interviewSessionId}`);
         console.info(`Requesting ${url} with target audience ${targetAudience}`);
         const client = yield auth.getIdTokenClient(targetAudience);
         // Get the ID token
@@ -76,4 +91,8 @@ functions.http('setUpAnalysis', (req, res) => __awaiter(void 0, void 0, void 0, 
         }
         res.status(500).send(`Internal server error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-}));
+    finally {
+        yield prisma.$disconnect();
+    }
+});
+exports.setUpAnalysis = setUpAnalysis;

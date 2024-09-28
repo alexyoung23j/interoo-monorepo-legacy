@@ -84,9 +84,11 @@ model Study {
   boostedKeywords    BoostedKeyword[]
 
   // Analysis
-  Themes     Theme[]
-  Attributes Attribute[]
-  Favorites  Favorite[]
+  Themes                       Theme[]
+  Attributes                   Attribute[]
+  Favorites                    Favorite[]
+  QuestionThemeAnalysisJob     QuestionThemeAnalysisJob[]
+  QuestionAttributeAnalysisJob QuestionAttributeAnalysisJob[]
 }
 
 enum TtsProvider {
@@ -301,6 +303,9 @@ enum JobStatus {
 model QuestionThemeAnalysisJob {
   id String @id @default(uuid())
 
+  study   Study  @relation(fields: [studyId], references: [id])
+  studyId String
+
   question   Question @relation(fields: [questionId], references: [id])
   questionId String
 
@@ -314,6 +319,9 @@ model QuestionThemeAnalysisJob {
 
 model QuestionAttributeAnalysisJob {
   id String @id @default(uuid())
+
+  study   Study  @relation(fields: [studyId], references: [id])
+  studyId String
 
   question   Question @relation(fields: [questionId], references: [id])
   questionId String

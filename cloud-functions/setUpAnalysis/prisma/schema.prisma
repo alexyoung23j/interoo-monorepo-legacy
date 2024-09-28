@@ -1,0 +1,470 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider  = "postgresql"
+    url       = env("DATABASE_URL")
+    directUrl = env("DIRECT_URL")
+}
+
+model Invite {
+    id             String       @id @default(uuid())
+    token          String       @unique
+    organizationId String
+    organization   Organization @relation(fields: [organizationId], references: [id])
+    expiresAt      DateTime
+    usedAt         DateTime?
+    createdAt      DateTime     @default(now())
+}
+
+model Organization {
+    id             String                  @id @default(uuid())
+    name           String
+    primaryColor   String?                 @default("#F0F2F3")
+    secondaryColor String?                 @default("#64748B")
+    logoUrl        String?
+    createdAt      DateTime                @default(now())
+    updatedAt      DateTime                @default(now())
+    profiles       ProfileInOrganization[]
+    studies        Study[]
+    invites        Invite[]
+}
+
+model Profile {
+    id             String                  @id @default(uuid())
+    name           String
+    email          String                  @unique
+    createdAt      DateTime                @default(now())
+    updatedAt      DateTime                @default(now())
+    supabaseUserID String
+    organizations  ProfileInOrganization[]
+    Favorite       Favorite[]
+}
+
+model ProfileInOrganization {
+    id             String       @id @default(uuid())
+    profileId      String
+    organizationId String
+    profile        Profile      @relation(fields: [profileId], references: [id])
+    organization   Organization @relation(fields: [organizationId], references: [id])
+    isDefaultOrg   Boolean      @default(false)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @default(now())
+
+    @@unique([profileId, organizationId])
+}
+
+model Study {
+    id                 String             @id @default(uuid())
+    organizationId     String
+    title              String
+    targetLength       Int?
+    welcomeDescription String?            @db.Text
+    termsAndConditions String?            @db.Text
+    welcomeImageUrl    String?
+    studyBackground    String?            @db.Text
+    videoEnabled       Boolean?           @default(false)
+    maxResponses       Int?
+    ttsProvider        TtsProvider        @default(GOOGLE)
+    status             StudyStatus
+    shortID            String             @unique
+    createdAt          DateTime           @default(now())
+    updatedAt          DateTime           @default(now())
+    organization       Organization       @relation(fields: [organizationId], references: [id])
+    reportingLanguage  Language
+    languages          Language[]
+    questions          Question[]
+    interviews         InterviewSession[]
+    boostedKeywords    BoostedKeyword[]
+
+    // Analysis
+    Themes                       Theme[]
+    Attributes                   Attribute[]
+    Favorites                    Favorite[]
+    QuestionThemeAnalysisJob     QuestionThemeAnalysisJob[]
+    QuestionAttributeAnalysisJob QuestionAttributeAnalysisJob[]
+}
+
+enum TtsProvider {
+    GOOGLE
+    ELEVENLABS
+}
+
+model BoostedKeyword {
+    id         String  @id @default(uuid())
+    keyword    String
+    definition String?
+    studyId    String
+    study      Study   @relation(fields: [studyId], references: [id], onDelete: Cascade)
+}
+
+enum StudyStatus {
+    DRAFT
+    PUBLISHED
+}
+
+enum Language {
+    ENGLISH
+    // Add more languages as needed
+}
+
+enum VideoStimulusType {
+    UPLOADED
+    EXTERNAL
+}
+
+model ImageStimulus {
+    id         String   @id @default(uuid())
+    bucketUrl  String
+    title      String?
+    altText    String?
+    questionId String
+    question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+model VideoStimulus {
+    id         String            @id @default(uuid())
+    url        String
+    type       VideoStimulusType
+    title      String?
+    questionId String
+    question   Question          @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+model WebsiteStimulus {
+    id         String   @id @default(uuid())
+    websiteUrl String
+    title      String?
+    questionId String
+    question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+model Question {
+    id                           String                         @id @default(uuid())
+    title                        String
+    context                      String?
+    shouldFollowUp               Boolean
+    followUpLevel                FollowUpLevel                  @default(AUTOMATIC)
+    body                         String?                        @db.Text
+    studyId                      String
+    questionType                 QuestionType
+    questionOrder                Int
+    hasStimulus                  Boolean                        @default(false)
+    websiteStimuli               WebsiteStimulus[]
+    imageStimuli                 ImageStimulus[]
+    videoStimuli                 VideoStimulus[]
+    createdAt                    DateTime                       @default(now())
+    updatedAt                    DateTime                       @default(now()) @updatedAt
+    study                        Study                          @relation(fields: [studyId], references: [id])
+    allowMultipleSelections      Boolean                        @default(false)
+    multipleChoiceOptions        MultipleChoiceOption[]
+    lowRange                     Int?
+    highRange                    Int?
+    interviews                   InterviewSession[]
+    Response                     Response[]
+    FollowUpQuestion             FollowUpQuestion[]
+    QuestionThemeAnalysisJob     QuestionThemeAnalysisJob[]
+    QuestionAttributeAnalysisJob QuestionAttributeAnalysisJob[]
+    ThemesOnQuestion             ThemesOnQuestion[]
+    AttributesOnQuestion         AttributesOnQuestion[]
+}
+
+model FollowUpQuestion {
+    id                    String           @id @default(uuid())
+    title                 String
+    body                  String?          @db.Text
+    followUpQuestionOrder Int
+    questionType          QuestionType     @default(OPEN_ENDED)
+    parentQuestionId      String
+    parentQuestion        Question         @relation(fields: [parentQuestionId], references: [id])
+    createdAt             DateTime         @default(now())
+    updatedAt             DateTime         @default(now())
+    Response              Response[]
+    interviewSession      InterviewSession @relation(fields: [interviewSessionId], references: [id])
+    interviewSessionId    String
+}
+
+model Response {
+    id                      String                @id @default(uuid())
+    interviewSession        InterviewSession      @relation(fields: [interviewSessionId], references: [id])
+    questionId              String
+    question                Question              @relation(fields: [questionId], references: [id])
+    fastTranscribedText     String                @db.Text
+    responseMedia           ResponseMedia?
+    multipleChoiceSelection MultipleChoiceOption? @relation(fields: [multipleChoiceOptionId], references: [id])
+    rangeSelection          Int?
+    interviewSessionId      String
+    multipleChoiceOptionId  String?
+
+    junkResponse Boolean @default(false)
+
+    // Json blob of transcript in our shape
+    transcriptionBody Json?
+
+    // if follow-up response
+    followUpQuestionId String?
+    followUpQuestion   FollowUpQuestion? @relation(fields: [followUpQuestionId], references: [id])
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @default(now())
+
+    Quote     Quote[]
+    Favorites Favorite[]
+}
+
+model ResponseMedia {
+    id              String   @id @default(uuid())
+    responseId      String   @unique
+    mediaUrl        String
+    contentType     String   @default("video/webm")
+    transcribedText String?  @db.Text
+    response        Response @relation(fields: [responseId], references: [id])
+}
+
+enum FollowUpLevel {
+    AUTOMATIC
+    SURFACE
+    LIGHT
+    DEEP
+}
+
+enum QuestionType {
+    OPEN_ENDED
+    MULTIPLE_CHOICE
+    RANGE
+}
+
+model MultipleChoiceOption {
+    id          String     @id @default(uuid())
+    questionId  String
+    optionText  String
+    optionOrder Int
+    question    Question   @relation(fields: [questionId], references: [id], onDelete: Cascade)
+    response    Response[]
+}
+
+model InterviewSession {
+    id                String                 @id @default(uuid())
+    studyId           String
+    startTime         DateTime?
+    lastUpdatedTime   DateTime?
+    status            InterviewSessionStatus @default(NOT_STARTED)
+    currentQuestionId String?
+    testMode          Boolean                @default(false)
+    elapsedTime       Int                    @default(0)
+    summary           String?                @db.Text
+    study             Study                  @relation(fields: [studyId], references: [id])
+    CurrentQuestion   Question?              @relation(fields: [currentQuestionId], references: [id])
+    responses         Response[]
+    FollowUpQuestions FollowUpQuestion[]
+    participant       InterviewParticipant?
+
+    // Analysis
+    Favorites                    Favorite[]
+    QuestionThemeAnalysisJob     QuestionThemeAnalysisJob[]
+    QuestionAttributeAnalysisJob QuestionAttributeAnalysisJob[]
+}
+
+model InterviewParticipant {
+    id                 String           @id @default(uuid())
+    interviewSessionId String           @unique
+    interviewSession   InterviewSession @relation(fields: [interviewSessionId], references: [id])
+    name               String?
+    email              String?
+
+    // Add other metadata as needed.
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+enum InterviewSessionStatus {
+    NOT_STARTED
+    IN_PROGRESS
+    COMPLETED
+}
+
+/// ANALYSIS 
+
+// Jobs
+enum JobStatus {
+    NOT_STARTED
+    IN_PROGRESS
+    COMPLETED
+    FAILED
+}
+
+model QuestionThemeAnalysisJob {
+    id String @id @default(uuid())
+
+    study   Study  @relation(fields: [studyId], references: [id])
+    studyId String
+
+    question   Question @relation(fields: [questionId], references: [id])
+    questionId String
+
+    interviewSession   InterviewSession @relation(fields: [interviewSessionId], references: [id])
+    interviewSessionId String
+
+    status    JobStatus @default(NOT_STARTED)
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+}
+
+model QuestionAttributeAnalysisJob {
+    id String @id @default(uuid())
+
+    study   Study  @relation(fields: [studyId], references: [id])
+    studyId String
+
+    question   Question @relation(fields: [questionId], references: [id])
+    questionId String
+
+    interviewSession   InterviewSession @relation(fields: [interviewSessionId], references: [id])
+    interviewSessionId String
+
+    status    JobStatus @default(NOT_STARTED)
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+}
+
+// Analysis Objects
+
+model Quote {
+    id        String @id @default(uuid())
+    plainText String
+
+    response   Response @relation(fields: [responseId], references: [id])
+    responseId String
+
+    // Index of the first and last word in the transcript blob
+    wordStartIndex Int
+    wordEndIndex   Int
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    // Through tables for association with themes and attributes
+    QuotesOnTheme     QuotesOnTheme[]
+    QuotesOnAttribute QuotesOnAttribute[]
+
+    Favorites Favorite[]
+}
+
+model QuotesOnTheme {
+    id String @id @default(uuid())
+
+    quote   Quote  @relation(fields: [quoteId], references: [id])
+    quoteId String
+
+    theme   Theme  @relation(fields: [themeId], references: [id])
+    themeId String
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+model ThemesOnQuestion {
+    id String @id @default(uuid())
+
+    theme   Theme  @relation(fields: [themeId], references: [id])
+    themeId String
+
+    question   Question @relation(fields: [questionId], references: [id])
+    questionId String
+}
+
+model Theme {
+    id String @id @default(uuid())
+
+    study   Study  @relation(fields: [studyId], references: [id])
+    studyId String
+
+    // Through table for association with questions
+    ThemesOnQuestion ThemesOnQuestion[]
+
+    name        String
+    description String?
+
+    tagColor String
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    // Through table for association with quotes
+    QuotesOnTheme QuotesOnTheme[]
+}
+
+model QuotesOnAttribute {
+    id String @id @default(uuid())
+
+    quote   Quote  @relation(fields: [quoteId], references: [id])
+    quoteId String
+
+    attribute   Attribute @relation(fields: [attributeId], references: [id])
+    attributeId String
+
+    attributeValue String? // The value of the attribute for this quote
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+model AttributesOnQuestion {
+    id String @id @default(uuid())
+
+    attribute   Attribute @relation(fields: [attributeId], references: [id])
+    attributeId String
+
+    question   Question @relation(fields: [questionId], references: [id])
+    questionId String
+}
+
+model Attribute {
+    id String @id @default(uuid())
+
+    study   Study  @relation(fields: [studyId], references: [id])
+    studyId String
+
+    name        String
+    description String?
+    values      String[]
+
+    tagColor String
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    // Through table for association with quotes
+    QuotesOnAttribute QuotesOnAttribute[]
+
+    // Through table for association with questions
+    AttributesOnQuestion AttributesOnQuestion[]
+}
+
+model Favorite {
+    id String @id @default(uuid())
+
+    createdBy   Profile @relation(fields: [createdById], references: [id])
+    createdById String
+
+    study   Study  @relation(fields: [studyId], references: [id])
+    studyId String
+
+    quote   Quote?  @relation(fields: [quoteId], references: [id])
+    quoteId String?
+
+    response   Response? @relation(fields: [responseId], references: [id])
+    responseId String?
+
+    interviewSession   InterviewSession? @relation(fields: [interviewSessionId], references: [id])
+    interviewSessionId String?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
