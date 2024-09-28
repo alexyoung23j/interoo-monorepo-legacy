@@ -311,7 +311,7 @@ export default function QuestionsPage({
         isOpen={showUpdateConfirmation}
         onOpenChange={setShowUpdateConfirmation}
         title="Update this published study?"
-        subtitle="Note that this may result in inconsistent responses across participants if you have already started distributing your study."
+        subtitle="Note that this may result in inconsistent responses across recorded interviews if you have already distributed your study."
         confirmButtonText="Update"
         cancelButtonText="Cancel"
         body={

@@ -116,7 +116,7 @@ const BasicDropZone: React.FC<BasicDropZoneProps> = ({
       ) : (
         <div className="flex flex-col items-center justify-center gap-2">
           <UploadSimple size={50} className="text-theme-400" />
-          <p className="mb-2 text-sm text-theme-900">{uploadMessage}</p>
+          <p className="mb-2 text-sm text-theme-600">{uploadMessage}</p>
         </div>
       )}
     </div>

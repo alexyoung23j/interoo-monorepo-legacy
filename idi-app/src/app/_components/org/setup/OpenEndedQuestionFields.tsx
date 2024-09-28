@@ -151,7 +151,7 @@ const OpenEndedQuestionFields: React.FC<OpenEndedQuestionFieldsProps> = ({
     <>
       <BasicTitleSection
         title="Should Follow Up"
-        subtitle="If you'd like the AI to ask follow ups, select yes."
+        subtitle="If you'd like the AI to ask follow up questions in response to participants' answers, select yes."
         titleClassName="!font-medium"
         subtitleClassName="!font-normal"
       >
@@ -172,6 +172,7 @@ const OpenEndedQuestionFields: React.FC<OpenEndedQuestionFieldsProps> = ({
         <>
           <BasicTitleSection
             title="Follow Up Settings"
+            subtitle="Configure the depth of AI follow ups."
             titleClassName="!font-medium"
             subtitleClassName="!font-normal"
           >
@@ -201,7 +202,7 @@ const OpenEndedQuestionFields: React.FC<OpenEndedQuestionFieldsProps> = ({
 
           <BasicTitleSection
             title="Context and Instructions"
-            subtitle="Include context to provide the AI with information about how to follow up, key areas of interest, goals of the question, etc. The quality of follow ups will be greatly enhanced by writing detailed question context."
+            subtitle="Include context to provide our AI with information about how to follow up, key areas of interest, goals of the question, etc. The quality of follow ups will be greatly enhanced by writing detailed question context."
             titleClassName="!font-medium"
             subtitleClassName="!font-normal"
           >
@@ -218,7 +219,7 @@ const OpenEndedQuestionFields: React.FC<OpenEndedQuestionFieldsProps> = ({
 
       <BasicTitleSection
         title="Include Stimuli"
-        subtitle="Select the type of stimuli to include with this question."
+        subtitle="Add images, videos, or websites to present the user with context for your question."
         titleClassName="!font-medium"
         subtitleClassName="!font-normal"
       >

@@ -24,6 +24,7 @@ const MultipleChoiceQuestionFields: React.FC<
   return (
     <BasicTitleSection
       title="Multiple Choice Options"
+      subtitle="Add at least 2 options to create a multiple choice question."
       titleClassName="!font-medium"
       subtitleClassName="!font-normal"
     >

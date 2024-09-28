@@ -319,7 +319,7 @@ export default function SetupOverviewPage({
         </BasicTitleSection>
         <BasicTitleSection
           title="Welcome Page Message"
-          subtitle="This will be shown to your participants before they start your interview. "
+          subtitle="This message will be shown to your participants before they start your interview."
           titleClassName="!font-medium"
           subtitleClassName="!font-normal"
         >
@@ -334,7 +334,7 @@ export default function SetupOverviewPage({
         </BasicTitleSection>
         <BasicTitleSection
           title="Terms of Service"
-          subtitle="This will be shown to your participants before they start your interview. "
+          subtitle="The terms of service will be shown to your participants before they start your interview."
           titleClassName="!font-medium"
           subtitleClassName="!font-normal"
         >
@@ -349,7 +349,7 @@ export default function SetupOverviewPage({
         </BasicTitleSection>
         <BasicTitleSection
           title="Response Recordings*"
-          subtitle="This title will be visible to participants in your interview."
+          subtitle="Choose whether you want to record video or audio responses."
           titleClassName="!font-medium"
           subtitleClassName="!font-normal"
         >
@@ -369,7 +369,7 @@ export default function SetupOverviewPage({
         </BasicTitleSection>
         <BasicTitleSection
           title="Special Keywords"
-          subtitle="Include any uncommon words or acronyms you expect respondents to use."
+          subtitle="Include any uncommon words or acronyms you expect respondents to use. This will improve transcription and AI analysis."
           titleClassName="!font-medium"
           subtitleClassName="!font-normal"
         >
@@ -378,7 +378,7 @@ export default function SetupOverviewPage({
             onAdd={addEntry}
             onRemove={removeEntry}
             onChange={updateEntries}
-            addText="Add new entry"
+            addText="Add new keyword"
             field1Placeholder="Enter keyword"
             field2Placeholder="Enter definition (optional)"
           />
