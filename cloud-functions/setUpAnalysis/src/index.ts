@@ -1,6 +1,10 @@
 import * as functions from '@google-cloud/functions-framework';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { GoogleAuth } from 'google-auth-library';
 import axios, { AxiosResponse } from 'axios';
+
+// Initialize Prisma Client
+const prisma = new PrismaClient();
 
 // Create a new GoogleAuth client
 const auth = new GoogleAuth();
@@ -17,7 +21,7 @@ interface ResponseData {
   message: string;
 }
 
-functions.http('setUpAnalysis', async (req: functions.Request, res: functions.Response) => {
+export const setUpAnalysis: functions.HttpFunction = async (req, res) => {
   const { interviewSessionId } = req.body as RequestBody;
 
   if (!interviewSessionId) {
@@ -26,9 +30,48 @@ functions.http('setUpAnalysis', async (req: functions.Request, res: functions.Re
   }
 
   try {
-    // Stub: Setup Supabase tables for future jobs
-    console.log(`Setting up Supabase tables for interview session: ${interviewSessionId}`);
-    // Your Supabase setup code would go here
+    // Fetch the study and questions using Prisma
+    const interviewSession = await prisma.interviewSession.findUnique({
+      where: { id: interviewSessionId },
+      include: {
+        study: {
+          include: {
+            questions: true
+          }
+        }
+      }
+    });
+
+    if (!interviewSession) {
+      throw new Error(`Interview session not found: ${interviewSessionId}`);
+    }
+
+    const { study } = interviewSession;
+
+    // Create analysis job rows in a single transaction
+    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      for (const question of study.questions) {
+        await tx.questionThemeAnalysisJob.create({
+          data: {
+            studyId: study.id,
+            questionId: question.id,
+            interviewSessionId: interviewSessionId,
+            status: 'NOT_STARTED',
+          }
+        });
+
+        await tx.questionAttributeAnalysisJob.create({
+          data: {
+            studyId: study.id,
+            questionId: question.id,
+            interviewSessionId: interviewSessionId,
+            status: 'NOT_STARTED',
+          }
+        });
+      }
+    });
+
+    console.log(`Analysis jobs created for interview session: ${interviewSessionId}`);
 
     console.info(`Requesting ${url} with target audience ${targetAudience}`);
     const client = await auth.getIdTokenClient(targetAudience);
@@ -59,5 +102,7 @@ functions.http('setUpAnalysis', async (req: functions.Request, res: functions.Re
       console.error('Response headers:', error.response.headers);
     }
     res.status(500).send(`Internal server error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  } finally {
+    await prisma.$disconnect();
   }
-});
+};
