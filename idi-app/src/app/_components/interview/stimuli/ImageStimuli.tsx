@@ -18,6 +18,9 @@ export const ImageStimuli: React.FC<ImageStimuliProps> = ({ imageStimuli }) => {
     [imageStimuli],
   );
   const { data: signedUrlsData } = useSignedReadUrls({ filePaths });
+  console.log({ theFirstSectoin: signedUrlsData });
+
+  if (!signedUrlsData) return null;
 
   console.log({ signedUrlsData, imageStimuli });
 
