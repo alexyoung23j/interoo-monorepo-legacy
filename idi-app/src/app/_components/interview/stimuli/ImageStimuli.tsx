@@ -19,6 +19,8 @@ export const ImageStimuli: React.FC<ImageStimuliProps> = ({ imageStimuli }) => {
   );
   const { data: signedUrlsData } = useSignedReadUrls({ filePaths });
 
+  console.log({ signedUrlsData, imageStimuli });
+
   if (!imageStimuli || imageStimuli.length === 0) return null;
 
   const handlePrev = () => {
