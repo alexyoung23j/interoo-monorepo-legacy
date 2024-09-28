@@ -100,7 +100,7 @@ model BoostedKeyword {
     keyword    String
     definition String?
     studyId    String
-    study      Study   @relation(fields: [studyId], references: [id])
+    study      Study   @relation(fields: [studyId], references: [id], onDelete: Cascade)
 }
 
 enum StudyStatus {
@@ -124,7 +124,7 @@ model ImageStimulus {
     title      String?
     altText    String?
     questionId String
-    question   Question @relation(fields: [questionId], references: [id])
+    question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
 }
 
 model VideoStimulus {
@@ -133,7 +133,7 @@ model VideoStimulus {
     type       VideoStimulusType
     title      String?
     questionId String
-    question   Question          @relation(fields: [questionId], references: [id])
+    question   Question          @relation(fields: [questionId], references: [id], onDelete: Cascade)
 }
 
 model WebsiteStimulus {
@@ -141,7 +141,7 @@ model WebsiteStimulus {
     websiteUrl String
     title      String?
     questionId String
-    question   Question @relation(fields: [questionId], references: [id])
+    question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
 }
 
 model Question {
@@ -240,11 +240,11 @@ enum QuestionType {
 }
 
 model MultipleChoiceOption {
-    id          String     @id
+    id          String     @id @default(uuid())
     questionId  String
     optionText  String
     optionOrder Int
-    question    Question   @relation(fields: [questionId], references: [id])
+    question    Question   @relation(fields: [questionId], references: [id], onDelete: Cascade)
     response    Response[]
 }
 
