@@ -18,19 +18,12 @@ export const useSignedReadUrls = ({
   return useQuery<SignedReadUrlData, Error>({
     queryKey: ["signedReadUrls", filePaths],
     queryFn: async () => {
-      const supabase = createClient();
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session) throw new Error("No active session");
-
       const signedUrls: Record<string, string> = {};
 
       for (const filePath of filePaths) {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const { readUrl } = await getSignedReadUrl({
           filePath,
-          token: session.access_token,
         });
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         signedUrls[filePath] = readUrl;

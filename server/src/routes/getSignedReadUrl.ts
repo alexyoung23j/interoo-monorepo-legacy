@@ -30,6 +30,6 @@ const getSignedReadUrl = async (req: Request<{}, {}, SignedReadUrlRequest>, res:
   }
 };
 
-router.post('/', authMiddleware, getSignedReadUrl);
+router.post('/', getSignedReadUrl);
 
 export const getSignedReadUrlRoute = router;
