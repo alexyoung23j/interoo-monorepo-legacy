@@ -1,0 +1,21 @@
+{
+    "scripts": {
+        "build": "tsc",
+        "deploy": "npm run build && gcloud functions deploy questionThemeAnalysisForBatch --gen2 --region=us-central1 --runtime=nodejs20 --trigger-http",
+        "dev": "npm run build && npx @google-cloud/functions-framework --target=questionThemeAnalysisForBatch",
+        "gcp-build": "npx prisma generate && npm run build"
+    },
+    "main": "index.js",
+    "dependencies": {
+        "@google-cloud/functions-framework": "^3.0.0",
+        "@langchain/core": "^0.1.63",
+        "@langchain/openai": "^0.0.x",
+        "@prisma/client": "^5.x.x",
+        "@supabase/supabase-js": "^2.39.3",
+        "typescript": "^5.6.2"
+    },
+    "devDependencies": {
+        "prisma": "^5.x.x",
+        "typescript": "^5.x.x"
+    }
+}
