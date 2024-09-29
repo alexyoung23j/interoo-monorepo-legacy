@@ -54,7 +54,7 @@ export const InterviewScreenLayout: React.FC<InterviewScreenLayoutProps> = ({
               backgroundLight ? "text-black" : "text-white"
             }`}
             onClick={() => {
-              // TODO: redirect to home page
+              window.open("https://interoo.ai", "_blank");
             }}
           >
             Powered by Interoo
@@ -83,7 +83,7 @@ export const InterviewScreenLayout: React.FC<InterviewScreenLayoutProps> = ({
           backgroundLight ? "text-black" : "text-white"
         }`}
         onClick={() => {
-          // TODO: redirect to home page
+          window.open("https://interoo.ai", "_blank");
         }}
       >
         Powered by Interoo
