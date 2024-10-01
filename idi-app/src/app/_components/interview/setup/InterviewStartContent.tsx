@@ -59,7 +59,7 @@ export const InterviewStartContent: React.FC<InterviewStartContentProps> = ({
       setCurrentQuestion(firstQuestion);
       setInterviewSession({
         ...interviewSession!,
-        status: "IN_PROGRESS",
+        status: "NOT_STARTED",
       });
       onStartInterview(); //simply updates progress state
       playTtsAudio(firstQuestion.title).catch((error) => {

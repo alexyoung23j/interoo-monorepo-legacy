@@ -203,7 +203,8 @@ const handleNoFollowUp = async (
       data: { 
         currentQuestionId: requestData.nextBaseQuestionId,
         lastUpdatedTime: new Date().toISOString(),
-        elapsedTime: elapsedTimeMs
+        elapsedTime: elapsedTimeMs,
+        status: InterviewSessionStatus.IN_PROGRESS
       }
     });
   } else {
@@ -258,7 +259,8 @@ const handlePotentialFollowUp = async (
           }
         },
         lastUpdatedTime: new Date().toISOString(),
-        elapsedTime: elapsedTimeMs
+        elapsedTime: elapsedTimeMs,
+        status: InterviewSessionStatus.IN_PROGRESS
       },
       include: {
         FollowUpQuestions: {

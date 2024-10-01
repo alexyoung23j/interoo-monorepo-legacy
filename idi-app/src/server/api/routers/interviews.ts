@@ -200,7 +200,7 @@ export const interviewsRouter = createTRPCRouter({
         where: { id: interviewSessionId },
         data: {
           currentQuestionId: firstQuestion.id,
-          status: "IN_PROGRESS",
+          status: "NOT_STARTED",
           lastUpdatedTime: new Date().toISOString(),
         },
         include: {
