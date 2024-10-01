@@ -3,13 +3,121 @@ import { PrismaClient } from '@prisma/client';
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { RunnableSequence } from "@langchain/core/runnables";
-import { MessageContent } from '@langchain/core/messages';
 import { HttpFunction } from '@google-cloud/functions-framework';
 import { z } from 'zod';
 
-const BATCH_SIZE = 5;
-
 const prisma = new PrismaClient();
+
+const BATCH_SIZE = 3;
+
+// Helper functions
+function isTranscriptionBody(obj: any): obj is TranscriptionBody {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    'transcript' in obj &&
+    'sentences' in obj.transcript &&
+    Array.isArray(obj.transcript.sentences)
+  );
+}
+
+function hexToHsl(hex: string): [number, number, number] {
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h = 0, s, l = (max + min) / 2;
+
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+      case g: h = (b - r) / d + 2; break;
+      case b: h = (r - g) / d + 4; break;
+    }
+    h /= 6;
+  } else {
+    s = 0;
+  }
+
+  return [h * 360, s * 100, l * 100];
+}
+
+function hslToHex(h: number, s: number, l: number): string {
+  h /= 360;
+  s /= 100;
+  l /= 100;
+  let r, g, b;
+
+  if (s === 0) {
+    r = g = b = l; // achromatic
+  } else {
+    const hue2rgb = (p: number, q: number, t: number): number => {
+      if (t < 0) t += 1;
+      if (t > 1) t -= 1;
+      if (t < 1/6) return p + (q - p) * 6 * t;
+      if (t < 1/2) return q;
+      if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+      return p;
+    };
+
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    r = hue2rgb(p, q, h + 1/3);
+    g = hue2rgb(p, q, h);
+    b = hue2rgb(p, q, h - 1/3);
+  }
+
+  return '#' + [r, g, b].map(x => Math.round(x * 255).toString(16).padStart(2, '0')).join('');
+}
+
+function generateHarmoniousColor(primaryColor: string, secondaryColor: string, existingColors: string[]): string {
+  const [h1, s1, l1] = hexToHsl(primaryColor);
+  const [h2, s2, l2] = hexToHsl(secondaryColor);
+
+  let newColor;
+  do {
+    const avgS = (s1 + s2) / 2;
+    const avgL = (l1 + l2) / 2;
+
+    const newH = (h1 + h2 + Math.random() * 180) % 360;
+    const newS = Math.max(0, Math.min(100, avgS + (Math.random() - 0.5) * 20));
+    const newL = Math.max(0, Math.min(100, avgL + (Math.random() - 0.5) * 20));
+
+    newColor = hslToHex(newH, newS, newL);
+  } while (existingColors.includes(newColor));
+
+  return newColor;
+}
+
+function createCitation(citation: any, responseIds: string[], responseSentences: string[][], sentenceMetadata: any[][], themeInfo: { id?: string, name?: string }) {
+  const { responseIndex, startSentenceIndex, endSentenceIndex } = citation;
+  
+  if (!sentenceMetadata[responseIndex] || 
+      !sentenceMetadata[responseIndex][startSentenceIndex] ||
+      !sentenceMetadata[responseIndex][endSentenceIndex]) {
+    logEntry('WARNING', 'Invalid sentence metadata access, skipping citation', {
+      ...themeInfo,
+      responseIndex,
+      startSentenceIndex,
+      endSentenceIndex,
+      sentenceMetadataLength: sentenceMetadata.length,
+      responseMetadataLength: sentenceMetadata[responseIndex]?.length
+    });
+    return [];
+  }
+
+  return [{
+    responseId: responseIds[responseIndex],
+    text: responseSentences[responseIndex].slice(startSentenceIndex, endSentenceIndex + 1).join(' '),
+    start_word_index: sentenceMetadata[responseIndex][startSentenceIndex].start_word_index,
+    end_word_index: sentenceMetadata[responseIndex][endSentenceIndex].end_word_index,
+    start_time: sentenceMetadata[responseIndex][startSentenceIndex].start_time,
+    end_time: sentenceMetadata[responseIndex][endSentenceIndex].end_time,
+  }];
+}
 
 // Helper function for structured logging
 function logEntry(severity: string, message: string, additionalFields: Record<string, any> = {}): void {
@@ -21,20 +129,40 @@ function logEntry(severity: string, message: string, additionalFields: Record<st
   console.log(JSON.stringify(entry));
 }
 
-interface TranscriptionSentence {
-  text: string;
-  start_time: number;
-  end_time: number;
+interface SentenceMetadata {
   start_word_index: number;
   end_word_index: number;
-  is_paragraph_end: boolean;
+  start_time: number;
+  end_time: number;
 }
 
-interface TranscriptionBody {
+const LLMCitationSchema = z.object({
+  responseIndex: z.number().describe("The index of the response in the responseSentences array"),
+  startSentenceIndex: z.number().describe("The index of the first sentence of the quote in the response"),
+  endSentenceIndex: z.number().describe("The index of the last sentence of the quote in the response"),
+});
+
+const LLMThemeAnalysisResultSchema = z.object({
+  existingThemes: z.array(z.object({
+    id: z.string(),
+    citations: z.array(LLMCitationSchema),
+  })),
+  newThemes: z.array(z.object({
+    name: z.string(),
+    description: z.string(),
+    citations: z.array(LLMCitationSchema),
+  })),
+});
+
+type LLMThemeAnalysisResult = z.infer<typeof LLMThemeAnalysisResultSchema>;
+
+interface Citation {
   responseId: string;
-  transcript: {
-    sentences: TranscriptionSentence[];
-  };
+  text: string;
+  start_word_index: number;
+  end_word_index: number;
+  start_time: number;
+  end_time: number;
 }
 
 interface ThemeAnalysisResult {
@@ -49,51 +177,29 @@ interface ThemeAnalysisResult {
   }[];
 }
 
-interface Citation {
-  responseId: string;
-  text: string;
-  start_word_index: number;
-  end_word_index: number;
-  start_time: number;
-  end_time: number;
-}
-
-const CitationSchema = z.object({
-  responseId: z.string().describe("id of the response the quote is from"),
-  text: z.string().describe("the quote's sentence(s) concatenated together"),
-  start_word_index: z.number().describe("start word index of the first sentence of the quote in the transcription"),
-  end_word_index: z.number().describe("end word index of the last sentence of the quote in the transcription"),
-  start_time: z.number().describe("start time of the first sentence of the quote"),
-  end_time: z.number().describe("end time of the last sentence of the quote"),
-});
-
-const ThemeAnalysisResultSchema = z.object({
-  existingThemes: z.array(
-    z.object({
-      id: z.string().describe("id of the existing theme"),
-      citations: z.array(CitationSchema),
-    })
-  ),
-  newThemes: z.array(
-    z.object({
-      name: z.string().describe("name of the new theme"),
-      description: z.string().describe("description of the new theme"),
-      citations: z.array(CitationSchema),
-    })
-  ),
-});
-
-type ThemeAnalysisResultSchema = z.infer<typeof ThemeAnalysisResultSchema>;
-
 const model = new ChatOpenAI({
   modelName: "gpt-4o",
   temperature: 0,
-}).withStructuredOutput(ThemeAnalysisResultSchema, { method: "jsonSchema" , name: "ThemeAnalysisResultWithQuoteCitationsToSupportThemes"});
+}).withStructuredOutput(LLMThemeAnalysisResultSchema);
 
+interface TranscriptionBody {
+  transcript: {
+    sentences: Array<{
+      text: string;
+      start_word_index: number;
+      end_word_index: number;
+      start_time: number;
+      end_time: number;
+    }>;
+  };
+}
+
+// Main function
 export const questionThemeAnalysisForBatch: HttpFunction = async (req, res) => {
   logEntry('INFO', 'Starting questionThemeAnalysisForBatch function');
   let batch: any[] | null = null;
   try {
+    // Database queries and data preparation
     batch = await prisma.$transaction(async (tx) => {
       // First, find questions with unprocessed jobs
       const eligibleQuestions = await tx.questionThemeAnalysisJob.groupBy({
@@ -175,22 +281,38 @@ export const questionThemeAnalysisForBatch: HttpFunction = async (req, res) => {
 
     logEntry('INFO', 'Updated job statuses to IN_PROGRESS');
 
-    // Fetch question text
-    const question = await prisma.question.findUnique({
+    // Fetch the main question and its follow-up questions
+    const questionWithFollowUps = await prisma.question.findUnique({
       where: {
         id: questionId
       },
-      select: {
-        title: true
+      include: {
+        FollowUpQuestion: true
       }
     });
 
-    logEntry('INFO', `Fetched question`, { questionTitle: question?.title });
+    if (!questionWithFollowUps) {
+      throw new Error(`Question with id ${questionId} not found`);
+    }
 
-    // Fetch responses
+    // Prepare an array of all question IDs (main question + follow-ups)
+    const allQuestionIds = [questionWithFollowUps.id, ...questionWithFollowUps.FollowUpQuestion.map(q => q.id)];
+
+    // Fetch responses for the main question and all follow-up questions
     const responses = await prisma.response.findMany({
       where: {
-        questionId: questionId,
+        OR: [
+          {
+            questionId: {
+              in: allQuestionIds
+            }
+          },
+          {
+            followUpQuestionId: {
+              in: allQuestionIds
+            }
+          }
+        ],
         interviewSessionId: {
           in: batch.map(job => job.interviewSessionId)
         },
@@ -200,11 +322,23 @@ export const questionThemeAnalysisForBatch: HttpFunction = async (req, res) => {
       },
       select: {
         id: true,
-        transcriptionBody: true
+        transcriptionBody: true,
+        questionId: true,
+        followUpQuestionId: true
       }
     });
 
     logEntry('INFO', `Fetched responses`, { responseCount: responses.length });
+
+    // Fetch the study to get the organizationId
+    const study = await prisma.study.findUnique({
+      where: { id: studyId },
+      include: { organization: true }
+    });
+
+    if (!study) {
+      throw new Error(`Study with id ${studyId} not found`);
+    }
 
     // Fetch existing themes
     const existingThemes = await prisma.theme.findMany({
@@ -214,27 +348,51 @@ export const questionThemeAnalysisForBatch: HttpFunction = async (req, res) => {
       select: {
         id: true,
         name: true,
-        description: true
+        description: true,
+        tagColor: true
       }
     });
+
+    const existingColors = existingThemes.map(theme => theme.tagColor);
 
     logEntry('INFO', `Fetched existing themes`, { themeCount: existingThemes.length });
 
     // Prepare data for LLM
-    const transcriptions: TranscriptionBody[] = responses.map(response => {
-      try {
-        const transcriptionBody = JSON.parse(response.transcriptionBody as string);
-        return {
-          responseId: response.id,
-          transcript: transcriptionBody.transcript
-        };
-      } catch (error) {
-        logEntry('ERROR', `Error parsing transcriptionBody`, { responseId: response.id, error: (error as Error).message });
-        return null;
-      }
-    }).filter((t): t is TranscriptionBody => t !== null);
+    const responseIds: string[] = [];
+    const sentenceMetadata: SentenceMetadata[][] = [];
+    const responsesSentences: string[][] = [];
 
-    logEntry('INFO', `Prepared transcriptions for LLM`, { transcriptionCount: transcriptions.length });
+    responses.forEach((response) => {
+      try {
+        if (!isTranscriptionBody(response.transcriptionBody)) {
+          throw new Error('Invalid transcriptionBody structure');
+        }
+
+        const transcriptionBody = response.transcriptionBody;
+
+        responseIds.push(response.id);
+        sentenceMetadata.push(transcriptionBody.transcript.sentences.map(sentence => ({
+          start_word_index: sentence.start_word_index,
+          end_word_index: sentence.end_word_index,
+          start_time: sentence.start_time,
+          end_time: sentence.end_time,
+        })));
+        responsesSentences.push(transcriptionBody.transcript.sentences.map(sentence => sentence.text));
+      } catch (error) {
+        logEntry('ERROR', `Error processing transcriptionBody`, { 
+          responseId: response.id, 
+          error: (error as Error).message,
+          transcriptionBody: JSON.stringify(response.transcriptionBody)
+        });
+      }
+    });
+
+    // Add these log statements
+    logEntry('INFO', 'Processed response data', {
+      responseIds: JSON.stringify(responseIds),
+      sentenceMetadata: JSON.stringify(sentenceMetadata),
+      responseSentencesLength: responsesSentences.length,
+    });
 
     const themeData = existingThemes.map(theme => ({
       id: theme.id,
@@ -243,82 +401,171 @@ export const questionThemeAnalysisForBatch: HttpFunction = async (req, res) => {
     }));
 
     // Generate LLM prompt
+    // TODO: add num_failed to jobs and stop retrying after a limit
+    // TODO (maybe): also include concatenated sentences with each reponse to make easier to parse for LLM
     const prompt = ChatPromptTemplate.fromTemplate(`
       You are an expert in qualitative research. I am giving you a list of transcribed responses to a question from a qualitative interview administered to a group of people.
-      You are to help a market researcher understand the responses better by identifying themes across the responses.
-      I've also included a list of themes that have already been identified from the rest of the study.
+      You are to help a market researcher understand the responses better by identifying key insights across the responses. 
+      I've also included a list of insights that have already been identified from the rest of the study. 
+      You can think of the words "themes" and "insights" interchangeably in my instructions.
 
-      Please analyze the following transcribed responses and see if you can identify responses that belong to existing themes, or if not, if there are any new
-      themes that should be identified. I also want you to provide a description of each new theme you identify, along with the citations (i.e. the quotes from the responses that support the theme 
-      along with the start and end word index of the quote in the transcription and the start and end time of the quote in the media of the response).
-
-      To do this, each transcribed response in the list of transcriptions contains sentences of the response in the following format:
-      {
-        "responseId": "string",
-        "transcript": {
-          "sentences": [
-            {
-              "text": "string" - the sentence of the response,
-              "start_time": number - the start time of the sentence in the media (media not provided in the transcription),
-              "end_time": number - the end time of the sentence in the media (media not provided in the transcription),
-              "start_word_index": number - the start word index of the sentence in the transcription,
-              "end_word_index": number - the end word index of the sentence in the transcription,
-              "is_paragraph_end": boolean - whether the sentence ends a paragraph in the response
-            }
-          ]
-        }
-      }
+      Please analyze the following transcribed responses and see if you can identify responses that support existing insights ("existingThemes"), or if not, if there are any new
+      insights ("newThemes") that should be identified. Each insight should be a concise statement, ideally 6-7 words or less, that captures a key finding or observation in the responses.
+      Please also include citations for each insight, where each citation is a quote from the responses that supports the insight. Keep in mind that these quotes can be multiple sentences- don't feel the need to force a quote to be a single sentence.
 
       The question being responded to is:
       "{questionText}"
 
-      The list of transcribed repsponses and their sentences are:
-      {transcriptions}
+      The format of the responses is a 2D array where each inner array represents an entire response, and each entry within the inner array represents a sentence of that response. The list of transcribed responses and their sentences are:
+      {responsesSentences}
 
-      The existing themes identified from the rest of the study are:
+      The existing insights identified from the rest of the study are:
       {existingThemes}
 
-      Ensure to provide multiple citations for each theme where applicable, but don't force a quote if there isn't enough relevant information to support it being part of a theme.
+      For citations, please provide the index of the response (remember, each inner array in responseSentences represents a response), the index of the first sentence of the identified quote from that response, and the index of the last sentence of the quote from that response.
+      The granularity of the responses I am giving you is at the sentence level, so sometimes a quote you pick out may contain some extra words that don't actually support the insight but are part of the sentence that was quoted. That's okay and expected behavior.
+
+      Try to provide multiple citations for each insight where applicable, but don't force a quote if there isn't enough relevant information to support it being part of an insight.
+
+      Here's an example of the input format:
+
+      responseSentences:
+      [
+        ["I love using this product every day.", "It has really improved my productivity.", "The interface is so intuitive."],
+        ["The price is a bit high for me.", "But the quality makes up for it.", "I've had it for a year and it still works like new."],
+        ["I'm not sure if it's worth the hype.", "It does the job, but I expected more features.", "The customer service is excellent though."],
+        ["This product has changed my life!", "I can't imagine going back to my old routine.", "It's so easy to use and effective."]
+      ]
+
+      existingThemes:
+      [
+        {{
+          "id": "insight1",
+          "name": "Intuitive interface enhances user experience",
+          "description": "Users find the product's interface easy to use, contributing to a positive experience."
+        }}
+      ]
+
+      And here's an example of the expected output format:
+
+      {{
+        "existingThemes": [
+          {{
+            "id": "insight1",
+            "citations": [
+              {{
+                "responseIndex": 0,
+                "startSentenceIndex": 2,
+                "endSentenceIndex": 2
+              }},
+              {{
+                "responseIndex": 3,
+                "startSentenceIndex": 2,
+                "endSentenceIndex": 2
+              }}
+            ]
+          }}
+        ],
+        "newThemes": [
+          {{
+            "name": "Product significantly improves daily productivity",
+            "description": "Users report that the product has a substantial positive impact on their daily work efficiency and routines.",
+            "citations": [
+              {{
+                "responseIndex": 0,
+                "startSentenceIndex": 1,
+                "endSentenceIndex": 1
+              }},
+              {{
+                "responseIndex": 3,
+                "startSentenceIndex": 0,
+                "endSentenceIndex": 1
+              }}
+            ]
+          }},
+          {{
+            "name": "Users demand value for their money",
+            "description": "There's a tension between the product's price and its perceived value, with some users questioning if the features justify the cost.",
+            "citations": [
+              {{
+                "responseIndex": 1,
+                "startSentenceIndex": 0,
+                "endSentenceIndex": 1
+              }},
+              {{
+                "responseIndex": 2,
+                "startSentenceIndex": 0,
+                "endSentenceIndex": 1
+              }}
+            ]
+          }}
+        ]
+      }}
+
+      Please analyze the provided responses and identify both existing insights and new insights with their respective citations. Remember to keep new insight names concise, ideally 5-6 words or less.
     `);
 
     const chain = RunnableSequence.from([prompt, model]);
 
-    logEntry('INFO', 'Invoking LLM chain');
-    const response = await chain.invoke({ 
-      questionText: question?.title ?? "",
-      transcriptions: JSON.stringify(transcriptions),
+    logEntry('INFO', 'Invoking LLM chain', {
+      prompt: prompt.toString(),
+      questionText: questionWithFollowUps.title,
+      responseSentences: JSON.stringify(responsesSentences),
       existingThemes: JSON.stringify(themeData)
     });
 
-    logEntry('INFO', 'Received response from LLM');
+    const response = await chain.invoke({ 
+      questionText: questionWithFollowUps.title,
+      responsesSentences: JSON.stringify(responsesSentences),
+      existingThemes: JSON.stringify(themeData)
+    });
 
-    const analysisResult = response;
+    logEntry('INFO', 'Received response from LLM', {
+      llmResponse: JSON.stringify(response, null, 2)
+    });
 
-    logEntry('INFO', 'Updating database based on analysis results');
+    // Process LLM output
+    const llmResult: LLMThemeAnalysisResult = response;
+
+    const analysisResult: ThemeAnalysisResult = {
+      existingThemes: llmResult.existingThemes.map(theme => ({
+        id: theme.id,
+        citations: theme.citations.flatMap(citation => 
+          createCitation(citation, responseIds, responsesSentences, sentenceMetadata, { id: theme.id })
+        ),
+      })),
+      newThemes: llmResult.newThemes.map(theme => ({
+        name: theme.name,
+        description: theme.description,
+        citations: theme.citations.flatMap(citation => 
+          createCitation(citation, responseIds, responsesSentences, sentenceMetadata, { name: theme.name })
+        ),
+      })),
+    };
+
     // Update database based on analysis results
-    await updateDatabase(analysisResult, questionId, studyId);
+    logEntry('INFO', 'Updating database based on analysis results');
+    await updateDatabase(analysisResult, questionId, studyId, study.organization.primaryColor ?? "#F0F2F3", study.organization.secondaryColor ?? "#64748B", existingColors);
 
-    // If everything is successful, update job statuses to COMPLETED
-    await prisma.questionThemeAnalysisJob.updateMany({
+    // Delete job rows
+    await prisma.questionThemeAnalysisJob.deleteMany({
       where: {
         id: {
           in: batch.map(job => job.id)
         }
-      },
-      data: {
-        status: 'COMPLETED'
       }
     });
 
     logEntry('INFO', 'Batch processing completed successfully');
     res.status(200).send('Batch processing completed successfully');
   } catch (error) {
+    // Error handling
     logEntry('ERROR', 'Error in questionThemeAnalysisForBatch', { 
       error: (error as Error).message,
       stack: (error as Error).stack
     });
 
-    // If we have a batch, update the job statuses to FAILED
+    // Update job statuses to FAILED if there's an error
     if (batch) {
       try {
         await prisma.questionThemeAnalysisJob.updateMany({
@@ -346,7 +593,8 @@ export const questionThemeAnalysisForBatch: HttpFunction = async (req, res) => {
   }
 };
 
-async function updateDatabase(result: ThemeAnalysisResult, questionId: string, studyId: string) {
+// Database update function
+async function updateDatabase(result: ThemeAnalysisResult, questionId: string, studyId: string, primaryColor: string, secondaryColor: string, existingColors: string[]) {
   for (const existingTheme of result.existingThemes) {
     for (const citation of existingTheme.citations) {
       const quote = await prisma.quote.create({
@@ -392,12 +640,15 @@ async function updateDatabase(result: ThemeAnalysisResult, questionId: string, s
   }
 
   for (const newTheme of result.newThemes) {
+    const newColor = generateHarmoniousColor(primaryColor, secondaryColor, existingColors);
+    existingColors.push(newColor);
+
     const theme = await prisma.theme.create({
       data: {
         name: newTheme.name,
         description: newTheme.description,
         studyId: studyId,
-        tagColor: "blue"
+        tagColor: newColor
       }
     });
 
