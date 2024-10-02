@@ -1,7 +1,7 @@
 {   
     "scripts": {
         "build": "tsc",
-        "deploy": "npm run build && gcloud functions deploy summarizeInterview --gen2 --region=us-central1 --runtime=nodejs20 --trigger-http",
+        "deploy": "gcloud functions deploy summarizeInterview --gen2 --region=us-central1 --runtime=nodejs20 --trigger-http",
         "dev": "npm run build && npx @google-cloud/functions-framework --target=summarizeInterview",
         "gcp-build": "npm run build"
     },
