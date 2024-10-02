@@ -119,6 +119,7 @@ export const studiesRouter = createTRPCRouter({
                 boostedKeywords: true,
               }
             : {}),
+          demographicQuestionConfiguration: true,
         },
       });
 
@@ -160,12 +161,20 @@ export const studiesRouter = createTRPCRouter({
         studyBackground: z.string().optional(),
         videoEnabled: z.boolean().optional(),
         maxResponses: z.number().int().optional().nullable(),
+        demographicQuestionConfiguration: z
+          .object({
+            name: z.boolean(),
+            email: z.boolean(),
+            phoneNumber: z.boolean(),
+          })
+          .optional(),
         status: z.nativeEnum(StudyStatus).optional(),
         reportingLanguage: z.nativeEnum(Language).optional(),
         languages: z.array(z.nativeEnum(Language)).optional(),
         boostedKeywords: z
           .array(
             z.object({
+              id: z.string().optional(),
               keyword: z.string(),
               definition: z.string().optional(),
             }),
@@ -174,23 +183,46 @@ export const studiesRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const { id, boostedKeywords, ...updateData } = input;
+      const {
+        id,
+        boostedKeywords,
+        demographicQuestionConfiguration,
+        ...updateData
+      } = input;
 
-      const updatedStudy = await ctx.db.study.update({
+      return await ctx.db.study.update({
         where: { id },
         data: {
           ...updateData,
+          demographicQuestionConfiguration: demographicQuestionConfiguration
+            ? {
+                upsert: {
+                  create: demographicQuestionConfiguration,
+                  update: demographicQuestionConfiguration,
+                },
+              }
+            : undefined,
           boostedKeywords: {
             deleteMany: {},
-            create: boostedKeywords,
+            upsert:
+              boostedKeywords?.map((keyword) => ({
+                where: { id: keyword.id ?? "" },
+                create: {
+                  keyword: keyword.keyword,
+                  definition: keyword.definition,
+                },
+                update: {
+                  keyword: keyword.keyword,
+                  definition: keyword.definition,
+                },
+              })) ?? [],
           },
         },
         include: {
           boostedKeywords: true,
+          demographicQuestionConfiguration: true,
         },
       });
-
-      return updatedStudy;
     }),
   /**
    * Used to fetch all interview sessions for a given study
