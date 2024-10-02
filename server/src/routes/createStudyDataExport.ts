@@ -5,7 +5,6 @@ import { Workbook, Worksheet, Column, FillGradientPath, FillGradientAngle } from
 
 import {
   FollowUpQuestion,
-  InterviewParticipant,
   InterviewSession,
   Question,
   Study,
@@ -13,6 +12,8 @@ import {
   InterviewSessionStatus,
   QuestionType,
   MultipleChoiceOption,
+  InterviewParticipant,
+  DemographicResponse,
 } from "@shared/generated/client";
 
 const router = Router();
@@ -30,7 +31,9 @@ type InterviewWithResponses = InterviewSession & {
     question: Question & { multipleChoiceOptions: MultipleChoiceOption[] };
     followUpQuestion: FollowUpQuestion | null;
   })[];
-  participant: InterviewParticipant | null;
+  participant: (InterviewParticipant & {
+    demographicResponse: DemographicResponse | null;
+  }) | null;
 };
 
 type StudyWithQuestionsAndInterviews = Study & {
@@ -105,7 +108,11 @@ const fetchStudyData = async (
               multipleChoiceSelection: true,
             },
           },
-          participant: true,
+          participant: {
+            include: {
+              demographicResponse: true,
+            },
+          },
         },
         where: {
           testMode: false,
@@ -161,19 +168,19 @@ const fetchStudyData = async (
   // Sort questions by questionOrder
   processedQuestions.sort((a, b) => a.questionOrder - b.questionOrder);
 
-  // Process interview session data (unchanged)
+  // Process interview session data
   const interviewSessionData: ConstructedInterviewSessionData[] =
     study.interviews.map((interview) => ({
-      lastUpdatedTime: interview.lastUpdatedTime || null,
-      participantName: interview.participant?.name || "Anonymous",
-      participantEmail: interview.participant?.email || "N/A",
+      lastUpdatedTime: interview.lastUpdatedTime ?? null,
+      participantName: interview.participant?.demographicResponse?.name ?? "Anonymous",
+      participantEmail: interview.participant?.demographicResponse?.email ?? "N/A",
       status: interview.status,
       responseCount: interview.responses.length,
       studyId: interview.studyId,
       id: interview.id,
       responses: interview.responses.map((response) => ({
         questionId: response.question.id,
-        followUpQuestionId: response.followUpQuestion?.id || null,
+        followUpQuestionId: response.followUpQuestion?.id ?? null,
         question: {
           ...response.question,
           multipleChoiceOptions: response.question.multipleChoiceOptions,
