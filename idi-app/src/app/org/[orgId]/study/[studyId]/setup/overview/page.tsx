@@ -13,7 +13,14 @@ import { useTextEntries } from "@/hooks/useTextEntries";
 import { api } from "@/trpc/react";
 import { ArrowRight, DotsThree, Trash } from "@phosphor-icons/react";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { Language, StudyStatus } from "@shared/generated/client";
+import {
+  Language,
+  StudyStatus,
+  Study as PrismaStudy,
+  DemographicQuestionConfiguration,
+  BoostedKeyword,
+  Question,
+} from "@shared/generated/client";
 import { ClipLoader } from "react-spinners";
 import { BasicProgressBar } from "@/app/_components/reusable/BasicProgressBar";
 import { showErrorToast } from "@/app/utils/toastUtils";
@@ -21,6 +28,16 @@ import { useRouter } from "next/navigation";
 import BasicTag from "@/app/_components/reusable/BasicTag";
 import BasicPopover from "@/app/_components/reusable/BasicPopover";
 import BasicConfirmationModal from "@/app/_components/reusable/BasicConfirmationModal";
+import { Switch } from "@/components/ui/switch";
+
+type StudyWithDemographics = PrismaStudy & {
+  demographicQuestionConfiguration: DemographicQuestionConfiguration | null;
+  completedInterviewsCount: number;
+  inProgressInterviewsCount: number;
+  interviews: undefined;
+  boostedKeywords: BoostedKeyword[];
+  questions: Question[];
+};
 
 export default function SetupOverviewPage({
   params,
@@ -28,15 +45,17 @@ export default function SetupOverviewPage({
   params: { studyId: string };
 }) {
   const router = useRouter();
-  const { data: study, isLoading } = api.studies.getStudy.useQuery(
-    {
-      studyId: params.studyId,
-      includeBoostedKeywords: true,
-    },
-    {
-      refetchOnWindowFocus: false,
-    },
-  );
+  const { data: study, isLoading } =
+    api.studies.getStudy.useQuery<StudyWithDemographics>(
+      {
+        studyId: params.studyId,
+        includeBoostedKeywords: true,
+        includeQuestions: true,
+      },
+      {
+        refetchOnWindowFocus: false,
+      },
+    );
 
   const updateStudyMutation = api.studies.updateStudy.useMutation();
   const deleteStudyMutation = api.studies.deleteStudy.useMutation();
@@ -51,6 +70,12 @@ export default function SetupOverviewPage({
     videoEnabled: false,
     targetLength: null as number | null,
     maxResponses: null as number | null,
+    collectDemographicInfo: "false",
+    demographicQuestionConfiguration: {
+      name: false,
+      email: false,
+      phoneNumber: false,
+    },
   });
 
   const [errors, setErrors] = useState({
@@ -90,6 +115,15 @@ export default function SetupOverviewPage({
         videoEnabled: study.videoEnabled ?? false,
         targetLength: study.targetLength ?? null,
         maxResponses: study.maxResponses ?? null,
+        collectDemographicInfo: study.demographicQuestionConfiguration
+          ? "true"
+          : "false",
+        demographicQuestionConfiguration:
+          study.demographicQuestionConfiguration ?? {
+            name: false,
+            email: false,
+            phoneNumber: false,
+          },
       });
       setHasUnsavedChanges(false);
     }
@@ -112,10 +146,39 @@ export default function SetupOverviewPage({
     [],
   );
 
-  const handleSelectChange = useCallback((value: string) => {
-    setFormData((prev) => ({ ...prev, videoEnabled: value === "true" }));
-    setHasUnsavedChanges(true);
-  }, []);
+  const handleSelectChange = useCallback(
+    (name: string) => (value: string) => {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+        ...(name === "collectDemographicInfo" && value === "false"
+          ? {
+              demographicQuestionConfiguration: {
+                name: false,
+                email: false,
+                phoneNumber: false,
+              },
+            }
+          : {}),
+      }));
+      setHasUnsavedChanges(true);
+    },
+    [],
+  );
+
+  const handleToggleChange = useCallback(
+    (name: string) => (value: boolean) => {
+      setFormData((prev) => ({
+        ...prev,
+        demographicQuestionConfiguration: {
+          ...prev.demographicQuestionConfiguration,
+          [name]: value,
+        },
+      }));
+      setHasUnsavedChanges(true);
+    },
+    [],
+  );
 
   const validateForm = useCallback(() => {
     let isValid = true;
@@ -359,7 +422,7 @@ export default function SetupOverviewPage({
               { value: "false", label: "Audio" },
             ]}
             value={formData.videoEnabled.toString()}
-            onValueChange={handleSelectChange}
+            onValueChange={handleSelectChange("videoEnabled")}
           />
           {errors.videoEnabled && (
             <div className="ml-2 text-xs text-red-500">
@@ -397,6 +460,61 @@ export default function SetupOverviewPage({
             placeholder="-"
           />
         </BasicTitleSection>
+        <BasicTitleSection
+          title="Collect Demographic Info?"
+          subtitle="Collect information about your participants. All responses will be listed as from 'Anonymous' otherwise."
+          titleClassName="!font-medium"
+          subtitleClassName="!font-normal"
+        >
+          <BasicSelect
+            options={[
+              { value: "true", label: "Yes" },
+              { value: "false", label: "No" },
+            ]}
+            value={formData.collectDemographicInfo}
+            onValueChange={handleSelectChange("collectDemographicInfo")}
+          />
+        </BasicTitleSection>
+        {formData.collectDemographicInfo === "true" && (
+          <BasicTitleSection
+            title="Demographic Collection"
+            subtitle="Choose which values to collect before your participant answers your study questions."
+            titleClassName="!font-medium"
+            subtitleClassName="!font-normal"
+          >
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  checked={formData.demographicQuestionConfiguration.name}
+                  onCheckedChange={handleToggleChange("name")}
+                />
+                <label className="text-sm font-medium text-theme-900">
+                  Name
+                </label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  checked={formData.demographicQuestionConfiguration.email}
+                  onCheckedChange={handleToggleChange("email")}
+                />
+                <label className="text-sm font-medium text-theme-900">
+                  Email
+                </label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  checked={
+                    formData.demographicQuestionConfiguration.phoneNumber
+                  }
+                  onCheckedChange={handleToggleChange("phoneNumber")}
+                />
+                <label className="text-sm font-medium text-theme-900">
+                  Phone Number
+                </label>
+              </div>
+            </div>
+          </BasicTitleSection>
+        )}
         <BasicTitleSection
           title="Maximum Responses"
           subtitle="Prevent interview access after a certain number of interviews have been completed."
