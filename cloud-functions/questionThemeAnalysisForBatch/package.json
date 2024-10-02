@@ -1,7 +1,7 @@
 {
     "scripts": {
         "build": "tsc",
-        "deploy": "npm run build && gcloud functions deploy questionThemeAnalysisForBatch --gen2 --region=us-central1 --runtime=nodejs20 --trigger-http",
+        "deploy": "gcloud functions deploy questionThemeAnalysisForBatch --gen2 --region=us-central1 --runtime=nodejs20 --trigger-http",
         "dev": "npm run build && npx @google-cloud/functions-framework --target=questionThemeAnalysisForBatch",
         "gcp-build": "npx prisma generate && npm run build"
     },
