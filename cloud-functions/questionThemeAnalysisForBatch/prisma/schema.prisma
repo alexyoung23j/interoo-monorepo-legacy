@@ -88,6 +88,8 @@ model Study {
     Favorites                    Favorite[]
     QuestionThemeAnalysisJob     QuestionThemeAnalysisJob[]
     QuestionAttributeAnalysisJob QuestionAttributeAnalysisJob[]
+
+    demographicQuestion DemographicQuestionConfiguration?
 }
 
 enum TtsProvider {
@@ -274,10 +276,8 @@ model InterviewParticipant {
     id                 String           @id @default(uuid())
     interviewSessionId String           @unique
     interviewSession   InterviewSession @relation(fields: [interviewSessionId], references: [id])
-    name               String?
-    email              String?
 
-    // Add other metadata as needed.
+    demographicResponse DemographicResponse?
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
@@ -470,4 +470,30 @@ model Favorite {
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
+}
+
+model DemographicQuestionConfiguration {
+    id          String  @id @default(uuid())
+    name        Boolean @default(false)
+    email       Boolean @default(false)
+    phoneNumber Boolean @default(false)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    study   Study  @relation(fields: [studyId], references: [id])
+    studyId String @unique
+}
+
+model DemographicResponse {
+    id          String  @id @default(uuid())
+    name        String?
+    email       String?
+    phoneNumber String?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    interviewParticipant   InterviewParticipant @relation(fields: [interviewParticipantId], references: [id])
+    interviewParticipantId String               @unique
 }
