@@ -42,6 +42,15 @@ interface InterviewLayoutProps {
       definition: string | null;
       studyId: string;
     }[];
+    demographicQuestionConfiguration: {
+      id: string;
+      name: boolean;
+      email: boolean;
+      phoneNumber: boolean;
+      createdAt: Date;
+      updatedAt: Date;
+      studyId: string;
+    } | null;
   };
   organization: Organization;
   backgroundLight: boolean;

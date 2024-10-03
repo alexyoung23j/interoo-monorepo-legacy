@@ -1,7 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import type { Organization, Study } from "@shared/generated/client";
+import type {
+  Organization,
+  Study,
+  DemographicQuestionConfiguration,
+} from "@shared/generated/client";
 import { Button } from "@/components/ui/button";
 import { getColorWithOpacity } from "@/app/utils/color";
 import { ArrowRight, Microphone } from "@phosphor-icons/react";
@@ -13,6 +17,8 @@ import {
   mediaAccessAtom,
 } from "@/app/state/atoms";
 import { useAtom, useAtomValue } from "jotai";
+import BasicInput from "@/app/_components/reusable/BasicInput";
+import BasicTitleSection from "@/app/_components/reusable/BasicTitleSection";
 
 export enum Stage {
   Intro = "intro",
@@ -20,9 +26,13 @@ export enum Stage {
   Access = "access",
 }
 
+interface ExtendedStudy extends Study {
+  demographicQuestionConfiguration: DemographicQuestionConfiguration | null;
+}
+
 interface InterviewStartContentProps {
   organization: Organization;
-  study: Study;
+  study: ExtendedStudy;
   stage: Stage;
   setStage: (stage: Stage) => void;
   onStartInterview: () => void;
@@ -82,11 +92,24 @@ export const InterviewStartContent: React.FC<InterviewStartContentProps> = ({
           <IntroContent
             study={study}
             organization={organization}
-            onStart={() => setStage(Stage.Access)}
+            onStart={() =>
+              setStage(
+                study.demographicQuestionConfiguration
+                  ? Stage.Form
+                  : Stage.Access,
+              )
+            }
           />
         );
       case Stage.Form:
-        return <FormContent />;
+        return (
+          <FormContent
+            study={study}
+            organization={organization}
+            onNext={() => setStage(Stage.Access)}
+            interviewSessionId={interviewSession?.id ?? ""}
+          />
+        );
       case Stage.Access:
         return mediaAccess.microphone &&
           (mediaAccess.camera || !study.videoEnabled) ? (
@@ -132,7 +155,13 @@ export const InterviewStartContent: React.FC<InterviewStartContentProps> = ({
           <IntroContent
             study={study}
             organization={organization}
-            onStart={() => setStage(Stage.Access)}
+            onStart={() =>
+              setStage(
+                study.demographicQuestionConfiguration
+                  ? Stage.Form
+                  : Stage.Access,
+              )
+            }
           />
         );
     }
@@ -146,7 +175,7 @@ export const InterviewStartContent: React.FC<InterviewStartContentProps> = ({
 };
 
 const IntroContent: React.FC<{
-  study: Study;
+  study: ExtendedStudy;
   organization: Organization;
   onStart: () => void;
 }> = ({ study, organization, onStart }) => {
@@ -191,14 +220,90 @@ const IntroContent: React.FC<{
   );
 };
 
-// TODO: Decide when this should actually be used, leaving blank for now
-// Involves a setting that requires they collect their name and email
-const FormContent: React.FC = () => {
-  return <div>{Stage.Form} Content</div>;
+const FormContent: React.FC<{
+  study: ExtendedStudy;
+  organization: Organization;
+  onNext: () => void;
+  interviewSessionId: string;
+}> = ({ study, organization, onNext, interviewSessionId }) => {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+
+  const createDemographicResponse =
+    api.demographics.createDemographicResponse.useMutation();
+
+  const newColor = getColorWithOpacity(organization.secondaryColor ?? "", 0.15);
+  const selectedColor = getColorWithOpacity(
+    organization.secondaryColor ?? "",
+    0.4,
+  );
+
+  const handleNext = async () => {
+    if (study.demographicQuestionConfiguration) {
+      await createDemographicResponse.mutateAsync({
+        interviewSessionId,
+        name: study.demographicQuestionConfiguration.name ? name : undefined,
+        email: study.demographicQuestionConfiguration.email ? email : undefined,
+        phoneNumber: study.demographicQuestionConfiguration.phoneNumber
+          ? phoneNumber
+          : undefined,
+      });
+    }
+    onNext();
+  };
+
+  return (
+    <div className="flex w-full max-w-[80%] flex-col gap-4 md:max-w-96">
+      <BasicTitleSection
+        title="Let's start by collecting some information about you."
+        subtitle="This information helps us understand our participants better."
+      >
+        <div className="space-y-4">
+          {study.demographicQuestionConfiguration?.name && (
+            <BasicInput
+              value={name}
+              onSetValue={setName}
+              placeholder="Enter your name"
+            />
+          )}
+          {study.demographicQuestionConfiguration?.email && (
+            <BasicInput
+              value={email}
+              onSetValue={setEmail}
+              placeholder="Enter your email"
+              type="email"
+            />
+          )}
+          {study.demographicQuestionConfiguration?.phoneNumber && (
+            <BasicInput
+              value={phoneNumber}
+              onSetValue={setPhoneNumber}
+              placeholder="Enter your phone number"
+              type="tel"
+            />
+          )}
+        </div>
+      </BasicTitleSection>
+      <Button
+        variant="unstyled"
+        className={`mt-8 flex min-h-10 w-fit max-w-md gap-3 rounded-[1px] border border-black border-opacity-50 bg-[var(--button-bg)] text-black transition-colors hover:bg-[var(--button-hover-bg)]`}
+        onClick={handleNext}
+        style={
+          {
+            "--button-bg": newColor,
+            "--button-hover-bg": selectedColor,
+          } as React.CSSProperties
+        }
+      >
+        Next <ArrowRight />
+      </Button>
+    </div>
+  );
 };
 
 const AccessContent: React.FC<{
-  study: Study;
+  study: ExtendedStudy;
   organization: Organization;
   isInitializing: boolean;
   handleGrantAccess: () => void;
@@ -325,7 +430,7 @@ const AccessContent: React.FC<{
 };
 
 const BeginContent: React.FC<{
-  study: Study;
+  study: ExtendedStudy;
   organization: Organization;
   isInitializing: boolean;
   handleStart: () => void;
