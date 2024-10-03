@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { FollowUpQuestion, Question, Response } from "@shared/generated/client";
 import { ClipLoader } from "react-spinners";
 import BasicCard from "@/app/_components/reusable/BasicCard";
@@ -9,8 +9,11 @@ import { ExtendedStudy } from "./ResultsPageComponent";
 import BasicMediaViewer from "@/app/_components/reusable/BasicMediaViewer";
 import { useMediaSessionUrls } from "@/hooks/useMediaSessionUrls";
 import { Button } from "@/components/ui/button";
-import { Download } from "@phosphor-icons/react";
+import { CopySimple, Download, Info } from "@phosphor-icons/react";
 import { useMediaDownload } from "@/hooks/useMediaDownload";
+import { api } from "@/trpc/react";
+import GeneralPopover from "@/app/_components/reusable/GeneralPopover";
+import { useToast } from "@/hooks/use-toast";
 
 interface QuestionModalLeftContentProps {
   responses:
@@ -22,6 +25,7 @@ interface QuestionModalLeftContentProps {
   currentResponseId: string | null;
   study: ExtendedStudy;
   question: Question;
+  interviewSessionId: string;
 }
 
 const QuestionModalLeftContent: React.FC<QuestionModalLeftContentProps> = ({
@@ -29,12 +33,28 @@ const QuestionModalLeftContent: React.FC<QuestionModalLeftContentProps> = ({
   currentResponseId,
   study,
   question,
+  interviewSessionId,
 }) => {
+  const { toast } = useToast();
+
   const {
     data: mediaUrlData,
     isLoading,
     error,
   } = useMediaSessionUrls({ responses, study, questionId: question.id });
+  const { data: participantData, isLoading: isLoadingParticipant } =
+    api.interviews.getInterviewSessionParticipant.useQuery({
+      interviewSessionId: interviewSessionId,
+    });
+
+  const hasSomeDemographicInfo = useMemo(() => {
+    return (
+      participantData?.demographicResponse?.name !== null ||
+      participantData?.demographicResponse?.email !== null ||
+      participantData?.demographicResponse?.phoneNumber !== null
+    );
+  }, [participantData]);
+
   const [isDownloading, setIsDownloading] = useState(false);
 
   const { handleDownload, isDownloading: isDownloadingMedia } =
@@ -60,9 +80,94 @@ const QuestionModalLeftContent: React.FC<QuestionModalLeftContentProps> = ({
   return (
     <div className="flex h-fit w-full flex-col gap-4">
       <div className="flex w-full items-center justify-between gap-3">
-        <div className="text-lg font-semibold text-theme-900">
-          {`Participant `}
-        </div>
+        {hasSomeDemographicInfo ? (
+          <div className="flex items-center justify-center gap-2">
+            <h2 className="text-lg font-semibold text-theme-900">
+              {participantData?.demographicResponse?.name ?? "No name provided"}
+            </h2>
+            <GeneralPopover
+              trigger={
+                <div className="mt-[2px] flex cursor-pointer items-center gap-1 text-xs font-light text-theme-600">
+                  see participant
+                  <Info size={12} className="text-theme-600" />
+                </div>
+              }
+              align="start"
+              content={
+                <div className="flex min-w-96 flex-col gap-2 p-6">
+                  {participantData?.demographicResponse?.name && (
+                    <div className="flex justify-between text-sm">
+                      <div className="text-theme-900">Name</div>
+                      <div className="flex items-center gap-2 text-theme-600">
+                        {participantData?.demographicResponse?.name}{" "}
+                        <CopySimple
+                          size={14}
+                          className="cursor-pointer text-theme-900"
+                          onClick={async () => {
+                            await navigator.clipboard.writeText(
+                              participantData?.demographicResponse?.name ?? "",
+                            );
+                            toast({
+                              title: "Name copied to clipboard",
+                              variant: "default",
+                            });
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                  {participantData?.demographicResponse?.email && (
+                    <div className="flex justify-between text-sm">
+                      <div className="text-theme-900">Email</div>
+                      <div className="flex items-center gap-2 text-theme-600">
+                        {participantData?.demographicResponse?.email}{" "}
+                        <CopySimple
+                          size={14}
+                          className="cursor-pointer text-theme-900"
+                          onClick={async () => {
+                            await navigator.clipboard.writeText(
+                              participantData?.demographicResponse?.email ?? "",
+                            );
+                            toast({
+                              title: "Email copied to clipboard",
+                              variant: "default",
+                            });
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                  {participantData?.demographicResponse?.phoneNumber && (
+                    <div className="flex justify-between text-sm">
+                      <div className="text-theme-900">Phone Number</div>
+                      <div className="flex items-center gap-2 text-theme-600">
+                        {participantData?.demographicResponse?.phoneNumber}{" "}
+                        <CopySimple
+                          size={14}
+                          className="cursor-pointer text-theme-900"
+                          onClick={async () => {
+                            await navigator.clipboard.writeText(
+                              participantData?.demographicResponse
+                                ?.phoneNumber ?? "",
+                            );
+                            toast({
+                              title: "Phone number copied to clipboard",
+                              variant: "default",
+                            });
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              }
+            />
+          </div>
+        ) : (
+          <h2 className="text-lg font-semibold text-theme-900">
+            Anonymous Participant
+          </h2>
+        )}
         <Button
           variant="secondary"
           className="gap-2"

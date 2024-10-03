@@ -135,7 +135,7 @@ const InterviewPageComponent: React.FC<InterviewPageComponentProps> = ({
   };
 
   const tableData = interviewData?.interviewSessions.map((session) => ({
-    respondent: "Anonymous",
+    respondent: session.participant?.demographicResponse?.name ?? "Anonymous",
     dateTaken: (
       <div className="text-xs font-light text-theme-600">
         {formatDate(session.startTime)}

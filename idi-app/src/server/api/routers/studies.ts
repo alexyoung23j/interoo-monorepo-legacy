@@ -240,7 +240,11 @@ export const studiesRouter = createTRPCRouter({
           testMode: false,
         },
         include: {
-          participant: true,
+          participant: {
+            include: {
+              demographicResponse: true,
+            },
+          },
           study: true,
           responses: {
             orderBy: { createdAt: "asc" },

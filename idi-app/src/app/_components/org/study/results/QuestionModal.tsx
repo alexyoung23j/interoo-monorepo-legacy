@@ -115,6 +115,7 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
           responses={responsesWithTranscripts ?? null}
           question={question}
           study={study}
+          interviewSessionId={interviewSessionId}
         />
       }
       rightContent={
