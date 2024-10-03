@@ -45,6 +45,8 @@ export default function SetupOverviewPage({
   params: { studyId: string };
 }) {
   const router = useRouter();
+  const utils = api.useUtils();
+
   const { data: study, isLoading } =
     api.studies.getStudy.useQuery<StudyWithDemographics>(
       {
@@ -57,7 +59,12 @@ export default function SetupOverviewPage({
       },
     );
 
-  const updateStudyMutation = api.studies.updateStudy.useMutation();
+  const updateStudyMutation = api.studies.updateStudy.useMutation({
+    onSuccess: () => {
+      // Invalidate and refetch
+      utils.studies.getStudy.invalidate({ studyId: params.studyId });
+    },
+  });
   const deleteStudyMutation = api.studies.deleteStudy.useMutation();
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
@@ -218,6 +225,8 @@ export default function SetupOverviewPage({
     }
   }, [formData, entries, params.studyId, updateStudyMutation, validateForm]);
 
+  const [isSaving, setIsSaving] = useState(false);
+
   if (isLoading)
     return (
       <div className="flex h-full items-center justify-center bg-theme-off-white">
@@ -229,7 +238,11 @@ export default function SetupOverviewPage({
     <div className="flex h-full flex-col gap-10 overflow-y-auto bg-theme-off-white p-9">
       <BasicConfirmationModal
         isOpen={showSaveConfirmation}
-        onOpenChange={setShowSaveConfirmation}
+        onOpenChange={(open) => {
+          if (!isSaving) {
+            setShowSaveConfirmation(open);
+          }
+        }}
         title="Save these study details?"
         confirmButtonText={
           study?.status === StudyStatus.DRAFT
@@ -239,7 +252,7 @@ export default function SetupOverviewPage({
         cancelButtonText="Cancel"
         body={
           <div>
-            {updateStudyMutation.isPending && (
+            {isSaving && (
               <div className="flex items-center justify-center py-4">
                 <ClipLoader size={20} color="grey" />
               </div>
@@ -247,9 +260,12 @@ export default function SetupOverviewPage({
           </div>
         }
         onCancel={() => {
-          setShowSaveConfirmation(false);
+          if (!isSaving) {
+            setShowSaveConfirmation(false);
+          }
         }}
         onConfirm={async () => {
+          setIsSaving(true);
           try {
             await handleSave();
             if (study?.status === StudyStatus.DRAFT) {
@@ -262,8 +278,11 @@ export default function SetupOverviewPage({
               );
             }
           } catch (error) {
-            showErrorToast("Failed to delete draft");
-            console.error("Failed to delete draft:", error);
+            showErrorToast("Failed to save study");
+            console.error("Failed to save study:", error);
+          } finally {
+            setIsSaving(false);
+            setShowSaveConfirmation(false);
           }
         }}
       />

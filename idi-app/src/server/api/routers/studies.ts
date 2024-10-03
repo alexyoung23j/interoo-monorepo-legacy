@@ -191,18 +191,26 @@ export const studiesRouter = createTRPCRouter({
         ...updateData
       } = input;
 
+      const shouldSetDemographicConfig =
+        demographicQuestionConfiguration &&
+        (demographicQuestionConfiguration.name ||
+          demographicQuestionConfiguration.email ||
+          demographicQuestionConfiguration.phoneNumber);
+
       return await ctx.db.study.update({
         where: { id },
         data: {
           ...updateData,
-          demographicQuestionConfiguration: demographicQuestionConfiguration
+          demographicQuestionConfiguration: shouldSetDemographicConfig
             ? {
                 upsert: {
                   create: demographicQuestionConfiguration,
                   update: demographicQuestionConfiguration,
                 },
               }
-            : undefined,
+            : {
+                delete: true,
+              },
           boostedKeywords: {
             deleteMany: {},
             upsert:
