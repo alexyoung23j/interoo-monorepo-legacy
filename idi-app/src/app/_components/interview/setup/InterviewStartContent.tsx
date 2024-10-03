@@ -94,7 +94,8 @@ export const InterviewStartContent: React.FC<InterviewStartContentProps> = ({
             organization={organization}
             onStart={() =>
               setStage(
-                study.demographicQuestionConfiguration
+                study.demographicQuestionConfiguration &&
+                  !interviewSession?.testMode
                   ? Stage.Form
                   : Stage.Access,
               )
@@ -157,7 +158,8 @@ export const InterviewStartContent: React.FC<InterviewStartContentProps> = ({
             organization={organization}
             onStart={() =>
               setStage(
-                study.demographicQuestionConfiguration
+                study.demographicQuestionConfiguration &&
+                  !interviewSession?.testMode
                   ? Stage.Form
                   : Stage.Access,
               )

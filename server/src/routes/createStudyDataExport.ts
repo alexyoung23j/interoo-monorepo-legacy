@@ -45,6 +45,7 @@ type ConstructedInterviewSessionData = {
   lastUpdatedTime: Date | null;
   participantName: string;
   participantEmail: string;
+  participantPhoneNumber: string;
   status: string;
   responseCount: number;
   studyId: string;
@@ -174,6 +175,7 @@ const fetchStudyData = async (
       lastUpdatedTime: interview.lastUpdatedTime ?? null,
       participantName: interview.participant?.demographicResponse?.name ?? "Anonymous",
       participantEmail: interview.participant?.demographicResponse?.email ?? "N/A",
+      participantPhoneNumber: interview.participant?.demographicResponse?.phoneNumber ?? "N/A",
       status: interview.status,
       responseCount: interview.responses.length,
       studyId: interview.studyId,
