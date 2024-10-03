@@ -45,6 +45,7 @@ export const studiesRouter = createTRPCRouter({
             },
           },
           boostedKeywords: true,
+          demographicQuestionConfiguration: true,
         },
       });
 
