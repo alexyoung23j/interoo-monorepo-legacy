@@ -6,6 +6,7 @@ import {
   Question,
   FollowUpQuestion,
   Study,
+  InterviewSessionStatus,
 } from "@shared/generated/client";
 import BasicHeaderCard from "@/app/_components/reusable/BasicHeaderCard";
 import { api } from "@/trpc/react";
@@ -16,11 +17,13 @@ import BasicTag from "@/app/_components/reusable/BasicTag";
 import BasicMediaViewer from "@/app/_components/reusable/BasicMediaViewer";
 import { useInterviewSessionMediaUrls } from "@/hooks/useInterviewSessionMediaUrls";
 import { Button } from "@/components/ui/button";
-import { CopySimple, Download } from "@phosphor-icons/react";
+import { CopySimple, Download, Info } from "@phosphor-icons/react";
 import { useMediaDownload } from "@/hooks/useMediaDownload";
 import { Sparkle } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { showSuccessToast } from "@/app/utils/toastUtils";
+import GeneralPopover from "@/app/_components/reusable/GeneralPopover";
+import { useToast } from "@/hooks/use-toast";
 
 interface InterviewSessionModalProps {
   isOpen: boolean;
@@ -46,12 +49,27 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
     null,
   );
   const [showFollowUps, setShowFollowUps] = useState(true);
+  const { toast } = useToast();
 
   const { data: responsesData, isLoading: isLoadingResponses } =
     api.interviews.getInterviewSessionResponses.useQuery(
       { interviewSessionId: interviewSession.id },
       { enabled: isOpen },
     );
+
+  const { data: participantData, isLoading: isLoadingParticipant } =
+    api.interviews.getInterviewSessionParticipant.useQuery(
+      { interviewSessionId: interviewSession.id },
+      { enabled: isOpen },
+    );
+
+  const hasSomeDemographicInfo = useMemo(() => {
+    return (
+      participantData?.demographicResponse?.name !== null ||
+      participantData?.demographicResponse?.email !== null ||
+      participantData?.demographicResponse?.phoneNumber !== null
+    );
+  }, [participantData]);
 
   const filteredResponses = useMemo(
     () =>
@@ -239,21 +257,119 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
       topContent={
         <BasicHeaderCard
           items={[
-            { title: "Anonymous", subtitle: "Respondent" },
             {
               title: interviewSession.startTime?.toDateString() ?? "",
               subtitle: "Date",
             },
             { title: totalTime, subtitle: "Duration" },
+            {
+              title:
+                interviewSession.status === InterviewSessionStatus.COMPLETED
+                  ? "Completed"
+                  : "In Progress",
+              subtitle: "Status",
+            },
           ]}
         />
       }
       leftContent={
-        <div className="flex h-fit w-full flex-col gap-4">
+        <div className="flex w-full flex-col gap-4">
           <div className="flex w-full items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold text-theme-900">
-              Interview Media
-            </h2>
+            {isLoadingParticipant ? (
+              <div className="">
+                <ClipLoader color="grey" size={12} />
+              </div>
+            ) : hasSomeDemographicInfo ? (
+              <div className="flex items-center justify-center gap-2">
+                <h2 className="text-lg font-semibold text-theme-900">
+                  {participantData?.demographicResponse?.name ??
+                    "No name provided"}
+                </h2>
+                <GeneralPopover
+                  trigger={
+                    <div className="mt-[2px] flex cursor-pointer items-center gap-1 text-xs font-light text-theme-600">
+                      see participant
+                      <Info size={12} className="text-theme-600" />
+                    </div>
+                  }
+                  align="start"
+                  content={
+                    <div className="flex min-w-96 flex-col gap-2 p-6">
+                      {participantData?.demographicResponse?.name && (
+                        <div className="flex justify-between text-sm">
+                          <div className="text-theme-900">Name</div>
+                          <div className="flex items-center gap-2 text-theme-600">
+                            {participantData?.demographicResponse?.name}{" "}
+                            <CopySimple
+                              size={14}
+                              className="cursor-pointer text-theme-900"
+                              onClick={async () => {
+                                await navigator.clipboard.writeText(
+                                  participantData?.demographicResponse?.name ??
+                                    "",
+                                );
+                                toast({
+                                  title: "Name copied to clipboard",
+                                  variant: "default",
+                                });
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )}
+                      {participantData?.demographicResponse?.email && (
+                        <div className="flex justify-between text-sm">
+                          <div className="text-theme-900">Email</div>
+                          <div className="flex items-center gap-2 text-theme-600">
+                            {participantData?.demographicResponse?.email}{" "}
+                            <CopySimple
+                              size={14}
+                              className="cursor-pointer text-theme-900"
+                              onClick={async () => {
+                                await navigator.clipboard.writeText(
+                                  participantData?.demographicResponse?.email ??
+                                    "",
+                                );
+                                toast({
+                                  title: "Email copied to clipboard",
+                                  variant: "default",
+                                });
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )}
+                      {participantData?.demographicResponse?.phoneNumber && (
+                        <div className="flex justify-between text-sm">
+                          <div className="text-theme-900">Phone Number</div>
+                          <div className="flex items-center gap-2 text-theme-600">
+                            {participantData?.demographicResponse?.phoneNumber}{" "}
+                            <CopySimple
+                              size={14}
+                              className="cursor-pointer text-theme-900"
+                              onClick={async () => {
+                                await navigator.clipboard.writeText(
+                                  participantData?.demographicResponse
+                                    ?.phoneNumber ?? "",
+                                );
+                                toast({
+                                  title: "Phone number copied to clipboard",
+                                  variant: "default",
+                                });
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  }
+                />
+              </div>
+            ) : (
+              <h2 className="text-lg font-semibold text-theme-900">
+                Anonymous Participant
+              </h2>
+            )}
             <Button
               variant="secondary"
               className="gap-2"
@@ -266,7 +382,7 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
               }
             >
               {isDownloadingMedia ? (
-                <ClipLoader color="black" size={16} />
+                <ClipLoader color="grey" size={16} />
               ) : (
                 <Download size={16} className="text-theme-900" />
               )}
@@ -275,9 +391,9 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
           </div>
           <div className="h-[1px] w-full bg-theme-200 text-theme-900"></div>
 
-          <div className="min-h-[80%] w-full flex-grow">
+          <div className="h-fit w-full">
             {isLoadingCurrentMedia ? (
-              <div className="flex h-full w-full items-center justify-center">
+              <div className="flex h-72 w-full items-center justify-center">
                 <ClipLoader color="grey" />
               </div>
             ) : currentResponseMediaUrl && currentResponseContentType ? (
@@ -425,7 +541,9 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
                 ))}
             </div>
           ) : (
-            <p>No responses available.</p>
+            <p className="mt-4 text-sm text-theme-600">
+              No responses available.
+            </p>
           )}
         </div>
       }

@@ -229,6 +229,10 @@ const FormContent: React.FC<{
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [errors, setErrors] = useState<{
+    email?: string;
+    phoneNumber?: string;
+  }>({});
 
   const createDemographicResponse =
     api.demographics.createDemographicResponse.useMutation();
@@ -239,18 +243,52 @@ const FormContent: React.FC<{
     0.4,
   );
 
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validatePhoneNumber = (phoneNumber: string) => {
+    const phoneRegex = /^\+?[\d\s()-]{7,}$/;
+    return phoneRegex.test(phoneNumber);
+  };
+
   const handleNext = async () => {
-    if (study.demographicQuestionConfiguration) {
-      await createDemographicResponse.mutateAsync({
-        interviewSessionId,
-        name: study.demographicQuestionConfiguration.name ? name : undefined,
-        email: study.demographicQuestionConfiguration.email ? email : undefined,
-        phoneNumber: study.demographicQuestionConfiguration.phoneNumber
-          ? phoneNumber
-          : undefined,
-      });
+    const newErrors: { email?: string; phoneNumber?: string } = {};
+
+    if (
+      study.demographicQuestionConfiguration?.email &&
+      email &&
+      !validateEmail(email)
+    ) {
+      newErrors.email = "Please enter a valid email address";
     }
-    onNext();
+
+    if (
+      study.demographicQuestionConfiguration?.phoneNumber &&
+      phoneNumber &&
+      !validatePhoneNumber(phoneNumber)
+    ) {
+      newErrors.phoneNumber = "Please enter a valid phone number";
+    }
+
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length === 0) {
+      if (study.demographicQuestionConfiguration) {
+        await createDemographicResponse.mutateAsync({
+          interviewSessionId,
+          name: study.demographicQuestionConfiguration.name ? name : undefined,
+          email: study.demographicQuestionConfiguration.email
+            ? email
+            : undefined,
+          phoneNumber: study.demographicQuestionConfiguration.phoneNumber
+            ? phoneNumber
+            : undefined,
+        });
+      }
+      onNext();
+    }
   };
 
   return (
@@ -268,20 +306,32 @@ const FormContent: React.FC<{
             />
           )}
           {study.demographicQuestionConfiguration?.email && (
-            <BasicInput
-              value={email}
-              onSetValue={setEmail}
-              placeholder="Enter your email"
-              type="email"
-            />
+            <div>
+              <BasicInput
+                value={email}
+                onSetValue={setEmail}
+                placeholder="Enter your email"
+                type="email"
+              />
+              {errors.email && (
+                <p className="mt-1 text-sm text-red-500">{errors.email}</p>
+              )}
+            </div>
           )}
           {study.demographicQuestionConfiguration?.phoneNumber && (
-            <BasicInput
-              value={phoneNumber}
-              onSetValue={setPhoneNumber}
-              placeholder="Enter your phone number"
-              type="tel"
-            />
+            <div>
+              <BasicInput
+                value={phoneNumber}
+                onSetValue={setPhoneNumber}
+                placeholder="Enter your phone number"
+                type="tel"
+              />
+              {errors.phoneNumber && (
+                <p className="mt-1 text-sm text-red-500">
+                  {errors.phoneNumber}
+                </p>
+              )}
+            </div>
           )}
         </div>
       </BasicTitleSection>

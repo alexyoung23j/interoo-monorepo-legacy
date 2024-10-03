@@ -233,4 +233,18 @@ export const interviewsRouter = createTRPCRouter({
 
       return responses;
     }),
+  getInterviewSessionParticipant: privateProcedure
+    .input(z.object({ interviewSessionId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const { interviewSessionId } = input;
+
+      const participant = await ctx.db.interviewParticipant.findUnique({
+        where: { interviewSessionId },
+        include: {
+          demographicResponse: true,
+        },
+      });
+
+      return participant;
+    }),
 });
