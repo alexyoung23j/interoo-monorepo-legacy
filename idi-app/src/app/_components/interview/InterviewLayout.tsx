@@ -35,6 +35,7 @@ import { useTtsAudio } from "@/hooks/useTtsAudio";
 import { api } from "@/trpc/react";
 import BasicConfirmationModal from "../reusable/BasicConfirmationModal";
 import { BasicLinkCopy } from "../reusable/BasicLinkCopy";
+import { Button } from "@/components/ui/button";
 
 interface InterviewLayoutProps {
   study: Study & {
@@ -263,7 +264,11 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
         body={
           <div className="my-2 flex flex-col gap-4">
             <p className="text-sm text-theme-600">
-              {`Your interview has been paused. You can resume it by clicking "Resume Interview", or returning to the link below at some later point (NOT the original link you visited to start this interview). You can close this page.`}
+              {`Your interview has been paused. You can resume it by clicking "Resume Interview", or returning to the link below at some later point`}{" "}
+              <span className="font-bold">
+                (NOT the original link you visited to start this interview)
+              </span>
+              .
             </p>
             <div className="flex w-full flex-row items-center gap-2">
               <BasicLinkCopy
