@@ -2,7 +2,7 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
 
 export const demographicsRouter = createTRPCRouter({
-  createDemographicResponse: publicProcedure
+  upsertDemographicResponse: publicProcedure
     .input(
       z.object({
         interviewSessionId: z.string(),
@@ -14,17 +14,29 @@ export const demographicsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { interviewSessionId, name, email, phoneNumber } = input;
 
-      // Create a new InterviewParticipant
-      const interviewParticipant = await ctx.db.interviewParticipant.create({
-        data: {
+      // Upsert the InterviewParticipant
+      const interviewParticipant = await ctx.db.interviewParticipant.upsert({
+        where: {
           interviewSessionId,
         },
+        create: {
+          interviewSessionId,
+        },
+        update: {},
       });
 
-      // Create the DemographicResponse
-      return ctx.db.demographicResponse.create({
-        data: {
+      // Upsert the DemographicResponse
+      return ctx.db.demographicResponse.upsert({
+        where: {
           interviewParticipantId: interviewParticipant.id,
+        },
+        create: {
+          interviewParticipantId: interviewParticipant.id,
+          name,
+          email,
+          phoneNumber,
+        },
+        update: {
           name,
           email,
           phoneNumber,
