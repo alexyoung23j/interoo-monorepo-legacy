@@ -24,6 +24,12 @@ export default async function InterviewSessionServerPage({
     interviewSessionId: interviewSessionId,
   });
 
+  // End any existing pause intervals
+  await api.interviews.setPauseIntervals({
+    interviewSessionId: interviewSessionId,
+    action: "END_PAUSE",
+  });
+
   // Get the host from headers
   const headersList = headers();
   const host = headersList.get("host") ?? "localhost";

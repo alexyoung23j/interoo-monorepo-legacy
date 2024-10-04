@@ -2,12 +2,17 @@ import React from "react";
 import Image from "next/image";
 import { Organization } from "@shared/generated/client";
 import ClipLoader from "react-spinners/ClipLoader";
+import { Button } from "@/components/ui/button";
+import { Pause } from "@phosphor-icons/react";
+import { isColorLight } from "@/app/utils/color";
 
 interface InterviewScreenLayoutProps {
   organization: Organization;
   backgroundLight: boolean;
   isLoading: boolean;
   children: React.ReactNode;
+  onPause?: () => void;
+  isInProgress?: boolean;
 }
 
 export const InterviewScreenLayout: React.FC<InterviewScreenLayoutProps> = ({
@@ -15,6 +20,8 @@ export const InterviewScreenLayout: React.FC<InterviewScreenLayoutProps> = ({
   backgroundLight,
   isLoading,
   children,
+  onPause,
+  isInProgress = false,
 }) => {
   return (
     <div
@@ -61,6 +68,29 @@ export const InterviewScreenLayout: React.FC<InterviewScreenLayoutProps> = ({
           </div>
         )}
       </div>
+
+      {isInProgress && (
+        <div className="absolute right-6 top-6 flex items-center gap-2">
+          <div className="hidden text-xs font-medium text-theme-900 md:flex">
+            Pause
+          </div>
+          <Button
+            variant="unstyled"
+            className="h-6 rounded-md bg-org-secondary !px-2"
+            onClick={onPause}
+          >
+            <Pause
+              color={
+                isColorLight(organization.secondaryColor ?? "")
+                  ? "black"
+                  : "white"
+              }
+              size={10}
+              weight="fill"
+            />
+          </Button>
+        </div>
+      )}
 
       <div className="flex w-full flex-1 items-center justify-center overflow-y-auto rounded-[4px] border-2 border-org-secondary bg-off-white md:px-4 md:py-4">
         {isLoading ? (

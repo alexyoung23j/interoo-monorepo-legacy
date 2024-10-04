@@ -257,3 +257,9 @@ export type FullTranscriptBlob = {
     }>;
   };
 }
+
+export type PauseInterval = {
+  startTime: string;
+  endTime?: string;
+  duration?: number;
+};

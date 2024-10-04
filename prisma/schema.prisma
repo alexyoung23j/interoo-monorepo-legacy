@@ -267,6 +267,9 @@ model InterviewSession {
   FollowUpQuestions FollowUpQuestion[]
   participant       InterviewParticipant?
 
+  // Json with [{startTime: number, endTime: number, duration: number}]
+  pauseIntervals Json[]
+
   // Analysis
   Favorites                    Favorite[]
   QuestionThemeAnalysisJob     QuestionThemeAnalysisJob[]

@@ -6,8 +6,12 @@ import {
   publicProcedure,
 } from "@/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { FollowUpQuestion, Question } from "@shared/generated/client";
-import { CurrentQuestionType } from "@shared/types";
+import {
+  FollowUpQuestion,
+  InterviewSessionStatus,
+  Question,
+} from "@shared/generated/client";
+import { CurrentQuestionType, PauseInterval } from "@shared/types";
 import { Response } from "@shared/generated/client";
 
 export const interviewsRouter = createTRPCRouter({
@@ -246,5 +250,71 @@ export const interviewsRouter = createTRPCRouter({
       });
 
       return participant;
+    }),
+  setPauseIntervals: publicProcedure
+    .input(
+      z.object({
+        interviewSessionId: z.string(),
+        action: z.enum(["START_PAUSE", "END_PAUSE"]),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { interviewSessionId, action } = input;
+      const currentTime = new Date().toISOString();
+
+      const interviewSession = await ctx.db.interviewSession.findUnique({
+        where: { id: interviewSessionId },
+      });
+
+      if (!interviewSession) {
+        throw new Error("Interview session not found");
+      }
+
+      if (interviewSession.status !== InterviewSessionStatus.IN_PROGRESS) {
+        return;
+      }
+
+      const pauseIntervals: PauseInterval[] = interviewSession.pauseIntervals
+        ? (interviewSession.pauseIntervals as PauseInterval[])
+        : [];
+
+      if (action === "START_PAUSE") {
+        if (
+          pauseIntervals.length > 0 &&
+          !pauseIntervals[pauseIntervals?.length - 1]?.endTime
+        ) {
+          // Overwrite the last incomplete pause interval
+          pauseIntervals[pauseIntervals.length - 1] = {
+            startTime: currentTime,
+          };
+        } else {
+          // Create a new pause interval
+          pauseIntervals.push({ startTime: currentTime });
+        }
+      } else if (action === "END_PAUSE") {
+        if (
+          pauseIntervals.length > 0 &&
+          !pauseIntervals[pauseIntervals?.length - 1]?.endTime
+        ) {
+          const lastPause = pauseIntervals[pauseIntervals.length - 1];
+          const startTime = new Date(lastPause?.startTime ?? currentTime);
+          const endTime = new Date(currentTime);
+          const duration = endTime.getTime() - startTime.getTime();
+
+          if (lastPause) {
+            lastPause.endTime = currentTime;
+            lastPause.duration = duration ?? 0;
+          }
+        }
+        // If the last pause already has an endTime, do nothing
+      }
+
+      // Update the interview session with the new pauseIntervals
+      await ctx.db.interviewSession.update({
+        where: { id: interviewSessionId },
+        data: { pauseIntervals: pauseIntervals },
+      });
+
+      return { success: true };
     }),
 });

@@ -40,7 +40,7 @@ const BasicConfirmationModal: React.FC<BasicConfirmationModalProps> = ({
 }) => {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="flex flex-col border border-theme-200 bg-theme-off-white">
+      <DialogContent className="flex max-w-[94vw] flex-col border border-theme-200 bg-theme-off-white md:max-w-[30vw]">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold text-theme-900">
             {title}
@@ -64,9 +64,9 @@ const BasicConfirmationModal: React.FC<BasicConfirmationModalProps> = ({
           )}
           {showSave && (
             <Button
-              variant="default"
+              variant="unstyled"
               onClick={onConfirm}
-              className={`${confirmButtonColor} bg-theme-600 text-theme-off-white`}
+              className={`${confirmButtonColor ?? "bg-theme-600"} text-medium w-fit rounded-sm text-theme-off-white shadow hover:bg-theme-900/90`}
             >
               {confirmButtonText}
             </Button>

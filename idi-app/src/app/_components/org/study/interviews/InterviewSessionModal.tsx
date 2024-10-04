@@ -24,6 +24,7 @@ import { Switch } from "@/components/ui/switch";
 import { showSuccessToast } from "@/app/utils/toastUtils";
 import GeneralPopover from "@/app/_components/reusable/GeneralPopover";
 import { useToast } from "@/hooks/use-toast";
+import { PauseInterval } from "@shared/types";
 
 interface InterviewSessionModalProps {
   isOpen: boolean;
@@ -141,7 +142,27 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
       responses[0]!.createdAt ?? session.startTime,
     ).getTime();
     const lastResponseTime = new Date(session.lastUpdatedTime!).getTime();
-    const elapsedTime = lastResponseTime - firstResponseTime;
+    let elapsedTime = lastResponseTime - firstResponseTime;
+
+    // Calculate total pause duration
+    const totalPauseDuration = (
+      (session.pauseIntervals as PauseInterval[]) ?? []
+    ).reduce((total, interval) => {
+      if (
+        typeof interval === "object" &&
+        interval !== null &&
+        "startTime" in interval
+      ) {
+        const start = new Date(interval.startTime).getTime();
+        const end = interval.endTime
+          ? new Date(interval.endTime).getTime()
+          : Date.now();
+        return total + (end - start);
+      }
+      return total;
+    }, 0);
+
+    elapsedTime -= totalPauseDuration;
 
     if (session.study.targetLength !== null) {
       const maxTime = session.study.targetLength * 1.25 * 60 * 1000; // Convert minutes to milliseconds

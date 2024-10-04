@@ -68,9 +68,11 @@ const DistributionPageComponent: React.FC<DistributionPageComponentProps> = ({
         title="Share"
         subtitle="Send this link to your survey participants."
       >
-        <BasicLinkCopy
-          link={`${window.location.origin}/study/${study?.shortID}`}
-        />
+        <div className="w-fit">
+          <BasicLinkCopy
+            link={`${window.location.origin}/study/${study?.shortID}`}
+          />
+        </div>
       </BasicTitleSection>
       <BasicTitleSection
         title="Maximum Participants"
