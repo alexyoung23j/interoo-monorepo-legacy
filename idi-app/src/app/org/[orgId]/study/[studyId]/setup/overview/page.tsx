@@ -60,9 +60,13 @@ export default function SetupOverviewPage({
     );
 
   const updateStudyMutation = api.studies.updateStudy.useMutation({
-    onSuccess: () => {
+    onSuccess: async () => {
       // Invalidate and refetch
-      utils.studies.getStudy.invalidate({ studyId: params.studyId });
+      try {
+        await utils.studies.getStudy.invalidate({ studyId: params.studyId });
+      } catch (error) {
+        console.error("Failed to invalidate study cache:", error);
+      }
     },
   });
   const deleteStudyMutation = api.studies.deleteStudy.useMutation();
