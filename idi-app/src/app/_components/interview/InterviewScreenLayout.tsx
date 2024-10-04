@@ -55,25 +55,45 @@ export const InterviewScreenLayout: React.FC<InterviewScreenLayoutProps> = ({
             />
           )}
         </div>
-        {organization.logoUrl && (
-          <div
-            className={`cursor-pointer text-center text-sm font-medium opacity-30 md:hidden ${
-              backgroundLight ? "text-black" : "text-white"
-            }`}
-            onClick={() => {
-              window.open("https://interoo.ai", "_blank");
-            }}
-          >
-            Powered by Interoo
-          </div>
-        )}
+        <div className="flex items-center gap-2 md:hidden">
+          {organization.logoUrl && !isInProgress && (
+            <div
+              className={`cursor-pointer text-center text-xs font-medium opacity-30 md:hidden ${
+                backgroundLight ? "text-black" : "text-white"
+              }`}
+              onClick={() => {
+                window.open("https://interoo.ai", "_blank");
+              }}
+            >
+              Powered by Interoo
+            </div>
+          )}
+          {isInProgress && (
+            <div className="flex items-center gap-2">
+              <div className="text-xs font-medium text-theme-900">Pause</div>
+              <Button
+                variant="unstyled"
+                className="h-6 rounded-md bg-org-secondary !px-2"
+                onClick={onPause}
+              >
+                <Pause
+                  color={
+                    isColorLight(organization.secondaryColor ?? "")
+                      ? "black"
+                      : "white"
+                  }
+                  size={10}
+                  weight="fill"
+                />
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
 
       {isInProgress && (
-        <div className="absolute right-6 top-6 flex items-center gap-2">
-          <div className="hidden text-xs font-medium text-theme-900 md:flex">
-            Pause
-          </div>
+        <div className="absolute right-6 top-6 hidden items-center gap-2 md:flex">
+          <div className="flex text-xs font-medium text-theme-900">Pause</div>
           <Button
             variant="unstyled"
             className="h-6 rounded-md bg-org-secondary !px-2"
