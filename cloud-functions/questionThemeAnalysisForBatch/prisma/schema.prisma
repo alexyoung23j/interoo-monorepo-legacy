@@ -89,7 +89,7 @@ model Study {
     QuestionThemeAnalysisJob     QuestionThemeAnalysisJob[]
     QuestionAttributeAnalysisJob QuestionAttributeAnalysisJob[]
 
-    demographicQuestion DemographicQuestionConfiguration?
+    demographicQuestionConfiguration DemographicQuestionConfiguration?
 }
 
 enum TtsProvider {

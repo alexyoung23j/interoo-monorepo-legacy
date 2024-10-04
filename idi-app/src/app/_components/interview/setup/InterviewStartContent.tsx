@@ -236,8 +236,8 @@ const FormContent: React.FC<{
     phoneNumber?: string;
   }>({});
 
-  const createDemographicResponse =
-    api.demographics.createDemographicResponse.useMutation();
+  const upsertDemographicResponse =
+    api.demographics.upsertDemographicResponse.useMutation();
 
   const newColor = getColorWithOpacity(organization.secondaryColor ?? "", 0.15);
   const selectedColor = getColorWithOpacity(
@@ -253,6 +253,24 @@ const FormContent: React.FC<{
   const validatePhoneNumber = (phoneNumber: string) => {
     const phoneRegex = /^\+?[\d\s()-]{7,}$/;
     return phoneRegex.test(phoneNumber);
+  };
+
+  const isFormValid = () => {
+    const {
+      name: nameRequired,
+      email: emailRequired,
+      phoneNumber: phoneRequired,
+    } = study.demographicQuestionConfiguration ?? {};
+
+    if (nameRequired && name === "") return false;
+    if (emailRequired && (email === "" || !validateEmail(email))) return false;
+    if (
+      phoneRequired &&
+      (phoneNumber === "" || !validatePhoneNumber(phoneNumber))
+    )
+      return false;
+
+    return true;
   };
 
   const handleNext = async () => {
@@ -278,7 +296,7 @@ const FormContent: React.FC<{
 
     if (Object.keys(newErrors).length === 0) {
       if (study.demographicQuestionConfiguration) {
-        await createDemographicResponse.mutateAsync({
+        await upsertDemographicResponse.mutateAsync({
           interviewSessionId,
           name: study.demographicQuestionConfiguration.name ? name : undefined,
           email: study.demographicQuestionConfiguration.email
@@ -316,7 +334,7 @@ const FormContent: React.FC<{
                 type="email"
               />
               {errors.email && (
-                <p className="mt-1 text-sm text-red-500">{errors.email}</p>
+                <p className="mt-1 text-sm text-theme-900">{errors.email}</p>
               )}
             </div>
           )}
@@ -329,7 +347,7 @@ const FormContent: React.FC<{
                 type="tel"
               />
               {errors.phoneNumber && (
-                <p className="mt-1 text-sm text-red-500">
+                <p className="mt-1 text-sm text-theme-900">
                   {errors.phoneNumber}
                 </p>
               )}
@@ -339,8 +357,9 @@ const FormContent: React.FC<{
       </BasicTitleSection>
       <Button
         variant="unstyled"
-        className={`mt-8 flex min-h-10 w-fit max-w-md gap-3 rounded-[1px] border border-black border-opacity-50 bg-[var(--button-bg)] text-black transition-colors hover:bg-[var(--button-hover-bg)]`}
+        className={`mt-8 flex min-h-10 w-fit max-w-md gap-3 rounded-[1px] border border-black border-opacity-50 bg-[var(--button-bg)] text-black transition-colors hover:bg-[var(--button-hover-bg)] disabled:cursor-not-allowed disabled:opacity-50`}
         onClick={handleNext}
+        disabled={!isFormValid()}
         style={
           {
             "--button-bg": newColor,
