@@ -6,7 +6,11 @@ import {
   publicProcedure,
 } from "@/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { FollowUpQuestion, Question } from "@shared/generated/client";
+import {
+  FollowUpQuestion,
+  InterviewSessionStatus,
+  Question,
+} from "@shared/generated/client";
 import { CurrentQuestionType, PauseInterval } from "@shared/types";
 import { Response } from "@shared/generated/client";
 
@@ -247,7 +251,7 @@ export const interviewsRouter = createTRPCRouter({
 
       return participant;
     }),
-  setPauseIntervals: privateProcedure
+  setPauseIntervals: publicProcedure
     .input(
       z.object({
         interviewSessionId: z.string(),
@@ -260,11 +264,14 @@ export const interviewsRouter = createTRPCRouter({
 
       const interviewSession = await ctx.db.interviewSession.findUnique({
         where: { id: interviewSessionId },
-        select: { pauseIntervals: true },
       });
 
       if (!interviewSession) {
         throw new Error("Interview session not found");
+      }
+
+      if (interviewSession.status !== InterviewSessionStatus.IN_PROGRESS) {
+        return;
       }
 
       const pauseIntervals: PauseInterval[] = interviewSession.pauseIntervals

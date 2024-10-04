@@ -76,10 +76,12 @@ export default function SettingsPageComponent({
         {inviteLink ? (
           <div className="flex flex-col gap-2">
             <div className="flex flex-row items-center gap-2">
-              <BasicLinkCopy
-                link={inviteLink}
-                toastString="Invite link copied."
-              />
+              <div className="w-fit">
+                <BasicLinkCopy
+                  link={inviteLink}
+                  toastString="Invite link copied."
+                />
+              </div>
               <div className="text-xs text-theme-600">Shareable link</div>
             </div>
             <div className="mt-4 max-w-[50%] text-sm font-light text-theme-600">

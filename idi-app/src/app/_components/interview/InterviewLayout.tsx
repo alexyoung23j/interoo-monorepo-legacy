@@ -234,6 +234,7 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
           action: "START_PAUSE",
         });
       }}
+      isInProgress={interviewProgress === "in-progress"}
     >
       <BasicConfirmationModal
         isOpen={showPauseModal}
@@ -260,10 +261,9 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
         }}
         cancelButtonText="Resume Interview"
         body={
-          <div className="my-2 flex flex-col gap-2">
+          <div className="my-2 flex flex-col gap-4">
             <p className="text-sm text-theme-600">
-              Your interview has been paused. You can resume it by clicking the
-              button below, or returning to the link below at some later point.
+              {`Your interview has been paused. You can resume it by clicking "Resume Interview", or returning to the link below at some later point. You can close this page.`}
             </p>
             <div className="flex w-full flex-row items-center gap-2">
               <BasicLinkCopy
