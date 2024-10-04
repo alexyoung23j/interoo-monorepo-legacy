@@ -263,7 +263,7 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
         body={
           <div className="my-2 flex flex-col gap-4">
             <p className="text-sm text-theme-600">
-              {`Your interview has been paused. You can resume it by clicking "Resume Interview", or returning to the link below at some later point. You can close this page.`}
+              {`Your interview has been paused. You can resume it by clicking "Resume Interview", or returning to the link below at some later point (NOT the original link you visited to start this interview). You can close this page.`}
             </p>
             <div className="flex w-full flex-row items-center gap-2">
               <BasicLinkCopy
