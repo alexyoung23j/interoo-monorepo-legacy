@@ -64,9 +64,9 @@ const BasicConfirmationModal: React.FC<BasicConfirmationModalProps> = ({
           )}
           {showSave && (
             <Button
-              variant="default"
+              variant="unstyled"
               onClick={onConfirm}
-              className={`${confirmButtonColor} bg-theme-600 text-theme-off-white`}
+              className={`${confirmButtonColor ?? "bg-theme-600"} text-medium w-fit rounded-sm text-theme-off-white shadow hover:bg-theme-900/90`}
             >
               {confirmButtonText}
             </Button>

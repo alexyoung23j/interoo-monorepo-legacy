@@ -27,13 +27,13 @@ export function BasicLinkCopy({ link, toastString }: BasicLinkCopyProps) {
   }, [copied]);
 
   return (
-    <div className="bg-theme-50 border-theme-200 flex w-fit flex-row items-center gap-4 rounded-md border p-2">
-      <span className="text-theme-900 flex-grow truncate text-sm font-semibold underline">
+    <div className="flex w-full flex-row items-center gap-4 rounded-md border border-theme-200 bg-theme-50 p-2">
+      <span className="flex-grow truncate text-sm font-semibold text-theme-900 underline">
         {displayLink}
       </span>
       <button
         onClick={handleCopy}
-        className="text-theme-500 hover:text-theme-600 ml-2 flex-shrink-0 focus:outline-none"
+        className="ml-2 flex-shrink-0 text-theme-500 hover:text-theme-600 focus:outline-none"
       >
         {copied ? (
           <Check size={16} weight="bold" className="text-theme-900" />

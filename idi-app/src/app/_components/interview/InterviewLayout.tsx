@@ -32,6 +32,9 @@ import { CurrentQuestionType } from "@shared/types";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Stage } from "./setup/InterviewStartContent";
 import { useTtsAudio } from "@/hooks/useTtsAudio";
+import { api } from "@/trpc/react";
+import BasicConfirmationModal from "../reusable/BasicConfirmationModal";
+import { BasicLinkCopy } from "../reusable/BasicLinkCopy";
 
 interface InterviewLayoutProps {
   study: Study & {
@@ -71,12 +74,15 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
 }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const addPauseIntervalMutation =
+    api.interviews.setPauseIntervals.useMutation();
 
   const params = useParams();
   const interviewSessionId = params.interviewSessionId as string;
 
   // Local state for initial stages
   const [localStage, setLocalStage] = useState<Stage>(Stage.Intro);
+  const [showPauseModal, setShowPauseModal] = useState(false);
 
   const [interviewProgress, setInterviewProgress] = useAtom(
     interviewProgressAtom,
@@ -104,6 +110,13 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
       study.ttsProvider === TtsProvider.ELEVENLABS ||
       interviewSession?.testMode,
   });
+
+  const updateProgress = useCallback(
+    (progress: string) => {
+      setInterviewProgress(progress);
+    },
+    [setInterviewProgress],
+  );
 
   useEffect(() => {
     const initializeInterview = async () => {
@@ -160,14 +173,8 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
     setInterviewSession,
     setFollowUpQuestions,
     setMediaAccess,
+    updateProgress,
   ]);
-
-  const updateProgress = useCallback(
-    (progress: string) => {
-      setInterviewProgress(progress);
-    },
-    [setInterviewProgress],
-  );
 
   // Interview Phases
   const hasCurrentQuestion = currentQuestion !== null;
@@ -220,7 +227,53 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
       organization={organization}
       backgroundLight={backgroundLight}
       isLoading={isLoading}
+      onPause={() => {
+        setShowPauseModal(true);
+        addPauseIntervalMutation.mutate({
+          interviewSessionId,
+          action: "START_PAUSE",
+        });
+      }}
     >
+      <BasicConfirmationModal
+        isOpen={showPauseModal}
+        onOpenChange={(open) => {
+          if (!open) {
+            addPauseIntervalMutation.mutate({
+              interviewSessionId,
+              action: "END_PAUSE",
+            });
+          }
+          setShowPauseModal(open);
+        }}
+        title="Interview Paused"
+        onConfirm={() => {
+          // Using onCancel as the "save" in this case
+        }}
+        showSave={false}
+        onCancel={() => {
+          addPauseIntervalMutation.mutate({
+            interviewSessionId,
+            action: "END_PAUSE",
+          });
+          setShowPauseModal(false);
+        }}
+        cancelButtonText="Resume Interview"
+        body={
+          <div className="my-2 flex flex-col gap-2">
+            <p className="text-sm text-theme-600">
+              Your interview has been paused. You can resume it by clicking the
+              button below, or returning to the link below at some later point.
+            </p>
+            <div className="flex w-full flex-row items-center gap-2">
+              <BasicLinkCopy
+                link={typeof window !== "undefined" ? window.location.href : ""}
+                toastString="Link copied."
+              />
+            </div>
+          </div>
+        }
+      />
       <div className="flex h-full w-full flex-col">
         <div className="w-full md:p-4">
           <InterviewProgressBar

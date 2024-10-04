@@ -16,6 +16,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { formatDuration, formatElapsedTime } from "@/app/utils/functions";
 import { api } from "@/trpc/react";
 import { ClipLoader } from "react-spinners";
+import { PauseInterval } from "@shared/types";
 
 interface InterviewPageComponentProps {
   studyId: string;
@@ -103,9 +104,32 @@ const InterviewPageComponent: React.FC<InterviewPageComponentProps> = ({
   const calculateElapsedTime = (
     session: InterviewSession & { study: Study; responses: Response[] },
   ) => {
-    const elapsedTime =
-      new Date(session.lastUpdatedTime!).getTime() -
-      new Date(session.responses[0]?.createdAt ?? session.startTime!).getTime();
+    const startTime = new Date(
+      session.responses[0]?.createdAt ?? session.startTime!,
+    ).getTime();
+    const endTime = new Date(session.lastUpdatedTime!).getTime();
+    let elapsedTime = endTime - startTime;
+
+    // Calculate total pause duration
+    const totalPauseDuration = (
+      (session.pauseIntervals as PauseInterval[]) ?? []
+    ).reduce((total, interval) => {
+      if (
+        typeof interval === "object" &&
+        interval !== null &&
+        "startTime" in interval
+      ) {
+        const pauseStart = new Date(interval.startTime).getTime();
+        const pauseEnd = interval.endTime
+          ? new Date(interval.endTime).getTime()
+          : Date.now();
+        return total + (pauseEnd - pauseStart);
+      }
+      return total;
+    }, 0);
+
+    // Subtract total pause duration from elapsed time
+    elapsedTime -= totalPauseDuration;
 
     if (session.study.targetLength !== null) {
       const maxTime = session.study.targetLength * 1.25 * 60 * 1000; // Convert minutes to milliseconds
