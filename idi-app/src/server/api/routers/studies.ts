@@ -197,6 +197,11 @@ export const studiesRouter = createTRPCRouter({
           demographicQuestionConfiguration.email ||
           demographicQuestionConfiguration.phoneNumber);
 
+      const existingConfig =
+        await ctx.db.demographicQuestionConfiguration.findUnique({
+          where: { studyId: id },
+        });
+
       return await ctx.db.study.update({
         where: { id },
         data: {
@@ -209,7 +214,7 @@ export const studiesRouter = createTRPCRouter({
                 },
               }
             : {
-                delete: true,
+                delete: existingConfig !== null,
               },
           boostedKeywords: {
             deleteMany: {},

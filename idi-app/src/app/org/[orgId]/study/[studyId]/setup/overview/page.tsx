@@ -161,7 +161,7 @@ export default function SetupOverviewPage({
     (name: string) => (value: string) => {
       setFormData((prev) => ({
         ...prev,
-        [name]: value,
+        [name]: name === "videoEnabled" ? value === "true" : value,
         ...(name === "collectDemographicInfo" && value === "false"
           ? {
               demographicQuestionConfiguration: {
