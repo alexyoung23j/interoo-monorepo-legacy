@@ -4,8 +4,11 @@ interface BasicTagProps {
   color?: string;
   borderColor?: string;
   fixedWidth?: boolean;
+  style?: React.CSSProperties;
   children: React.ReactNode;
   className?: string;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
 }
 
 const BasicTag: React.FC<BasicTagProps> = ({
@@ -14,12 +17,18 @@ const BasicTag: React.FC<BasicTagProps> = ({
   fixedWidth = true,
   children,
   className,
+  style,
+  onMouseEnter,
+  onMouseLeave,
 }) => {
   return (
     <div
       className={`${className} inline-flex items-center justify-center rounded-md px-3 py-1 text-xs font-medium text-theme-900 ${color} border ${borderColor} ${
         fixedWidth ? "min-w-20" : ""
       } `}
+      style={style}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
     >
       {children}
     </div>

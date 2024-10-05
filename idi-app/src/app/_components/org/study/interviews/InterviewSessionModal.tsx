@@ -24,7 +24,8 @@ import { Switch } from "@/components/ui/switch";
 import { showSuccessToast } from "@/app/utils/toastUtils";
 import GeneralPopover from "@/app/_components/reusable/GeneralPopover";
 import { useToast } from "@/hooks/use-toast";
-import { PauseInterval } from "@shared/types";
+import { ExtendedResponse, PauseInterval } from "@shared/types";
+import { ResponseModalCard } from "@/app/_components/reusable/ResponseModalCard";
 
 interface InterviewSessionModalProps {
   isOpen: boolean;
@@ -33,11 +34,6 @@ interface InterviewSessionModalProps {
   studyId: string;
   orgId: string;
 }
-
-type ExtendedResponse = Response & {
-  question: Question;
-  followUpQuestion: FollowUpQuestion | null;
-};
 
 const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
   isOpen,
@@ -52,11 +48,14 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
   const [showFollowUps, setShowFollowUps] = useState(true);
   const { toast } = useToast();
 
-  const { data: responsesData, isLoading: isLoadingResponses } =
-    api.interviews.getInterviewSessionResponses.useQuery(
-      { interviewSessionId: interviewSession.id },
-      { enabled: isOpen },
-    );
+  const {
+    data: responsesData,
+    isLoading: isLoadingResponses,
+    refetch: refetchResponses,
+  } = api.interviews.getInterviewSessionResponses.useQuery(
+    { interviewSessionId: interviewSession.id, includeQuotes: true },
+    { enabled: isOpen },
+  );
 
   const { data: participantData, isLoading: isLoadingParticipant } =
     api.interviews.getInterviewSessionParticipant.useQuery(
@@ -174,7 +173,10 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
 
   const totalTime = useMemo(() => {
     return formatElapsedTime(
-      calculateElapsedTime(interviewSession, filteredResponses),
+      calculateElapsedTime(
+        interviewSession,
+        filteredResponses as ExtendedResponse[],
+      ),
     );
   }, [interviewSession, filteredResponses]);
 
@@ -519,47 +521,17 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
                 .filter(
                   (response) => showFollowUps || !response.followUpQuestion,
                 )
-                .map((response: ExtendedResponse) => (
-                  <BasicCard
+                .map((response) => (
+                  <ResponseModalCard
                     key={response.id}
-                    className={`flex cursor-pointer flex-col gap-2 transition-all duration-200 ${
-                      response.id === selectedResponseId
-                        ? "bg-theme-50 shadow-md"
-                        : "shadow hover:bg-theme-50"
-                    }`}
-                    shouldHover
-                    isSelected={response.id === selectedResponseId}
-                    onClick={() => setSelectedResponseId(response.id)}
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-grow font-semibold text-theme-900">
-                        {response.followUpQuestion
-                          ? response.followUpQuestion.title
-                          : `${response.question.questionOrder + 1}: ${response.question.title}`}
-                      </div>
-                      <CopySimple
-                        size={16}
-                        className="flex-shrink-0 text-theme-900"
-                        onClick={(e) => copyIndividualResponse(response, e)}
-                      />
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-theme-500">
-                      {response.followUpQuestion && (
-                        <BasicTag className="py-0.5 text-xs">
-                          Follow Up
-                        </BasicTag>
-                      )}
-                      <span className="italic">
-                        {formatDuration(
-                          new Date(response.createdAt),
-                          new Date(response.updatedAt),
-                        )}
-                      </span>
-                    </div>
-                    <div className="text-theme-600">
-                      {`"${response.fastTranscribedText}"`}
-                    </div>
-                  </BasicCard>
+                    response={response as ExtendedResponse}
+                    currentResponseId={selectedResponseId ?? ""}
+                    onResponseClicked={(response) =>
+                      setSelectedResponseId(response.id)
+                    }
+                    copyIndividualResponse={copyIndividualResponse}
+                    refetchResponses={refetchResponses}
+                  />
                 ))}
             </div>
           ) : (

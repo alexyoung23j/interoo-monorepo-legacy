@@ -18,6 +18,7 @@ export const questionsRouter = createTRPCRouter({
       z.object({
         questionId: z.string(),
         includeQuestions: z.boolean().optional(),
+        includeQuotes: z.boolean().optional(),
         interviewSessionId: z.string().optional(),
       }),
     )
@@ -36,6 +37,22 @@ export const questionsRouter = createTRPCRouter({
         include: {
           question: input.includeQuestions,
           followUpQuestion: input.includeQuestions,
+          Quote: input.includeQuotes
+            ? {
+                include: {
+                  QuotesOnTheme: {
+                    include: {
+                      theme: true,
+                    },
+                  },
+                  QuotesOnAttribute: {
+                    include: {
+                      attribute: true,
+                    },
+                  },
+                },
+              }
+            : false,
         },
         orderBy: {
           interviewSession: {

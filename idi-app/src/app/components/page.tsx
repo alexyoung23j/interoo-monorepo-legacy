@@ -81,7 +81,7 @@ const ComponentsPage: React.FC = () => {
           <QuoteTextField
             transcriptBlob={mockTranscriptBlob}
             highlight={editHighlight}
-            className="text-theme-900"
+            className="text-sm text-theme-900"
             editMode={editMode}
             onEditCursorReleased={(newHighlight) => {
               setEditHighlight(newHighlight);
