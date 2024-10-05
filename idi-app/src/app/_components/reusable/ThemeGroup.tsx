@@ -35,8 +35,6 @@ const ThemeGroup: React.FC<ThemeGroupProps> = ({
     setIsOpen((prev) => !prev);
   };
 
-  console.log({ themes });
-
   return (
     <div className="mt-3 flex flex-col gap-2">
       <div className="h-[1px] w-full bg-theme-200" />

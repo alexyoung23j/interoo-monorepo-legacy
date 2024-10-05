@@ -76,7 +76,6 @@ export const ResponseModalCard: React.FC<ResponseModalCardProps> = ({
   };
 
   const handleRemoveThemeFromQuote = async (themeId: string) => {
-    console.log({ themeId });
     const quoteWithTheme = response.Quote?.find((quote) =>
       quote.QuotesOnTheme.some((qot) => qot.theme.id === themeId),
     );
