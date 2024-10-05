@@ -1,7 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { X } from "@phosphor-icons/react";
 import SplitScreenModal from "@/app/_components/layouts/org/SplitScreenModal";
-import { FollowUpQuestion, Question } from "@shared/generated/client";
+import type {
+  Attribute,
+  FollowUpQuestion,
+  Question,
+  Quote,
+  QuotesOnAttribute,
+  QuotesOnTheme,
+  Theme,
+  Response,
+} from "@shared/generated/client";
 import BasicHeaderCard from "@/app/_components/reusable/BasicHeaderCard";
 import { api } from "@/trpc/react";
 import QuestionModalRightContent from "./QuestionModalRightContent";
@@ -9,6 +18,7 @@ import { ExtendedStudy } from "./ResultsPageComponent";
 import { formatDuration } from "@/app/utils/functions";
 import QuestionModalLeftContent from "./QuestionModalLeftContent";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { ExtendedResponse } from "@shared/types";
 
 interface QuestionModalProps {
   isOpen: boolean;
@@ -19,11 +29,6 @@ interface QuestionModalProps {
   selectedResponseId: string | null;
   setSelectedResponseId: (responseId: string | null) => void;
 }
-
-type ExtendedResponse = Response & {
-  question: Question | null;
-  followUpQuestion: FollowUpQuestion | null;
-};
 
 const QuestionModal: React.FC<QuestionModalProps> = ({
   isOpen,
@@ -38,12 +43,16 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
   const router = useRouter();
   const pathname = usePathname();
 
-  const { data: responsesData, isLoading } =
-    api.questions.getResponses.useQuery({
-      questionId: question?.id ?? "",
-      includeQuestions: true,
-      interviewSessionId: interviewSessionId,
-    });
+  const {
+    data: responsesData,
+    isLoading,
+    refetch: refetchResponses,
+  } = api.questions.getResponses.useQuery({
+    questionId: question?.id ?? "",
+    includeQuestions: true,
+    includeQuotes: true,
+    interviewSessionId: interviewSessionId,
+  });
 
   const responsesWithTranscripts = responsesData
     ?.filter((response) => response.fastTranscribedText !== "")
@@ -72,13 +81,18 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
       console.log("setting initial response id");
       setSelectedResponseId(responsesWithTranscripts[0]?.id ?? null);
     }
-  }, [isOpen, responsesWithTranscripts, selectedResponseId]);
+  }, [
+    isOpen,
+    responsesWithTranscripts,
+    selectedResponseId,
+    setSelectedResponseId,
+  ]);
 
   useEffect(() => {
     if (!isOpen) {
       setSelectedResponseId(null);
     }
-  }, [isOpen]);
+  }, [isOpen, setSelectedResponseId]);
 
   return (
     <SplitScreenModal
@@ -120,7 +134,7 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
       }
       rightContent={
         <QuestionModalRightContent
-          responses={responsesWithTranscripts ?? null}
+          responses={responsesWithTranscripts as ExtendedResponse[]}
           onResponseClicked={(response) => {
             setSelectedResponseId(response.id);
             const newSearchParams = new URLSearchParams(searchParams);
@@ -128,6 +142,7 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
             router.push(`${pathname}?${newSearchParams.toString()}`);
           }}
           currentResponseId={selectedResponseId ?? ""}
+          refetchResponses={refetchResponses}
         />
       }
     />

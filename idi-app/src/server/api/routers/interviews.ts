@@ -221,8 +221,13 @@ export const interviewsRouter = createTRPCRouter({
 
       return firstQuestion;
     }),
-  getInterviewSessionResponses: publicProcedure
-    .input(z.object({ interviewSessionId: z.string() }))
+  getInterviewSessionResponses: privateProcedure
+    .input(
+      z.object({
+        interviewSessionId: z.string(),
+        includeQuotes: z.boolean().optional(),
+      }),
+    )
     .query(async ({ ctx, input }) => {
       const { interviewSessionId } = input;
 
@@ -231,6 +236,22 @@ export const interviewsRouter = createTRPCRouter({
         include: {
           question: true,
           followUpQuestion: true,
+          Quote: input.includeQuotes
+            ? {
+                include: {
+                  QuotesOnTheme: {
+                    include: {
+                      theme: true,
+                    },
+                  },
+                  QuotesOnAttribute: {
+                    include: {
+                      attribute: true,
+                    },
+                  },
+                },
+              }
+            : false,
         },
         orderBy: { createdAt: "asc" },
       });

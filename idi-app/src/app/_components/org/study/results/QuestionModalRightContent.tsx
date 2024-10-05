@@ -1,5 +1,14 @@
 import React from "react";
-import { FollowUpQuestion, Question, Response } from "@shared/generated/client";
+import {
+  Attribute,
+  FollowUpQuestion,
+  Question,
+  Quote,
+  QuotesOnAttribute,
+  QuotesOnTheme,
+  Response,
+  Theme,
+} from "@shared/generated/client";
 import { ClipLoader } from "react-spinners";
 import BasicCard from "@/app/_components/reusable/BasicCard";
 import { CopySimple } from "@phosphor-icons/react";
@@ -7,22 +16,21 @@ import { Button } from "@/components/ui/button";
 import { formatDuration } from "@/app/utils/functions";
 import BasicTag from "@/app/_components/reusable/BasicTag";
 import { showSuccessToast } from "@/app/utils/toastUtils";
+import { ExtendedResponse, FullTranscriptBlob } from "@shared/types";
+import { ResponseModalCard } from "@/app/_components/reusable/ResponseModalCard";
 
 interface QuestionModalRightContentProps {
-  responses:
-    | (Response & {
-        question: Question | null;
-        followUpQuestion: FollowUpQuestion | null;
-      })[]
-    | null;
+  responses: ExtendedResponse[] | null;
   onResponseClicked: (response: Response) => void;
   currentResponseId: string;
+  refetchResponses: () => void;
 }
 
 const QuestionModalRightContent: React.FC<QuestionModalRightContentProps> = ({
   responses,
   onResponseClicked,
   currentResponseId,
+  refetchResponses,
 }) => {
   if (!responses) {
     return (
@@ -107,43 +115,14 @@ const QuestionModalRightContent: React.FC<QuestionModalRightContentProps> = ({
 
       <div className="flex w-full flex-col gap-3">
         {responses.map((response) => (
-          <BasicCard
-            className={`flex cursor-pointer flex-col gap-2 shadow-standard ${
-              response.id === currentResponseId ? "shadow-sm" : ""
-            }`}
-            shouldHover
-            isSelected={response.id === currentResponseId}
+          <ResponseModalCard
             key={response.id}
-            onClick={() => onResponseClicked(response)}
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-grow font-semibold text-theme-900">
-                {!response.followUpQuestion
-                  ? response.question?.title
-                  : response.followUpQuestion?.title}
-              </div>
-              <CopySimple
-                size={16}
-                className="flex-shrink-0 text-theme-900"
-                onClick={(e) => copyIndividualResponse(response, e)}
-              />
-            </div>
-            <div className="flex items-center gap-2 text-sm text-theme-500">
-              {response.followUpQuestion && (
-                <BasicTag className="py-0.5 text-xs">Follow Up</BasicTag>
-              )}
-              <span className="italic">
-                {formatDuration(
-                  new Date(response.createdAt),
-                  new Date(response.updatedAt),
-                )}
-              </span>
-            </div>
-
-            <div className="text-theme-600">
-              {`"${response.fastTranscribedText}"`}
-            </div>
-          </BasicCard>
+            response={response}
+            currentResponseId={currentResponseId}
+            onResponseClicked={onResponseClicked}
+            copyIndividualResponse={copyIndividualResponse}
+            refetchResponses={refetchResponses}
+          />
         ))}
       </div>
     </div>

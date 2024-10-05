@@ -145,14 +145,14 @@ export default function QuoteTextField({
   );
 
   const renderText = useMemo(() => {
-    if (!transcriptBlob.transcript) return null;
+    if (!transcriptBlob?.transcript) return null;
 
     const { words, sentences } = transcriptBlob.transcript;
     const content: React.ReactNode[] = [];
 
     const highlightToUse = editMode ? localHighlight : highlight;
 
-    sentences.forEach((sentence, sentenceIndex) => {
+    sentences.forEach((sentence, sentenceIndex, sentencesArray) => {
       const sentenceWords = words.slice(
         sentence.start_word_index,
         sentence.end_word_index + 1,
@@ -192,7 +192,10 @@ export default function QuoteTextField({
         content.push(" ");
       });
 
-      if (sentence.is_paragraph_end) {
+      if (
+        sentence.is_paragraph_end &&
+        sentenceIndex < sentencesArray.length - 1
+      ) {
         content.push(<br key={`br-${sentenceIndex}`} />);
         content.push(<br key={`br-${sentenceIndex}-second`} />);
       }
