@@ -43,16 +43,14 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
   const router = useRouter();
   const pathname = usePathname();
 
-  const {
-    data: responsesData,
-    isLoading,
-    refetch: refetchResponses,
-  } = api.questions.getResponses.useQuery({
-    questionId: question?.id ?? "",
-    includeQuestions: true,
-    includeQuotes: true,
-    interviewSessionId: interviewSessionId,
-  });
+  const { data: responsesData, refetch: refetchResponses } =
+    api.questions.getResponses.useQuery({
+      questionId: question?.id ?? "",
+      includeQuestions: true,
+      includeQuotes: true,
+      includeParticipantDemographics: false,
+      interviewSessionId: interviewSessionId,
+    });
 
   const responsesWithTranscripts = responsesData
     ?.filter((response) => response.fastTranscribedText !== "")

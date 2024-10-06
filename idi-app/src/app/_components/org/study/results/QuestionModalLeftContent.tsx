@@ -49,9 +49,10 @@ const QuestionModalLeftContent: React.FC<QuestionModalLeftContentProps> = ({
 
   const hasSomeDemographicInfo = useMemo(() => {
     return (
-      participantData?.demographicResponse?.name !== null ||
-      participantData?.demographicResponse?.email !== null ||
-      participantData?.demographicResponse?.phoneNumber !== null
+      participantData &&
+      (participantData?.demographicResponse?.name !== null ||
+        participantData?.demographicResponse?.email !== null ||
+        participantData?.demographicResponse?.phoneNumber !== null)
     );
   }, [participantData]);
 

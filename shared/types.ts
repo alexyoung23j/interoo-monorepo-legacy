@@ -1,4 +1,4 @@
-import { FollowUpQuestion, Response, Question, VideoStimulusType, FollowUpLevel, BoostedKeyword, Quote, Attribute, QuotesOnAttribute, QuotesOnTheme, Theme } from "./generated/client";
+import { FollowUpQuestion, Response, Question, VideoStimulusType, FollowUpLevel, BoostedKeyword, Quote, Attribute, QuotesOnAttribute, QuotesOnTheme, Theme, InterviewSession, InterviewParticipant, DemographicResponse } from "./generated/client";
 
 // Add this new type
 export interface CurrentResponseAndUploadUrl {
@@ -267,6 +267,11 @@ export type PauseInterval = {
 export type ExtendedResponse = Response & {
   question: Question | null;
   followUpQuestion: FollowUpQuestion | null;
+  interviewSession: InterviewSession & {
+    participant: InterviewParticipant & {
+      demographicResponse: DemographicResponse | null;
+    } | null;
+  };
   Quote: (Quote & {
     QuotesOnTheme: (QuotesOnTheme & {
       theme: Theme;

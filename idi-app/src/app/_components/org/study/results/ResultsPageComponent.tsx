@@ -6,6 +6,8 @@ import {
   Study,
   Response,
   InterviewSession,
+  Theme,
+  ThemesOnQuestion,
 } from "@shared/generated/client";
 import SplitScreenLayout from "@/app/_components/layouts/org/SplitScreenLayout";
 import BasicCard from "@/app/_components/reusable/BasicCard";
@@ -24,7 +26,12 @@ import { api } from "@/trpc/react";
 export type ExtendedStudy = Study & {
   completedInterviewsCount: number;
   inProgressInterviewsCount: number;
-  questions: (Question & { _count?: { Response: number } })[];
+  questions: (Question & {
+    _count?: { Response: number };
+    ThemesOnQuestion: (ThemesOnQuestion & {
+      theme: Theme;
+    })[];
+  })[];
 };
 
 interface ResultsPageComponentProps {
@@ -46,7 +53,7 @@ const ResultsPageComponent: React.FC<ResultsPageComponentProps> = ({
     {
       refetchOnWindowFocus: false,
     },
-  );
+  ) as { data: ExtendedStudy; isLoading: boolean };
 
   const { handleExport, isExporting } = useExportData({
     studyId: study?.id,

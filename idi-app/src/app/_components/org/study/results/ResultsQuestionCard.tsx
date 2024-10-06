@@ -3,6 +3,8 @@ import {
   FollowUpLevel,
   Question,
   QuestionType,
+  Theme,
+  ThemesOnQuestion,
 } from "@shared/generated/client";
 import BasicCard from "@/app/_components/reusable/BasicCard";
 import { Button } from "@/components/ui/button";
@@ -17,9 +19,15 @@ import {
 import BasicTitleSection from "@/app/_components/reusable/BasicTitleSection";
 import { api } from "@/trpc/react";
 import MultipleChoiceMetadataDisplay from "./MultipleChoiceMetadataDisplay";
+import BasicTag from "@/app/_components/reusable/BasicTag";
 
 interface ResultsQuestionCardProps {
-  question: Question & { _count?: { Response: number } };
+  question: Question & {
+    _count?: { Response: number };
+    ThemesOnQuestion: (ThemesOnQuestion & {
+      theme: Theme;
+    })[];
+  };
   index: number;
   onViewResponses: () => void;
   isSelected: boolean;
@@ -46,33 +54,18 @@ const ResultsQuestionCard: React.FC<ResultsQuestionCardProps> = ({
   onViewResponses,
   isSelected,
 }) => {
+  const hasThemes = question.ThemesOnQuestion.length > 0;
+  const themes = Array.from(
+    new Map(
+      question.ThemesOnQuestion.map((theme) => [theme.theme.id, theme.theme]),
+    ).values(),
+  );
+
   const renderQuestionTypeMetadata = () => {
     switch (question.questionType) {
       case QuestionType.OPEN_ENDED:
         return (
           <div>
-            <div className="flex flex-col gap-2">
-              <div className="flex flex-row items-center gap-2 text-base font-medium text-theme-900">
-                Summary{" "}
-                <Sparkle size={16} className="text-theme-900" weight="bold" />
-              </div>
-              <div className="mb-4 text-sm text-theme-600">
-                AI summaries coming soon!
-              </div>
-            </div>
-            <div className="flex flex-col gap-2">
-              <div className="flex flex-row items-center gap-2 text-base font-medium text-theme-900">
-                Codes{" "}
-                <ListChecks
-                  size={16}
-                  className="text-theme-900"
-                  weight="bold"
-                />
-              </div>
-              <div className="mb-4 text-sm text-theme-600">
-                AI powered coding and analysis coming soon!
-              </div>
-            </div>
             <div className="flex flex-col gap-2">
               <div className="flex flex-row items-center gap-2 text-base font-medium text-theme-900">
                 Responses{" "}
@@ -96,6 +89,49 @@ const ResultsQuestionCard: React.FC<ResultsQuestionCardProps> = ({
                 </div>
               </div>
             </div>
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-row items-center gap-2 text-base font-medium text-theme-900">
+                Summary{" "}
+                <Sparkle size={16} className="text-theme-900" weight="bold" />
+              </div>
+              <div className="text-sm text-theme-600">
+                Summary has not been generated yet.
+              </div>
+            </div>
+            {hasThemes && (
+              <div className="mt-4 flex flex-col gap-2">
+                <div className="flex flex-col">
+                  <div className="flex flex-row items-center gap-2 text-base font-medium text-theme-900">
+                    Themes{" "}
+                    <ListChecks
+                      size={16}
+                      className="text-theme-900"
+                      weight="bold"
+                    />
+                  </div>
+                  <div className="text-sm text-theme-600">
+                    Themes capture the big picture ideas communicated by your
+                    respondents.
+                  </div>
+                </div>
+                <div className="text-sm text-theme-600">
+                  <div className="flex flex-wrap gap-2">
+                    {themes.map((theme) => (
+                      <BasicTag
+                        key={theme.id}
+                        style={{
+                          borderColor: theme.tagColor,
+                          backgroundColor: `${theme.tagColor}33`, // 33 represents 20% opacity in hex
+                        }}
+                        className="flex cursor-pointer gap-2 border py-1 transition-colors duration-200 ease-in-out"
+                      >
+                        {theme.name}
+                      </BasicTag>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         );
       case QuestionType.MULTIPLE_CHOICE:

@@ -111,6 +111,11 @@ export const studiesRouter = createTRPCRouter({
                         },
                       },
                     },
+                    ThemesOnQuestion: {
+                      include: {
+                        theme: true,
+                      },
+                    },
                   },
                 },
               }

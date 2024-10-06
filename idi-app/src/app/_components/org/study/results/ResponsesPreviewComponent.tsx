@@ -1,7 +1,14 @@
 import BasicCard from "@/app/_components/reusable/BasicCard";
 import { api } from "@/trpc/react";
 import { ArrowSquareOut } from "@phosphor-icons/react";
-import { Question, QuestionType, Response } from "@shared/generated/client";
+import {
+  DemographicResponse,
+  InterviewParticipant,
+  Question,
+  QuestionType,
+  Response,
+} from "@shared/generated/client";
+import { ExtendedResponse } from "@shared/types";
 import React, { useMemo } from "react";
 import { ClipLoader } from "react-spinners";
 
@@ -17,6 +24,11 @@ interface ProcessedResponse {
   numFollowUps: number;
   multipleChoiceOptionId: string | null;
   rangeSelection: number | null;
+  participant:
+    | (InterviewParticipant & {
+        demographicResponse: DemographicResponse;
+      })
+    | null;
 }
 
 const ResponsesPreview: React.FC<ResponsesPreviewProps> = ({
@@ -27,12 +39,12 @@ const ResponsesPreview: React.FC<ResponsesPreviewProps> = ({
     api.questions.getResponses.useQuery({
       questionId: question?.id ?? "",
       includeQuestions: false,
-    });
+      includeParticipantDemographics: true,
+    }) as { data: ExtendedResponse[]; isLoading: boolean };
 
-  const { data: mcOptions, isLoading: mcOptionsLoading } =
-    api.questions.getMultipleChoiceOptions.useQuery({
-      questionId: question?.id ?? "",
-    });
+  const { data: mcOptions } = api.questions.getMultipleChoiceOptions.useQuery({
+    questionId: question?.id ?? "",
+  });
 
   const filteredResponsesData =
     question?.questionType === QuestionType.OPEN_ENDED
@@ -58,6 +70,10 @@ const ResponsesPreview: React.FC<ResponsesPreviewProps> = ({
           numFollowUps: 0,
           multipleChoiceOptionId: response.multipleChoiceOptionId,
           rangeSelection: response.rangeSelection,
+          participant: response.interviewSession
+            .participant as InterviewParticipant & {
+            demographicResponse: DemographicResponse;
+          },
         },
       ]),
     );
@@ -75,6 +91,7 @@ const ResponsesPreview: React.FC<ResponsesPreviewProps> = ({
 
     return Array.from(responseMap.values());
   }, [filteredResponsesData]);
+
   if (isLoading)
     return (
       <div className="mt-10 flex h-full w-full justify-center">
@@ -97,7 +114,13 @@ const ResponsesPreview: React.FC<ResponsesPreviewProps> = ({
             key={key}
           >
             <div className="flex justify-between">
-              <div className="text-sm text-theme-900">Response {index + 1}</div>
+              <div className="text-sm text-theme-900">
+                Response {index + 1}
+                <span className="font-light text-theme-600">
+                  {processedResponse.participant != null &&
+                    `- ${processedResponse.participant.demographicResponse?.name}`}
+                </span>
+              </div>
             </div>
             <div className="text-xs text-theme-300">
               Selection:{" "}
@@ -129,7 +152,13 @@ const ResponsesPreview: React.FC<ResponsesPreviewProps> = ({
             }
           >
             <div className="flex justify-between">
-              <div className="text-sm text-theme-900">Response {index + 1}</div>
+              <div className="text-sm text-theme-900">
+                Response {index + 1}{" "}
+                <span className="font-light text-theme-600">
+                  {processedResponse.participant != null &&
+                    `- ${processedResponse.participant.demographicResponse?.name}`}
+                </span>
+              </div>
               <ArrowSquareOut size={16} className="text-theme-900" />
             </div>
             {question?.shouldFollowUp && (
@@ -138,7 +167,7 @@ const ResponsesPreview: React.FC<ResponsesPreviewProps> = ({
               </div>
             )}
             <div className="text-xs text-theme-900">
-              {`"${processedResponse.fastTranscribedText}"`}
+              {`"${processedResponse.fastTranscribedText.slice(0, 200)}${processedResponse.fastTranscribedText.length > 200 ? "..." : ""}"`}
             </div>
           </BasicCard>
         );
