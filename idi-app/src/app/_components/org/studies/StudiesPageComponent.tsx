@@ -35,6 +35,7 @@ export default function StudiesPageComponent({
   const formattedData = useMemo(() => {
     return studies.map((study) => ({
       id: study.id,
+      numResponses: study.completedInterviewsCount,
       isDraft: study.status === StudyStatus.DRAFT,
       name: <div className="font-semibold text-theme-700">{study.title}</div>,
       lastUpdated: (
@@ -93,7 +94,11 @@ export default function StudiesPageComponent({
             if (row.isDraft) {
               router.push(`/org/${orgId}/study/${row.id}/setup/overview`);
             } else {
-              router.push(`/org/${orgId}/study/${row.id}/distribution`);
+              if (row.numResponses > 0) {
+                router.push(`/org/${orgId}/study/${row.id}/results`);
+              } else {
+                router.push(`/org/${orgId}/study/${row.id}/distribution`);
+              }
             }
           }}
           tableClassName="w-full"
