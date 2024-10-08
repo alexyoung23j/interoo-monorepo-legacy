@@ -7,6 +7,7 @@ import {
   FollowUpQuestion,
   Study,
   InterviewSessionStatus,
+  Favorite,
 } from "@shared/generated/client";
 import BasicHeaderCard from "@/app/_components/reusable/BasicHeaderCard";
 import { api } from "@/trpc/react";
@@ -17,7 +18,7 @@ import BasicTag from "@/app/_components/reusable/BasicTag";
 import BasicMediaViewer from "@/app/_components/reusable/BasicMediaViewer";
 import { useInterviewSessionMediaUrls } from "@/hooks/useInterviewSessionMediaUrls";
 import { Button } from "@/components/ui/button";
-import { CopySimple, Download, Info } from "@phosphor-icons/react";
+import { CopySimple, Download, Info, Star } from "@phosphor-icons/react";
 import { useMediaDownload } from "@/hooks/useMediaDownload";
 import { Sparkle } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
@@ -30,9 +31,13 @@ import { ResponseModalCard } from "@/app/_components/reusable/ResponseModalCard"
 interface InterviewSessionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  interviewSession: InterviewSession & { study: Study };
+  interviewSession: InterviewSession & {
+    study: Study;
+    Favorites: Favorite[];
+  };
   studyId: string;
   orgId: string;
+  refetchInterview: () => void;
 }
 
 const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
@@ -41,6 +46,7 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
   interviewSession,
   studyId,
   orgId,
+  refetchInterview,
 }) => {
   const [selectedResponseId, setSelectedResponseId] = useState<string | null>(
     null,
@@ -62,6 +68,15 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
       { interviewSessionId: interviewSession.id },
       { enabled: isOpen },
     );
+
+  const [isFavorite, setIsFavorite] = useState(false);
+
+  useEffect(() => {
+    setIsFavorite(interviewSession.Favorites?.length > 0 ?? false);
+  }, [interviewSession.Favorites]);
+
+  const createFavorite = api.favorites.createFavorite.useMutation();
+  const removeFavorite = api.favorites.removeFavorite.useMutation();
 
   const hasSomeDemographicInfo = useMemo(() => {
     return (
@@ -274,6 +289,36 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
     }
   };
 
+  const handleToggleFavorite = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsFavorite((prev) => !prev);
+
+    if (isFavorite) {
+      toast({
+        title: "Removed from favorites",
+        variant: "default",
+        duration: 1500,
+      });
+      await removeFavorite.mutateAsync({
+        favoriteId: interviewSession.Favorites[0]?.id ?? "",
+      });
+
+      refetchInterview();
+    } else {
+      toast({
+        title: "Response added to Favorites!",
+        variant: "default",
+        duration: 1500,
+      });
+      await createFavorite.mutateAsync({
+        interviewSessionId: interviewSession.id,
+        studyId: interviewSession.studyId,
+      });
+
+      refetchInterview();
+    }
+  };
+
   return (
     <SplitScreenModal
       isOpen={isOpen}
@@ -292,6 +337,26 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
                   ? "Completed"
                   : "In Progress",
               subtitle: "Status",
+            },
+            {
+              title: "",
+              subtitle: "",
+              childNode: (
+                <Button
+                  variant="secondary"
+                  className="flex gap-2 outline-none"
+                  onClick={handleToggleFavorite}
+                >
+                  {isFavorite ? "Unfavorite" : "Favorite"} Interview
+                  <Star
+                    size={16}
+                    weight={isFavorite ? "fill" : "regular"}
+                    className={
+                      isFavorite ? "text-yellow-400" : "text-theme-900"
+                    }
+                  />
+                </Button>
+              ),
             },
           ]}
         />

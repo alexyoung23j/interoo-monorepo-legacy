@@ -50,6 +50,7 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
       includeQuotes: true,
       includeParticipantDemographics: false,
       interviewSessionId: interviewSessionId,
+      includeFavorites: true,
     });
 
   const responsesWithTranscripts = responsesData

@@ -21,6 +21,7 @@ export const questionsRouter = createTRPCRouter({
         includeQuotes: z.boolean().optional(),
         includeParticipantDemographics: z.boolean().optional(),
         interviewSessionId: z.string().optional(),
+        includeFavorites: z.boolean().optional(),
       }),
     )
     .query(async ({ ctx, input }) => {
@@ -49,6 +50,7 @@ export const questionsRouter = createTRPCRouter({
             : false,
           question: input.includeQuestions,
           followUpQuestion: input.includeQuestions,
+          Favorites: input.includeFavorites,
           Quote: input.includeQuotes
             ? {
                 include: {

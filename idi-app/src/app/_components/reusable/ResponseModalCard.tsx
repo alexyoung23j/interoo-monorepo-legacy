@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { CopySimple } from "@phosphor-icons/react";
+import React, { useState, useEffect } from "react";
+import { CopySimple, Star } from "@phosphor-icons/react";
 import type { ExtendedResponse, FullTranscriptBlob } from "@shared/types";
 import BasicCard from "./BasicCard";
 import BasicTag from "./BasicTag";
@@ -8,13 +8,13 @@ import QuoteTextField, { HighlightReference } from "./QuoteTextField";
 import type {
   FollowUpQuestion,
   Question,
-  Quote,
   Response,
   Theme,
 } from "@shared/generated/client";
 import ThemeGroup from "./ThemeGroup";
 import { getColorWithOpacity } from "@/app/utils/color";
 import { api } from "@/trpc/react";
+import { useToast } from "@/hooks/use-toast";
 
 interface ResponseModalCardProps {
   response: ExtendedResponse;
@@ -39,9 +39,18 @@ export const ResponseModalCard: React.FC<ResponseModalCardProps> = ({
   copyIndividualResponse,
   refetchResponses,
 }) => {
+  const { toast } = useToast();
+
   const removeThemeFromQuote = api.themes.removeThemeFromQuote.useMutation();
+  const createFavorite = api.favorites.createFavorite.useMutation();
+  const removeFavorite = api.favorites.removeFavorite.useMutation();
   const [currentHighlight, setCurrentHighlight] =
     useState<HighlightReference | null>(null);
+  const [isFavorite, setIsFavorite] = useState(false);
+
+  useEffect(() => {
+    setIsFavorite(response.Favorites?.length > 0 ?? false);
+  }, [response.Favorites]);
 
   const hasTheme = response.Quote?.some(
     (quote) => quote.QuotesOnTheme.length > 0,
@@ -90,6 +99,36 @@ export const ResponseModalCard: React.FC<ResponseModalCardProps> = ({
     }
   };
 
+  const handleToggleFavorite = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsFavorite((prev) => !prev);
+
+    if (isFavorite) {
+      toast({
+        title: "Removed from favorites",
+        variant: "default",
+        duration: 1500,
+      });
+      await removeFavorite.mutateAsync({
+        favoriteId: response.Favorites[0]?.id ?? "",
+      });
+
+      refetchResponses();
+    } else {
+      toast({
+        title: "Response added to Favorites!",
+        variant: "default",
+        duration: 1500,
+      });
+      await createFavorite.mutateAsync({
+        responseId: response.id,
+        studyId: response.question?.studyId ?? "",
+      });
+
+      refetchResponses();
+    }
+  };
+
   return (
     <BasicCard
       className={`flex cursor-pointer flex-col gap-2 shadow-standard ${
@@ -107,11 +146,19 @@ export const ResponseModalCard: React.FC<ResponseModalCardProps> = ({
               response.question?.title ??
               "")}
         </div>
-        <CopySimple
-          size={16}
-          className="flex-shrink-0 text-theme-900"
-          onClick={(e) => copyIndividualResponse(response, e)}
-        />
+        <div className="flex items-center gap-2">
+          <CopySimple
+            size={16}
+            className="flex-shrink-0 text-theme-900"
+            onClick={(e) => copyIndividualResponse(response, e)}
+          />
+          <Star
+            size={16}
+            weight={isFavorite ? "fill" : "regular"}
+            className={isFavorite ? "text-yellow-400" : "text-theme-900"}
+            onClick={handleToggleFavorite}
+          />
+        </div>
       </div>
       <div className="flex items-center gap-2 text-sm text-theme-500">
         {response.followUpQuestion && (
