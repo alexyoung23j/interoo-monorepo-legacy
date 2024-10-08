@@ -26,6 +26,7 @@ import {
 import { Button } from "@/components/ui/button";
 import BasicTabs from "@/app/_components/reusable/BasicTabs";
 import DisplayFavoriteResponses from "./DisplayFavoriteResponses";
+import DisplayFavoriteInterviews from "./DisplayFavoriteInterviews";
 
 interface FavoritesPageComponentProps {
   studyId: string;
@@ -54,7 +55,28 @@ const FavoritesPageComponent: React.FC<FavoritesPageComponentProps> = ({
   );
 
   const [isExporting, setIsExporting] = useState(false);
-  const [selectedTab, setSelectedTab] = useState("responses");
+  const [selectedTab, setSelectedTab] = useState(
+    searchParams.get("tab") ?? "responses",
+  );
+
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab && (tab === "responses" || tab === "interviews")) {
+      setSelectedTab(tab);
+    } else {
+      // If no valid tab is in the URL, set it to "responses" by default
+      const newSearchParams = new URLSearchParams(searchParams);
+      newSearchParams.set("tab", "responses");
+      router.replace(`${pathname}?${newSearchParams.toString()}`);
+    }
+  }, [searchParams, pathname, router]);
+
+  const handleTabChange = (value: string) => {
+    setSelectedTab(value);
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.set("tab", value);
+    router.replace(`${pathname}?${newSearchParams.toString()}`);
+  };
 
   if (isLoading || !interviewData) {
     return (
@@ -68,8 +90,7 @@ const FavoritesPageComponent: React.FC<FavoritesPageComponentProps> = ({
     if (selectedTab === "responses") {
       return <DisplayFavoriteResponses studyId={studyId} />;
     } else if (selectedTab === "interviews") {
-      //   return <DisplayFavoriteInterviews />;
-      return null;
+      return <DisplayFavoriteInterviews studyId={studyId} />;
     }
   };
 
@@ -115,9 +136,8 @@ const FavoritesPageComponent: React.FC<FavoritesPageComponentProps> = ({
                 icon: <VideoCamera size={16} className="text-theme-900" />,
               },
             ]}
-            onValueChange={(value) => {
-              setSelectedTab(value);
-            }}
+            onValueChange={handleTabChange}
+            defaultValue={selectedTab}
           />
           {renderTabContent()}
         </div>

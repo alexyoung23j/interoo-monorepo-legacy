@@ -306,7 +306,7 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
       refetchInterview();
     } else {
       toast({
-        title: "Response added to Favorites!",
+        title: "Interview added to Favorites!",
         variant: "default",
         duration: 1500,
       });

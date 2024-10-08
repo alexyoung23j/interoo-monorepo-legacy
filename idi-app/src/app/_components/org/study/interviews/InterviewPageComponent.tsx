@@ -88,6 +88,8 @@ const InterviewPageComponent: React.FC<InterviewPageComponentProps> = ({
       setSelectedInterview(interview);
     }
 
+    console.log("modalOpen", modalOpen);
+
     if (modalOpen === "true") {
       setIsModalOpen(true);
     }
@@ -223,7 +225,7 @@ const InterviewPageComponent: React.FC<InterviewPageComponentProps> = ({
                 },
               ]}
             />
-            <div className="mt-8 text-xl font-medium text-theme-900">
+            <div className="mt-8 text-lg font-medium text-theme-900">
               Interviews
             </div>
             <CardTable
