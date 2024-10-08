@@ -1,4 +1,4 @@
-import { FollowUpQuestion, Response, Question, VideoStimulusType, FollowUpLevel, BoostedKeyword, Quote, Attribute, QuotesOnAttribute, QuotesOnTheme, Theme, InterviewSession, InterviewParticipant, DemographicResponse } from "./generated/client";
+import { FollowUpQuestion, Response, Question, VideoStimulusType, FollowUpLevel, BoostedKeyword, Quote, Attribute, QuotesOnAttribute, QuotesOnTheme, Theme, InterviewSession, InterviewParticipant, DemographicResponse, Favorite } from "./generated/client";
 
 // Add this new type
 export interface CurrentResponseAndUploadUrl {
@@ -272,6 +272,7 @@ export type ExtendedResponse = Response & {
       demographicResponse: DemographicResponse | null;
     } | null;
   };
+  Favorites: Favorite[];
   Quote: (Quote & {
     QuotesOnTheme: (QuotesOnTheme & {
       theme: Theme;

@@ -15,6 +15,7 @@ interface CardTableProps<T> {
   onRowClick?: (row: T) => void;
   rowClassName?: string;
   tableClassName?: string;
+  showHeader?: boolean;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -24,6 +25,7 @@ function CardTable<T extends Record<string, any>>({
   onRowClick,
   rowClassName,
   tableClassName,
+  showHeader = true,
 }: CardTableProps<T>) {
   return (
     <div
@@ -31,35 +33,37 @@ function CardTable<T extends Record<string, any>>({
       role="table"
       aria-label="Card Table"
     >
-      <div className="text-theme-900 flex flex-col space-y-2">
-        <div className="flex w-full px-4" role="row">
-          {columns.map((column) => (
-            <div
-              key={column.key}
-              className={cn(
-                "text-theme-600 flex items-center text-xs font-medium text-muted-foreground",
-                column.className,
-              )}
-              style={{
-                width: column.width,
-                flexGrow: column.width ? 0 : 1,
-                flexShrink: column.width ? 0 : 1,
-                flexBasis: column.width ?? "0%",
-              }}
-              role="columnheader"
-            >
-              {column.header}
-            </div>
-          ))}
-        </div>
+      <div className="flex flex-col space-y-2 text-theme-900">
+        {showHeader && (
+          <div className="flex w-full px-4" role="row">
+            {columns.map((column) => (
+              <div
+                key={column.key}
+                className={cn(
+                  "flex items-center text-xs font-medium text-muted-foreground text-theme-600",
+                  column.className,
+                )}
+                style={{
+                  width: column.width,
+                  flexGrow: column.width ? 0 : 1,
+                  flexShrink: column.width ? 0 : 1,
+                  flexBasis: column.width ?? "0%",
+                }}
+                role="columnheader"
+              >
+                {column.header}
+              </div>
+            ))}
+          </div>
+        )}
         <div className="flex flex-col space-y-3" role="rowgroup">
           {data.map((row, index) => (
             <div
               key={index}
               onClick={() => onRowClick && onRowClick(row)}
               className={cn(
-                "border-theme-200 bg-theme-off-white shadow-light flex w-full items-center rounded-sm border p-4",
-                "hover:bg-theme-50 transition-colors duration-200",
+                "flex w-full items-center rounded-sm border border-theme-200 bg-theme-off-white p-4 shadow-light",
+                "transition-colors duration-200 hover:bg-theme-50",
                 onRowClick && "cursor-pointer",
                 rowClassName,
               )}
@@ -69,7 +73,7 @@ function CardTable<T extends Record<string, any>>({
                 <div
                   key={column.key}
                   className={cn(
-                    "text-theme-900 flex items-center text-sm",
+                    "flex items-center text-sm text-theme-900",
                     column.className,
                   )}
                   style={{

@@ -6,6 +6,7 @@ import {
   InterviewSessionStatus,
   Study,
   Response,
+  Favorite,
 } from "@shared/generated/client";
 import SplitScreenLayout from "@/app/_components/layouts/org/SplitScreenLayout";
 import BasicHeaderCard from "@/app/_components/reusable/BasicHeaderCard";
@@ -52,18 +53,26 @@ const InterviewPageComponent: React.FC<InterviewPageComponentProps> = ({
   const router = useRouter();
   const pathname = usePathname();
 
-  const { data: interviewData, isLoading } =
-    api.studies.getStudyInterviews.useQuery(
-      {
-        studyId: studyId,
-      },
-      {
-        refetchOnWindowFocus: false,
-      },
-    );
+  const {
+    data: interviewData,
+    isLoading,
+    refetch: refetchInterviews,
+  } = api.studies.getStudyInterviews.useQuery(
+    {
+      studyId: studyId,
+    },
+    {
+      refetchOnWindowFocus: false,
+    },
+  );
 
   const [selectedInterview, setSelectedInterview] = useState<
-    (InterviewSession & { study: Study; responses: Response[] }) | null
+    | (InterviewSession & {
+        study: Study;
+        responses: Response[];
+        Favorites: Favorite[];
+      })
+    | null
   >(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -214,7 +223,7 @@ const InterviewPageComponent: React.FC<InterviewPageComponentProps> = ({
                 },
               ]}
             />
-            <div className="mt-8 text-xl font-medium text-theme-900">
+            <div className="mt-8 text-lg font-medium text-theme-900">
               Interviews
             </div>
             <CardTable
@@ -246,6 +255,7 @@ const InterviewPageComponent: React.FC<InterviewPageComponentProps> = ({
           interviewSession={selectedInterview}
           studyId={studyId}
           orgId={orgId}
+          refetchInterview={refetchInterviews}
         />
       )}
     </>

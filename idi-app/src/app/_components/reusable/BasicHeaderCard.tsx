@@ -4,6 +4,7 @@ import BasicCard from "./BasicCard";
 interface HeaderItem {
   title: string;
   subtitle: string;
+  childNode?: React.ReactNode;
 }
 
 interface BasicHeaderCardProps {
@@ -21,10 +22,18 @@ const BasicHeaderCard: React.FC<BasicHeaderCardProps> = ({
     >
       {items.map((item, index) => (
         <div key={index} className="flex items-center gap-2 text-center">
-          <h2 className="text-lg font-semibold text-theme-900">{item.title}</h2>
-          <p className="mt-0.5 text-sm font-medium text-theme-500">
-            {item.subtitle}
-          </p>
+          {item.childNode ? (
+            item.childNode
+          ) : (
+            <>
+              <h2 className="text-lg font-semibold text-theme-900">
+                {item.title}
+              </h2>
+              <p className="mt-0.5 text-sm font-medium text-theme-500">
+                {item.subtitle}
+              </p>
+            </>
+          )}
         </div>
       ))}
     </BasicCard>

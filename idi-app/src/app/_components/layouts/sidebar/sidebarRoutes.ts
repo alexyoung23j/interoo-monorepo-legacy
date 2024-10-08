@@ -35,6 +35,11 @@ export const INNER_SIDEBAR_ROUTES = [
     path: "/org/[orgId]/study/[studyId]/interviews",
     allowedWhenDraft: false,
   },
+  {
+    title: "Favorites",
+    path: "/org/[orgId]/study/[studyId]/favorites",
+    allowedWhenDraft: false,
+  },
   // {
   //   title: "Analysis",
   //   items: [

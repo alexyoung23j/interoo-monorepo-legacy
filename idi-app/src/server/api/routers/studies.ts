@@ -263,6 +263,7 @@ export const studiesRouter = createTRPCRouter({
               demographicResponse: true,
             },
           },
+          Favorites: true,
           study: true,
           responses: {
             orderBy: { createdAt: "asc" },
