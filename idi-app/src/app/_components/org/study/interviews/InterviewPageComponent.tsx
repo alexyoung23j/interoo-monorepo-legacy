@@ -88,8 +88,6 @@ const InterviewPageComponent: React.FC<InterviewPageComponentProps> = ({
       setSelectedInterview(interview);
     }
 
-    console.log("modalOpen", modalOpen);
-
     if (modalOpen === "true") {
       setIsModalOpen(true);
     }

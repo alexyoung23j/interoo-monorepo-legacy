@@ -105,7 +105,8 @@ const FavoritesPageComponent: React.FC<FavoritesPageComponentProps> = ({
               </div>
               <div className="text-sm text-theme-600">
                 Capture interesting moments, insightful comments, and relevant
-                responses for future reference.
+                responses for future reference. Click the star icon to add
+                favorites.
               </div>
             </div>
             {/* <Button
