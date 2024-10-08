@@ -31,7 +31,8 @@ const ThemeGroup: React.FC<ThemeGroupProps> = ({
     }
   }, [responseSelected]);
 
-  const toggleOpen = () => {
+  const toggleOpen = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation();
     setIsOpen((prev) => !prev);
   };
 

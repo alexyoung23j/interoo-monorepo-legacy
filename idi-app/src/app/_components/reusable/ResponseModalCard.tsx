@@ -29,6 +29,10 @@ interface ResponseModalCardProps {
     e: React.MouseEvent,
   ) => void;
   refetchResponses: () => void;
+  showFollowUpAndTime?: boolean;
+  showCopyButton?: boolean;
+  showFavoriteButton?: boolean;
+  largeQuestionFont?: boolean;
 }
 
 export const ResponseModalCard: React.FC<ResponseModalCardProps> = ({
@@ -38,6 +42,10 @@ export const ResponseModalCard: React.FC<ResponseModalCardProps> = ({
   onResponseClicked,
   copyIndividualResponse,
   refetchResponses,
+  showFollowUpAndTime = true,
+  showCopyButton = true,
+  showFavoriteButton = true,
+  largeQuestionFont = true,
 }) => {
   const { toast } = useToast();
 
@@ -139,7 +147,11 @@ export const ResponseModalCard: React.FC<ResponseModalCardProps> = ({
       onClick={() => onResponseClicked(response)}
     >
       <div className="flex items-start justify-between gap-4">
-        <div className="flex-grow font-semibold text-theme-900">
+        <div
+          className={`flex-grow font-semibold text-theme-900 ${
+            largeQuestionFont ? "" : "text-sm"
+          }`}
+        >
           {showNumber
             ? `${(response.question?.questionOrder ?? -1) + 1}: ${response.question?.title ?? ""}`
             : (response.followUpQuestion?.title ??
@@ -147,30 +159,36 @@ export const ResponseModalCard: React.FC<ResponseModalCardProps> = ({
               "")}
         </div>
         <div className="flex items-center gap-2">
-          <CopySimple
-            size={16}
-            className="flex-shrink-0 text-theme-900"
-            onClick={(e) => copyIndividualResponse(response, e)}
-          />
-          <Star
-            size={16}
-            weight={isFavorite ? "fill" : "regular"}
-            className={isFavorite ? "text-yellow-400" : "text-theme-900"}
-            onClick={handleToggleFavorite}
-          />
+          {showCopyButton && (
+            <CopySimple
+              size={16}
+              className="flex-shrink-0 text-theme-900"
+              onClick={(e) => copyIndividualResponse(response, e)}
+            />
+          )}
+          {showFavoriteButton && (
+            <Star
+              size={16}
+              weight={isFavorite ? "fill" : "regular"}
+              className={isFavorite ? "text-yellow-400" : "text-theme-900"}
+              onClick={handleToggleFavorite}
+            />
+          )}
         </div>
       </div>
-      <div className="flex items-center gap-2 text-sm text-theme-500">
-        {response.followUpQuestion && (
-          <BasicTag className="py-0.5 text-xs">Follow Up</BasicTag>
-        )}
-        <span className="italic">
-          {formatDuration(
-            new Date(response.createdAt),
-            new Date(response.updatedAt),
+      {showFollowUpAndTime && (
+        <div className="flex items-center gap-2 text-sm text-theme-500">
+          {response.followUpQuestion && (
+            <BasicTag className="py-0.5 text-xs">Follow Up</BasicTag>
           )}
-        </span>
-      </div>
+          <span className="italic">
+            {formatDuration(
+              new Date(response.createdAt),
+              new Date(response.updatedAt),
+            )}
+          </span>
+        </div>
+      )}
 
       <div className="text-theme-600">
         {response.transcriptionBody ? (

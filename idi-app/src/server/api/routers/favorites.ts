@@ -93,4 +93,136 @@ export const favoritesRouter = createTRPCRouter({
 
       return { success: true };
     }),
+  getFavoriteQuotes: privateProcedure
+    .input(z.object({ studyId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const { studyId } = input;
+
+      const favoriteQuotes = await ctx.db.favorite.findMany({
+        where: {
+          studyId,
+          quoteId: { not: null },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        include: {
+          quote: {
+            include: {
+              QuotesOnTheme: {
+                include: {
+                  theme: true,
+                },
+              },
+              QuotesOnAttribute: {
+                include: {
+                  attribute: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      return favoriteQuotes;
+    }),
+
+  getFavoriteResponses: privateProcedure
+    .input(z.object({ studyId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const { studyId } = input;
+
+      const favoriteResponses = await ctx.db.favorite.findMany({
+        where: {
+          studyId,
+          responseId: { not: null },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        include: {
+          response: {
+            include: {
+              interviewSession: {
+                select: {
+                  participant: {
+                    select: {
+                      demographicResponse: true,
+                    },
+                  },
+                },
+              },
+              question: true,
+              followUpQuestion: true,
+              Favorites: true,
+              Quote: {
+                include: {
+                  QuotesOnTheme: {
+                    include: {
+                      theme: true,
+                    },
+                  },
+                  QuotesOnAttribute: {
+                    include: {
+                      attribute: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      return favoriteResponses;
+    }),
+
+  getFavoriteInterviewSessions: privateProcedure
+    .input(z.object({ studyId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const { studyId } = input;
+
+      const favoriteInterviewSessions = await ctx.db.favorite.findMany({
+        where: {
+          studyId,
+          interviewSessionId: { not: null },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        include: {
+          interviewSession: {
+            include: {
+              participant: {
+                include: {
+                  demographicResponse: true,
+                },
+              },
+              responses: {
+                include: {
+                  question: true,
+                  followUpQuestion: true,
+                  Quote: {
+                    include: {
+                      QuotesOnTheme: {
+                        include: {
+                          theme: true,
+                        },
+                      },
+                      QuotesOnAttribute: {
+                        include: {
+                          attribute: true,
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      return favoriteInterviewSessions;
+    }),
 });
