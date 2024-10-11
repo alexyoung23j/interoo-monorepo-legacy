@@ -296,7 +296,7 @@ const shouldFollowUpBasedOnTime = (requestData: TranscribeAndGenerateNextQuestio
   const expectedElapsedTime = targetTimePerQuestion * (requestData.currentQuestionNumber + 1);
 
   // If we're more than 30% behind schedule, don't follow up
-  if (elapsedTimeMinutes > expectedElapsedTime * 3) { // TODO: hone this
+  if (elapsedTimeMinutes > expectedElapsedTime * 4) { // TODO: hone this
     requestLogger.info('Not following up because we\'re more than 100% behind schedule', { elapsedTimeMinutes, expectedElapsedTime });
     return false;
   }
