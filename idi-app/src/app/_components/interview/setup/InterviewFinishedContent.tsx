@@ -20,7 +20,10 @@ const InterviewFinishedContent: React.FC<{
         <div className="text-lg">Thank you for completing the interview!</div>
         <div className="text-sm text-neutral-500 md:text-base">
           Your responses have been recorded. We appreciate your participation in
-          this study.
+          this study.{" "}
+          <span className="font-semibold text-theme-900">
+            You can now close this page.
+          </span>
         </div>
         {/* <Button
         variant="unstyled"

@@ -188,23 +188,25 @@ const IntroContent: React.FC<{
   );
 
   return (
-    <div className="flex w-full max-w-[80%] flex-col gap-4 md:max-w-96">
+    <div className="flex max-h-[80%] w-full max-w-[80%] flex-col gap-4 overflow-y-auto pb-10 md:max-h-full md:max-w-[30rem]">
       <div className="text-lg md:text-2xl">{study.title}</div>
-      <div className="text-sm text-neutral-500 md:text-base">
-        {study.welcomeDescription}
-      </div>
-      <div className="text-sm text-neutral-500 md:text-base">
-        {study.termsAndConditions}
-      </div>
-      {study.targetLength && (
+      <div className="flex h-full w-full flex-col gap-4 overflow-y-auto pr-10">
         <div className="text-sm text-neutral-500 md:text-base">
-          This interview should take ~
-          <span className="font-bold text-neutral-700">
-            {study.targetLength} minutes
-          </span>
-          .
+          {study.welcomeDescription}
         </div>
-      )}
+        <div className="text-sm text-neutral-500 md:text-base">
+          {study.termsAndConditions}
+        </div>
+        {study.targetLength && (
+          <div className="text-sm text-neutral-500 md:text-base">
+            This interview should take ~
+            <span className="font-bold text-neutral-700">
+              {study.targetLength} minutes
+            </span>
+            .
+          </div>
+        )}
+      </div>
       <Button
         variant="unstyled"
         className={`mt-8 flex min-h-10 w-fit max-w-md gap-3 rounded-[1px] border border-black border-opacity-50 bg-[var(--button-bg)] text-black transition-colors hover:bg-[var(--button-hover-bg)]`}
