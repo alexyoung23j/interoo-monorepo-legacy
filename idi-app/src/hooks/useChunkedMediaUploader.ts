@@ -127,57 +127,6 @@ export function useChunkedMediaUploader() {
     [uploadNextChunk],
   ); // Explicit dependency on uploadNextChunk just in case
 
-  const startRecording = useCallback(
-    async (isVideoEnabled: boolean) => {
-      if (!currentResponseAndUploadUrl.uploadSessionUrl) {
-        throw new Error("No upload session URL available");
-      }
-
-      try {
-        const mimeType = getSupportedMimeType(isVideoEnabled);
-        uploadedSize.current = 0;
-        totalSize.current = 0;
-        buffer.current = new Blob([], {
-          type: mimeType,
-        });
-        isUploading.current = false;
-        uploadComplete.current = false;
-        setIsUploadComplete(false);
-
-        buffer.current = new Blob([], { type: mimeType });
-
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: isVideoEnabled,
-          audio: true,
-        });
-        mediaRecorder.current = new MediaRecorder(stream, {
-          mimeType,
-          videoBitsPerSecond: isVideoEnabled ? 2500000 : undefined,
-          audioBitsPerSecond: 128000,
-        });
-
-        mediaRecorder.current.ondataavailable = (event) => {
-          if (event.data.size > 0) {
-            addChunkToBuffer(event.data);
-          }
-        };
-
-        setIsRecording(true);
-        mediaRecorder.current.start(500);
-
-        // Set timeout to stop recording after 10 minutes
-        recordingTimeout.current = setTimeout(() => {
-          void stopRecording();
-          showWarningToast("Recording time limit reached (10 minutes).");
-        }, MAX_RECORDING_TIME);
-      } catch (err) {
-        console.error("Error starting recording:", err);
-        setError("Failed to start recording. Please check your permissions.");
-      }
-    },
-    [currentResponseAndUploadUrl, addChunkToBuffer],
-  );
-
   const stopRecording = useCallback(async () => {
     if (recordingTimeout.current) {
       clearTimeout(recordingTimeout.current);
@@ -273,6 +222,58 @@ export function useChunkedMediaUploader() {
       });
     }
   }, [uploadNextChunk]);
+
+  const startRecording = useCallback(
+    async (isVideoEnabled: boolean, facingMode: "user" | "environment") => {
+      if (!currentResponseAndUploadUrl.uploadSessionUrl) {
+        throw new Error("No upload session URL available");
+      }
+
+      try {
+        const mimeType = getSupportedMimeType(isVideoEnabled);
+        uploadedSize.current = 0;
+        totalSize.current = 0;
+        buffer.current = new Blob([], {
+          type: mimeType,
+        });
+        isUploading.current = false;
+        uploadComplete.current = false;
+        setIsUploadComplete(false);
+
+        buffer.current = new Blob([], { type: mimeType });
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: isVideoEnabled ? { facingMode } : false,
+          audio: true,
+        });
+
+        mediaRecorder.current = new MediaRecorder(stream, {
+          mimeType,
+          videoBitsPerSecond: isVideoEnabled ? 2500000 : undefined,
+          audioBitsPerSecond: 128000,
+        });
+
+        mediaRecorder.current.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            addChunkToBuffer(event.data);
+          }
+        };
+
+        setIsRecording(true);
+        mediaRecorder.current.start(500);
+
+        // Set timeout to stop recording after 10 minutes
+        recordingTimeout.current = setTimeout(() => {
+          void stopRecording();
+          showWarningToast("Recording time limit reached (10 minutes).");
+        }, MAX_RECORDING_TIME);
+      } catch (err) {
+        console.error("Error starting recording:", err);
+        setError("Failed to start recording. Please check your permissions.");
+      }
+    },
+    [currentResponseAndUploadUrl, addChunkToBuffer, stopRecording],
+  );
 
   return {
     isRecording,

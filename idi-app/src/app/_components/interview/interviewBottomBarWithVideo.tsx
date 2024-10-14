@@ -76,6 +76,9 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
   audioOn,
   setAudioOn,
 }) => {
+  const [currentFacingMode, setCurrentFacingMode] = useState<
+    "user" | "environment"
+  >("user");
   const [currentQuestion] = useAtom(currentQuestionAtom);
   const [currentResponseAndUploadUrl, setCurrentResponseAndUploadUrl] = useAtom(
     currentResponseAndUploadUrlAtom,
@@ -98,6 +101,13 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
     isUploadComplete,
     isUploadingFinalChunks,
   } = useChunkedMediaUploader();
+
+  const handleCameraSwitch = useCallback(
+    (newFacingMode: "user" | "environment") => {
+      setCurrentFacingMode(newFacingMode);
+    },
+    [],
+  );
 
   const isButtonDisabled = useMemo(() => {
     const disabled =
@@ -123,7 +133,10 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
     try {
       stopTtsAudio();
       setIsFullyRecording(true);
-      await startChunkedMediaUploader(study.videoEnabled ?? false);
+      await startChunkedMediaUploader(
+        study.videoEnabled ?? false,
+        currentFacingMode,
+      );
       await transcriptionRecorder.startRecording();
     } catch (err) {
       console.error("Error starting response:", err);
@@ -364,7 +377,10 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
         <div className="flex w-1/3 items-center justify-end">
           {showWebcamPreview && (
             <div className="">
-              <WebcamPreview />
+              <WebcamPreview
+                onCameraSwitch={handleCameraSwitch}
+                isRecording={isFullyRecording}
+              />{" "}
             </div>
           )}
         </div>
@@ -393,7 +409,12 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
         </div>
 
         <div className="flex items-center justify-end md:w-1/3">
-          {showWebcamPreview && <WebcamPreview />}
+          {showWebcamPreview && (
+            <WebcamPreview
+              onCameraSwitch={handleCameraSwitch}
+              isRecording={isFullyRecording}
+            />
+          )}
         </div>
       </div>
     </div>

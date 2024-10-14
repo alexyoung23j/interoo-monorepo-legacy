@@ -11,7 +11,6 @@ export const WebsiteStimuli: React.FC<WebsiteStimuliProps> = ({
   websiteStimuli,
   isBackgroundLight,
 }) => {
-  console.log({ websiteStimuli });
   if (!websiteStimuli || websiteStimuli.length === 0) return null;
 
   return (
