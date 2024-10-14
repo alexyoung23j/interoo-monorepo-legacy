@@ -59,7 +59,9 @@ const WebcamPreview: React.FC<{
         autoPlay
         playsInline
         muted
-        className="h-full w-full scale-x-[-1] transform object-cover"
+        className={`h-full w-full object-cover ${
+          facingMode === "user" ? "scale-x-[-1]" : ""
+        } transform`}
       />
       {hasMultipleCameras && !isRecording && (
         <div
