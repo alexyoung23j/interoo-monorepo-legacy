@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+      "target": "ES2018",
+      "module": "commonjs",
+      "strict": true,
+      "esModuleInterop": true,
+      "skipLibCheck": true,
+      "forceConsistentCasingInFileNames": true,
+      "baseUrl": ".",
+      "paths": {
+        "@shared/*": ["../shared/*"]
+      },
+      "moduleResolution": "node",
+      "resolveJsonModule": true,
+      "types": ["node"]
+    },
+    "include": ["*.ts"],
+    "exclude": ["node_modules"]
+}
