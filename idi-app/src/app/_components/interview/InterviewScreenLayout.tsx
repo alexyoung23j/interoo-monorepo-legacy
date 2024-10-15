@@ -70,7 +70,15 @@ export const InterviewScreenLayout: React.FC<InterviewScreenLayoutProps> = ({
           )}
           {isInProgress && (
             <div className="flex items-center gap-2">
-              <div className="text-xs font-medium text-theme-900">Pause</div>
+              <div
+                className={`text-xs font-medium ${
+                  isColorLight(organization.secondaryColor ?? "")
+                    ? "text-theme-off-white"
+                    : "text-theme-900"
+                }`}
+              >
+                Pause
+              </div>
               <Button
                 variant="unstyled"
                 className="h-6 rounded-md bg-org-secondary !px-2"
@@ -93,7 +101,15 @@ export const InterviewScreenLayout: React.FC<InterviewScreenLayoutProps> = ({
 
       {isInProgress && (
         <div className="absolute right-6 top-6 hidden items-center gap-2 md:flex">
-          <div className="flex text-xs font-medium text-theme-900">Pause</div>
+          <div
+            className={`flex text-xs font-medium ${
+              isColorLight(organization.secondaryColor ?? "")
+                ? "text-theme-off-white"
+                : "text-theme-900"
+            }`}
+          >
+            Pause
+          </div>
           <Button
             variant="unstyled"
             className="h-6 rounded-md bg-org-secondary !px-2"
