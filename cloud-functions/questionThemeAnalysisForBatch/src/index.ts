@@ -165,7 +165,7 @@ interface Citation {
   end_time: number;
 }
 
-interface ThemeAnalysisResult {
+export interface ThemeAnalysisResult {
   existingThemes: {
     id: string;
     citations: Citation[];
@@ -177,11 +177,6 @@ interface ThemeAnalysisResult {
   }[];
 }
 
-const model = new ChatOpenAI({
-  modelName: "gpt-4o",
-  temperature: 0,
-}).withStructuredOutput(LLMThemeAnalysisResultSchema);
-
 interface TranscriptionBody {
   transcript: {
     sentences: Array<{
@@ -191,6 +186,167 @@ interface TranscriptionBody {
       start_time: number;
       end_time: number;
     }>;
+  };
+}
+
+export async function generateThemeAnalysis(
+  questionText: string,
+  questionContext: string,
+  studyBackground: string,
+  responsesSentences: string[][],
+  existingThemes: { id: string; name: string; description: string | null }[],
+  responseIds: string[],
+  sentenceMetadata: SentenceMetadata[][],
+  apiKey?: string
+): Promise<ThemeAnalysisResult> {
+  const model = new ChatOpenAI({
+    modelName: "gpt-4o",
+    temperature: 0,
+    openAIApiKey: apiKey ?? process.env.OPENAI_API_KEY,
+  }).withStructuredOutput(LLMThemeAnalysisResultSchema, {
+    method: 'jsonSchema',
+    name: "ThemeAnalysisResult",
+  });
+
+  const prompt = ChatPromptTemplate.fromTemplate(`
+    You are an expert in qualitative research. I am giving you a list of transcribed responses to a question from a qualitative interview administered to a group of people.
+    You are to help a market researcher understand the responses better by identifying key insights across the responses. 
+    I've also included a list of insights that have already been identified from the rest of the study. 
+    You can think of the words "themes" and "insights" interchangeably in my instructions.
+
+    Please analyze the following transcribed responses and see if you can identify responses that support existing insights ("existingThemes"), or if not, if there are any new
+    insights ("newThemes") that should be identified. Each insight should be a concise statement, ideally 6-7 words or less, that captures a key finding or observation in the responses.
+    
+    Please also include citations for each insight, where each citation is a sentence or group of sentences from a response in the responses that supports the insight. Try to avoid using sentences that express a partial thought as a citation. Citations can and usually will be multiple sentences from a response combined. 
+    Avoid just finding sentences that just have similar words to the themes to use as citations- instead, try to really look at the meaning behind the sentences and if what the user is trying to convey supports the theme.
+
+    The question being responded to is:
+    "{questionText}"
+
+    The question context (which can describe useful additional information about the question like the goals of asking it) is:
+    "{questionContext}"
+
+    The study background (which can describe useful additional information about the study like the goals of administering the interview) is:
+    "{studyBackground}"
+
+    The format of the responses is a 2D array where each inner array represents an entire response, and each entry within the inner array represents a sentence of that response. The list of transcribed responses and their sentences are:
+    {responsesSentences}
+
+    The existing insights identified from the rest of the study are:
+    {existingThemes}
+
+    For citations, please provide the index of the response (remember, each inner array in responseSentences represents a response), the index of the first sentence of the identified quote from that response, and the index of the last sentence of the quote from that response.
+    The granularity of the responses I am giving you is at the sentence level, so sometimes a quote you pick out may contain some extra words that don't actually support the insight but are part of the sentence that was quoted. That's okay and expected behavior.
+
+    Try to provide multiple citations for each insight where applicable, but don't force a quote if there isn't enough relevant information to support it being part of an insight.
+
+    Here's an example of the input format:
+
+    responseSentences:
+    [
+      ["I love using this product every day.", "It has really improved my productivity.", "The interface is so intuitive."],
+      ["The price is a bit high for me.", "But the quality makes up for it.", "I've had it for a year and it still works like new."],
+      ["I'm not sure if it's worth the hype.", "It does the job, but I expected more features.", "The customer service is excellent though."],
+      ["This product has changed my life!", "I can't imagine going back to my old routine.", "It's so easy to use and effective."]
+    ]
+
+    existingThemes:
+    [
+      {{
+        "id": "insight1",
+        "name": "Intuitive interface enhances user experience",
+        "description": "Users find the product's interface easy to use, contributing to a positive experience."
+      }}
+    ]
+
+    And here's an example of the expected output format:
+
+    {{
+      "existingThemes": [
+        {{
+          "id": "insight1",
+          "citations": [
+            {{
+              "responseIndex": 0,
+              "startSentenceIndex": 2,
+              "endSentenceIndex": 2
+            }},
+            {{
+              "responseIndex": 3,
+              "startSentenceIndex": 2,
+              "endSentenceIndex": 2
+            }}
+          ]
+        }}
+      ],
+      "newThemes": [
+        {{
+          "name": "Product significantly improves daily productivity",
+          "description": "Users report that the product has a substantial positive impact on their daily work efficiency and routines.",
+          "citations": [
+            {{
+              "responseIndex": 0,
+              "startSentenceIndex": 1,
+              "endSentenceIndex": 1
+            }},
+            {{
+              "responseIndex": 3,
+              "startSentenceIndex": 0,
+              "endSentenceIndex": 1
+            }}
+          ]
+        }},
+        {{
+          "name": "Users demand value for their money",
+          "description": "There's a tension between the product's price and its perceived value, with some users questioning if the features justify the cost.",
+          "citations": [
+            {{
+              "responseIndex": 1,
+              "startSentenceIndex": 0,
+              "endSentenceIndex": 1
+            }},
+            {{
+              "responseIndex": 2,
+              "startSentenceIndex": 0,
+              "endSentenceIndex": 1
+            }}
+          ]
+        }}
+      ]
+    }}
+
+    Please analyze the provided responses and identify both existing insights and new insights with their respective citations. Remember to keep new insight names concise, ideally 5-6 words or less.
+  `);
+
+  const chain = RunnableSequence.from([prompt, model]);
+
+  const response = await chain.invoke({ 
+    questionText,
+    questionContext,
+    studyBackground,
+    responsesSentences: JSON.stringify(responsesSentences),
+    existingThemes: JSON.stringify(existingThemes.map(theme => ({
+      ...theme,
+      description: theme.description ?? ''
+    })))
+  });
+
+  const llmResult: LLMThemeAnalysisResult = response;
+
+  return {
+    existingThemes: llmResult.existingThemes.map(theme => ({
+      id: theme.id,
+      citations: theme.citations.flatMap(citation => 
+        createCitation(citation, responseIds, responsesSentences, sentenceMetadata, { id: theme.id })
+      ),
+    })),
+    newThemes: llmResult.newThemes.map(theme => ({
+      name: theme.name,
+      description: theme.description,
+      citations: theme.citations.flatMap(citation => 
+        createCitation(citation, responseIds, responsesSentences, sentenceMetadata, { name: theme.name })
+      ),
+    })),
   };
 }
 
@@ -400,148 +556,16 @@ export const questionThemeAnalysisForBatch: HttpFunction = async (req, res) => {
       description: theme.description
     }));
 
-    // Generate LLM prompt
-    // TODO: add num_failed to jobs and stop retrying after a limit
-    // TODO (maybe): also include concatenated sentences with each reponse to make easier to parse for LLM
-    const prompt = ChatPromptTemplate.fromTemplate(`
-      You are an expert in qualitative research. I am giving you a list of transcribed responses to a question from a qualitative interview administered to a group of people.
-      You are to help a market researcher understand the responses better by identifying key insights across the responses. 
-      I've also included a list of insights that have already been identified from the rest of the study. 
-      You can think of the words "themes" and "insights" interchangeably in my instructions.
-
-      Please analyze the following transcribed responses and see if you can identify responses that support existing insights ("existingThemes"), or if not, if there are any new
-      insights ("newThemes") that should be identified. Each insight should be a concise statement, ideally 6-7 words or less, that captures a key finding or observation in the responses.
-      Please also include citations for each insight, where each citation is a quote from the responses that supports the insight. Keep in mind that these quotes can be multiple sentences- don't feel the need to force a quote to be a single sentence.
-
-      The question being responded to is:
-      "{questionText}"
-
-      The format of the responses is a 2D array where each inner array represents an entire response, and each entry within the inner array represents a sentence of that response. The list of transcribed responses and their sentences are:
-      {responsesSentences}
-
-      The existing insights identified from the rest of the study are:
-      {existingThemes}
-
-      For citations, please provide the index of the response (remember, each inner array in responseSentences represents a response), the index of the first sentence of the identified quote from that response, and the index of the last sentence of the quote from that response.
-      The granularity of the responses I am giving you is at the sentence level, so sometimes a quote you pick out may contain some extra words that don't actually support the insight but are part of the sentence that was quoted. That's okay and expected behavior.
-
-      Try to provide multiple citations for each insight where applicable, but don't force a quote if there isn't enough relevant information to support it being part of an insight.
-
-      Here's an example of the input format:
-
-      responseSentences:
-      [
-        ["I love using this product every day.", "It has really improved my productivity.", "The interface is so intuitive."],
-        ["The price is a bit high for me.", "But the quality makes up for it.", "I've had it for a year and it still works like new."],
-        ["I'm not sure if it's worth the hype.", "It does the job, but I expected more features.", "The customer service is excellent though."],
-        ["This product has changed my life!", "I can't imagine going back to my old routine.", "It's so easy to use and effective."]
-      ]
-
-      existingThemes:
-      [
-        {{
-          "id": "insight1",
-          "name": "Intuitive interface enhances user experience",
-          "description": "Users find the product's interface easy to use, contributing to a positive experience."
-        }}
-      ]
-
-      And here's an example of the expected output format:
-
-      {{
-        "existingThemes": [
-          {{
-            "id": "insight1",
-            "citations": [
-              {{
-                "responseIndex": 0,
-                "startSentenceIndex": 2,
-                "endSentenceIndex": 2
-              }},
-              {{
-                "responseIndex": 3,
-                "startSentenceIndex": 2,
-                "endSentenceIndex": 2
-              }}
-            ]
-          }}
-        ],
-        "newThemes": [
-          {{
-            "name": "Product significantly improves daily productivity",
-            "description": "Users report that the product has a substantial positive impact on their daily work efficiency and routines.",
-            "citations": [
-              {{
-                "responseIndex": 0,
-                "startSentenceIndex": 1,
-                "endSentenceIndex": 1
-              }},
-              {{
-                "responseIndex": 3,
-                "startSentenceIndex": 0,
-                "endSentenceIndex": 1
-              }}
-            ]
-          }},
-          {{
-            "name": "Users demand value for their money",
-            "description": "There's a tension between the product's price and its perceived value, with some users questioning if the features justify the cost.",
-            "citations": [
-              {{
-                "responseIndex": 1,
-                "startSentenceIndex": 0,
-                "endSentenceIndex": 1
-              }},
-              {{
-                "responseIndex": 2,
-                "startSentenceIndex": 0,
-                "endSentenceIndex": 1
-              }}
-            ]
-          }}
-        ]
-      }}
-
-      Please analyze the provided responses and identify both existing insights and new insights with their respective citations. Remember to keep new insight names concise, ideally 5-6 words or less.
-    `);
-
-    const chain = RunnableSequence.from([prompt, model]);
-
-    logEntry('INFO', 'Invoking LLM chain', {
-      prompt: prompt.toString(),
-      questionText: questionWithFollowUps.title,
-      responseSentences: JSON.stringify(responsesSentences),
-      existingThemes: JSON.stringify(themeData)
-    });
-
-    const response = await chain.invoke({ 
-      questionText: questionWithFollowUps.title,
-      responsesSentences: JSON.stringify(responsesSentences),
-      existingThemes: JSON.stringify(themeData)
-    });
-
-    logEntry('INFO', 'Received response from LLM', {
-      llmResponse: JSON.stringify(response, null, 2)
-    });
-
-    // Process LLM output
-    const llmResult: LLMThemeAnalysisResult = response;
-
-    const analysisResult: ThemeAnalysisResult = {
-      existingThemes: llmResult.existingThemes.map(theme => ({
-        id: theme.id,
-        citations: theme.citations.flatMap(citation => 
-          createCitation(citation, responseIds, responsesSentences, sentenceMetadata, { id: theme.id })
-        ),
-      })),
-      newThemes: llmResult.newThemes.map(theme => ({
-        name: theme.name,
-        description: theme.description,
-        citations: theme.citations.flatMap(citation => 
-          createCitation(citation, responseIds, responsesSentences, sentenceMetadata, { name: theme.name })
-        ),
-      })),
-    };
+    // Generate theme analysis
+    const analysisResult = await generateThemeAnalysis(
+      questionWithFollowUps.title,
+      questionWithFollowUps.context ?? "",
+      study.studyBackground ?? "",
+      responsesSentences,
+      themeData,
+      responseIds,
+      sentenceMetadata
+    );
 
     // Update database based on analysis results
     logEntry('INFO', 'Updating database based on analysis results');

@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "seed": "ts-node seed.ts"
+    "testQuestionThemes": "ts-node testQuestionThemes.ts"
   },
   "dependencies": {
     "@langchain/core": "^0.3.8",
