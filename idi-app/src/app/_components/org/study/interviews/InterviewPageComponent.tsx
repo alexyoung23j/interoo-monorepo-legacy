@@ -53,6 +53,8 @@ const InterviewPageComponent: React.FC<InterviewPageComponentProps> = ({
   const router = useRouter();
   const pathname = usePathname();
 
+  console.log("InterviewPageComponent");
+
   const {
     data: interviewData,
     isLoading,
