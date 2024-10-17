@@ -215,10 +215,10 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
           ? response.followUpQuestion.title
           : `${response.question.questionOrder + 1}: ${response.question.title}`;
         const questionType = response.followUpQuestion
-          ? "Follow Up"
-          : "Original Question";
+          ? "Follow Up Question"
+          : "Question";
 
-        return `${questionType}: "${questionTitle}"\nAnswer: "${response.fastTranscribedText}"\n`;
+        return `${questionType}: "${questionTitle}"\n\nAnswer: "${response.fastTranscribedText}"\n\n\n`;
       })
       .join("\n");
 

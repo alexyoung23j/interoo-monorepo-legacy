@@ -235,15 +235,15 @@ const getFullTranscript = (
     );
     if (!mainResponse) continue;
 
-    transcript += `Question: "${mainResponse.question.title}"\n`;
+    transcript += `Question: "${mainResponse.question.title}"\n\n`;
 
     // Check question type and format response accordingly
     switch (mainResponse.question.questionType) {
       case QuestionType.OPEN_ENDED:
-        transcript += `Response: "${mainResponse.responseText || ""}"\n\n`;
+        transcript += `Response: "${mainResponse.responseText || ""}"\n\n\n`;
         break;
       case QuestionType.MULTIPLE_CHOICE:
-        transcript += `Multiple Choice Selection: [${mainResponse.question.multipleChoiceOptions.find((o) => o.id === mainResponse.multipleChoiceOptionId)?.optionText ?? "N/A"}]\n\n`;
+        transcript += `Multiple Choice Selection: [${mainResponse.question.multipleChoiceOptions.find((o) => o.id === mainResponse.multipleChoiceOptionId)?.optionText ?? "N/A"}]\n\n\n`;
         break;
       default:
         transcript += `Response: [Response not available for this question type]\n\n`;
@@ -252,10 +252,10 @@ const getFullTranscript = (
     // Add follow-up questions and responses (already sorted)
     const followUps = responses.filter((r) => r.followUpQuestionId);
     for (const followUp of followUps) {
-      transcript += `Question (Follow Up): "${followUp.followUpQuestion?.title}"\n`;
+      transcript += `Question (Follow Up): "${followUp.followUpQuestion?.title}"\n\n`;
 
       // Assuming follow-up questions are always open-ended
-      transcript += `Response: "${followUp.responseText || ""}"\n\n`;
+      transcript += `Response: "${followUp.responseText || ""}"\n\n\n`;
     }
 
     transcript += "\n"; // Extra line between question groups
@@ -303,28 +303,28 @@ const getQuestionOrThreadTranscript = (
 
   if (questionResponse.mainResponse) {
     const question = processedQuestion;
-    transcript += `Question: "${question.title}"\n`;
+    transcript += `Question: "${question.title}"\n\n`;
 
     switch (question.questionType) {
       case QuestionType.OPEN_ENDED:
-        transcript += `Response: "${questionResponse.mainResponse.fastTranscribedText || ""}"\n\n`;
+        transcript += `Response: "${questionResponse.mainResponse.fastTranscribedText || ""}"\n\n\n`;
         break;
       case QuestionType.MULTIPLE_CHOICE:
         const selectedOption = question.multipleChoiceOptions.find(
           (o) => o.id === questionResponse.mainResponse?.multipleChoiceOptionId,
         );
-        transcript += `Multiple Choice Selection: [${selectedOption?.optionText ?? "N/A"}]\n\n`;
+        transcript += `Multiple Choice Selection: [${selectedOption?.optionText ?? "N/A"}]\n\n\n`;
         break;
       default:
-        transcript += `Response: [Response not available for this question type]\n\n`;
+        transcript += `Response: [Response not available for this question type]\n\n\n`;
     }
   }
 
   // Add follow-up questions and responses
   if (includeFollowUps) {
     questionResponse.followUpResponses.forEach((followUp) => {
-      transcript += `Question (Follow Up): "${followUp.followUpQuestion.title}"\n`;
-      transcript += `Response: "${followUp.response.fastTranscribedText || ""}"\n\n`;
+      transcript += `Question (Follow Up): "${followUp.followUpQuestion.title}"\n\n`;
+      transcript += `Response: "${followUp.response.fastTranscribedText || ""}"\n\n\n`;
     });
   }
 
@@ -338,7 +338,7 @@ const getFollowUpTranscript = (followUpResponse: {
   const followUpQuestion = followUpResponse.followUpQuestion;
   const response = followUpResponse.response;
 
-  return `Question (Follow Up): "${followUpQuestion.title}"\nResponse: "${response.fastTranscribedText || ""}"\n\n`;
+  return `Question (Follow Up): "${followUpQuestion.title}"\n\nResponse: "${response.fastTranscribedText || ""}"\n\n\n`;
 };
 
 interface InterviewData {
