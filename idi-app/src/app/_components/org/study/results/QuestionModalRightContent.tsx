@@ -50,10 +50,10 @@ const QuestionModalRightContent: React.FC<QuestionModalRightContentProps> = ({
           ? response.question?.title
           : response.followUpQuestion?.title;
         const questionType = response.followUpQuestion
-          ? "Follow Up"
-          : "Original Question";
+          ? "Follow Up Question"
+          : "Question";
 
-        return `${questionType}: "${questionTitle}"\nAnswer: "${response.fastTranscribedText}"\n`;
+        return `${questionType}: "${questionTitle}"\n\nAnswer: "${response.fastTranscribedText}"\n\n\n`;
       })
       .join("\n");
 
