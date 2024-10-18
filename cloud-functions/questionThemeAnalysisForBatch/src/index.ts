@@ -8,7 +8,7 @@ import { z } from 'zod';
 
 const prisma = new PrismaClient();
 
-const BATCH_SIZE = 3;
+const BATCH_SIZE = 10;
 
 // Helper functions
 function isTranscriptionBody(obj: any): obj is TranscriptionBody {
@@ -214,7 +214,7 @@ export async function generateThemeAnalysis(
     I've also included a list of insights that have already been identified from the rest of the study. 
     You can think of the words "themes" and "insights" interchangeably in my instructions.
 
-    Please analyze the following transcribed responses and see if you can identify responses that support existing insights ("existingThemes"), or if not, if there are any new
+    Please analyze the following transcribed responses and see if you can identify responses that support existing insights ("existingThemes") and if there are any new
     insights ("newThemes") that should be identified. Each insight should be a concise statement, ideally 6-7 words or less, that captures a key finding or observation in the responses.
     
     Please also include citations for each insight, where each citation is a sentence or group of sentences from a response in the responses that supports the insight. Try to avoid using sentences that express a partial thought as a citation. Citations can and usually will be multiple sentences from a response combined. 
@@ -238,7 +238,9 @@ export async function generateThemeAnalysis(
     For citations, please provide the index of the response (remember, each inner array in responseSentences represents a response), the index of the first sentence of the identified quote from that response, and the index of the last sentence of the quote from that response.
     The granularity of the responses I am giving you is at the sentence level, so sometimes a quote you pick out may contain some extra words that don't actually support the insight but are part of the sentence that was quoted. That's okay and expected behavior.
 
-    Try to provide multiple citations for each insight where applicable, but don't force a quote if there isn't enough relevant information to support it being part of an insight.
+    Try to provide multiple citations for each insight where applicable. Have a decently high bar for what qualifies as a theme, and bias towards having fewer themes with more citations rather than a lot of themes with only a couple of citations each for example. You usually shouldn't have more 3-5 new themes identified.
+    If the name of a theme is "Health considerations drive choices", a good quote in a citation would be "I'm looking for that high protein item, low carb, low sugar, and low sodium.", and a bad quote would be "I can give you 2 items.". 
+    Notice how in the bad quote, the user is expressing a partial thought that does not fully support the insight ("I can give you 2 items") rather than a complete thought that fully expresses an insight ("I can give you 2 items that are high protein, low carb, low sugar, and low sodium.").
 
     Here's an example of the input format:
 
@@ -350,11 +352,21 @@ export async function generateThemeAnalysis(
   };
 }
 
+// Request body schema
+const requestSchema = z.object({
+  testMode: z.boolean().optional().default(false)
+});
+
 // Main function
 export const questionThemeAnalysisForBatch: HttpFunction = async (req, res) => {
-  logEntry('INFO', 'Starting questionThemeAnalysisForBatch function');
   let batch: any[] | null = null;
+  let testMode = false;
+  
   try {
+    const parsedBody = requestSchema.parse(req.body);
+    testMode = parsedBody.testMode;
+    logEntry('INFO', `Starting questionThemeAnalysisForBatch function in ${testMode ? 'test' : 'production'} mode`);
+
     // Database queries and data preparation
     batch = await prisma.$transaction(async (tx) => {
       // First, find questions with unprocessed jobs
@@ -567,30 +579,44 @@ export const questionThemeAnalysisForBatch: HttpFunction = async (req, res) => {
       sentenceMetadata
     );
 
-    // Update database based on analysis results
-    logEntry('INFO', 'Updating database based on analysis results');
-    await updateDatabase(analysisResult, questionId, studyId, study.organization.primaryColor ?? "#F0F2F3", study.organization.secondaryColor ?? "#64748B", existingColors);
+    if (testMode) {
+      // Log analysisResult
+      logEntry('INFO', 'Analysis result in test mode:', { analysisResult: JSON.stringify(analysisResult) });
 
-    // Delete job rows
-    await prisma.questionThemeAnalysisJob.deleteMany({
-      where: {
-        id: {
-          in: batch.map(job => job.id)
+      // Update job statuses back to NOT_STARTED
+      await prisma.questionThemeAnalysisJob.updateMany({
+        where: {
+          id: {
+            in: batch.map(job => job.id)
+          }
+        },
+        data: {
+          status: 'NOT_STARTED'
         }
-      }
-    });
+      });
+      logEntry('INFO', 'Updated job statuses back to NOT_STARTED for test mode');
+    } else {
+      // Update database based on analysis results
+      logEntry('INFO', 'Updating database based on analysis results');
+      await updateDatabase(analysisResult, questionId, studyId, study.organization.primaryColor ?? "#F0F2F3", study.organization.secondaryColor ?? "#64748B", existingColors);
 
-    logEntry('INFO', 'Batch processing completed successfully');
-    res.status(200).send('Batch processing completed successfully');
+      // Delete job rows
+      await prisma.questionThemeAnalysisJob.deleteMany({
+        where: {
+          id: {
+            in: batch.map(job => job.id)
+          }
+        }
+      });
+    }
+
+    logEntry('INFO', `Batch processing completed successfully in ${testMode ? 'test' : 'production'} mode`);
+    res.status(200).send(`Batch processing completed successfully in ${testMode ? 'test' : 'production'} mode`);
   } catch (error) {
-    // Error handling
-    logEntry('ERROR', 'Error in questionThemeAnalysisForBatch', { 
-      error: (error as Error).message,
-      stack: (error as Error).stack
-    });
-
-    // Update job statuses to FAILED if there's an error
-    if (batch) {
+    logEntry('ERROR', `Error in questionThemeAnalysisForBatch: ${error instanceof Error ? error.message : String(error)}`);
+    
+    // Set jobs to FAILED status if not in test mode
+    if (!testMode && batch) {
       try {
         await prisma.questionThemeAnalysisJob.updateMany({
           where: {
@@ -604,13 +630,15 @@ export const questionThemeAnalysisForBatch: HttpFunction = async (req, res) => {
         });
         logEntry('INFO', 'Updated job statuses to FAILED due to error');
       } catch (updateError) {
-        logEntry('ERROR', 'Error updating job statuses to FAILED', { 
-          error: (updateError as Error).message
-        });
+        logEntry('ERROR', `Failed to update job statuses: ${updateError instanceof Error ? updateError.message : String(updateError)}`);
       }
     }
 
-    res.status(500).send(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    if (error instanceof z.ZodError) {
+      res.status(400).send(`Invalid request body: ${error.message}`);
+    } else {
+      res.status(500).send('Internal server error');
+    }
   } finally {
     await prisma.$disconnect();
     logEntry('INFO', 'Disconnected from Prisma');
