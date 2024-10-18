@@ -15,7 +15,7 @@ export function useFeatureFlags(organizationId: string) {
   );
 
   const isFeatureEnabled = (flagName: string) => {
-    return featureFlags ? !!featureFlags[flagName] : false;
+    return featureFlags?.[flagName] ?? false;
   };
 
   return {

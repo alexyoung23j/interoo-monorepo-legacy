@@ -23,17 +23,17 @@ model Invite {
 }
 
 model Organization {
-  id             String                  @id @default(uuid())
+  id             String                    @id @default(uuid())
   name           String
-  primaryColor   String?                 @default("#F0F2F3")
-  secondaryColor String?                 @default("#64748B")
+  primaryColor   String?                   @default("#F0F2F3")
+  secondaryColor String?                   @default("#64748B")
   logoUrl        String?
-  createdAt      DateTime                @default(now())
-  updatedAt      DateTime                @default(now())
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @default(now())
   profiles       ProfileInOrganization[]
   studies        Study[]
   invites        Invite[]
-  featureFlags   FeatureFlag[]
+  featureFlags   OrganizationFeatureFlag[]
 }
 
 model Profile {
@@ -504,13 +504,23 @@ model DemographicResponse {
 }
 
 model FeatureFlag {
+  id            String                    @id @default(uuid())
+  name          String                    @unique
+  description   String?
+  createdAt     DateTime                  @default(now())
+  updatedAt     DateTime                  @updatedAt
+  organizations OrganizationFeatureFlag[]
+}
+
+model OrganizationFeatureFlag {
   id             String       @id @default(uuid())
-  name           String
-  description    String?
-  enabled        Boolean      @default(false)
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id])
+  featureFlagId  String
+  featureFlag    FeatureFlag  @relation(fields: [featureFlagId], references: [id])
+  enabled        Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  @@unique([organizationId, featureFlagId])
 }
