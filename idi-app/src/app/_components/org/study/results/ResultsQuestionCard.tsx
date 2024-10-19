@@ -20,8 +20,10 @@ import BasicTitleSection from "@/app/_components/reusable/BasicTitleSection";
 import { api } from "@/trpc/react";
 import MultipleChoiceMetadataDisplay from "./MultipleChoiceMetadataDisplay";
 import BasicTag from "@/app/_components/reusable/BasicTag";
+import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 
 interface ResultsQuestionCardProps {
+  orgId: string;
   question: Question & {
     _count?: { Response: number };
     ThemesOnQuestion: (ThemesOnQuestion & {
@@ -53,6 +55,7 @@ const ResultsQuestionCard: React.FC<ResultsQuestionCardProps> = ({
   index,
   onViewResponses,
   isSelected,
+  orgId,
 }) => {
   const hasThemes = question.ThemesOnQuestion.length > 0;
   const themes = Array.from(
@@ -60,6 +63,10 @@ const ResultsQuestionCard: React.FC<ResultsQuestionCardProps> = ({
       question.ThemesOnQuestion.map((theme) => [theme.theme.id, theme.theme]),
     ).values(),
   );
+
+  const { isFeatureEnabled, isLoading: featureFlagsLoading } =
+    useFeatureFlags(orgId);
+  const themesEnabled = isFeatureEnabled("themes");
 
   const renderQuestionTypeMetadata = () => {
     switch (question.questionType) {
@@ -98,7 +105,7 @@ const ResultsQuestionCard: React.FC<ResultsQuestionCardProps> = ({
                 Summary has not been generated yet.
               </div>
             </div>
-            {hasThemes && (
+            {hasThemes && !featureFlagsLoading && themesEnabled && (
               <div className="mt-4 flex flex-col gap-2">
                 <div className="flex flex-col">
                   <div className="flex flex-row items-center gap-2 text-base font-medium text-theme-900">

@@ -15,6 +15,8 @@ import ThemeGroup from "./ThemeGroup";
 import { getColorWithOpacity } from "@/app/utils/color";
 import { api } from "@/trpc/react";
 import { useToast } from "@/hooks/use-toast";
+import { useParams } from "next/navigation";
+import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 
 interface ResponseModalCardProps {
   response: ExtendedResponse;
@@ -47,6 +49,9 @@ export const ResponseModalCard: React.FC<ResponseModalCardProps> = ({
   showFavoriteButton = true,
   largeQuestionFont = true,
 }) => {
+  const params = useParams();
+  const orgId = params.orgId as string;
+
   const { toast } = useToast();
 
   const removeThemeFromQuote = api.themes.removeThemeFromQuote.useMutation();
@@ -71,6 +76,10 @@ export const ResponseModalCard: React.FC<ResponseModalCardProps> = ({
       ),
     ).values(),
   );
+
+  const { isFeatureEnabled, isLoading: featureFlagsLoading } =
+    useFeatureFlags(orgId);
+  const themesEnabled = isFeatureEnabled("themes");
 
   const handleThemeHover = (theme: Theme) => {
     const relatedQuotes = response.Quote.filter((quote) =>
@@ -204,7 +213,7 @@ export const ResponseModalCard: React.FC<ResponseModalCardProps> = ({
           </div>
         )}
       </div>
-      {hasTheme && (
+      {hasTheme && !featureFlagsLoading && themesEnabled && (
         <ThemeGroup
           themes={themes}
           onThemeHover={handleThemeHover}

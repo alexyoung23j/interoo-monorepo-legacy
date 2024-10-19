@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/trpc/react";
+import { useCallback } from "react";
 
 export function useFeatureFlags(organizationId: string) {
   const {
@@ -14,10 +15,12 @@ export function useFeatureFlags(organizationId: string) {
     },
   );
 
-  const isFeatureEnabled = (flagName: string) => {
-    return featureFlags?.[flagName] ?? false;
-  };
-
+  const isFeatureEnabled = useCallback(
+    (flagName: string) => {
+      return featureFlags?.[flagName] ?? false;
+    },
+    [featureFlags],
+  );
   return {
     featureFlags,
     isLoading,
