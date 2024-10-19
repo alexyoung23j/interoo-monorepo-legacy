@@ -8,7 +8,7 @@ import { z } from 'zod';
 
 const prisma = new PrismaClient();
 
-const BATCH_SIZE = 10;
+const BATCH_SIZE = 3;
 
 // Helper functions
 function isTranscriptionBody(obj: any): obj is TranscriptionBody {
