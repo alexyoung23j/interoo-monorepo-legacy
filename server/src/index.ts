@@ -19,6 +19,7 @@ import { convertAndDownloadMediaRoute } from "./routes/convertAndDownloadMedia";
 import { createStudyDataExportRoute } from "./routes/createStudyDataExport";
 import { getSignedUploadUrlRoute } from "./routes/getSignedUploadUrl";
 import { getSignedReadUrlRoute } from "./routes/getSignedReadUrl";
+import { resetStudyThemesRoute } from './routes/resetStudyThemes';
 
 // Configuration and Setup
 const rootDir = path.resolve(__dirname, "../..");
@@ -72,27 +73,6 @@ app.use((req, res, next) => {
 app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
 app.use(express.json());
 
-// Test endpoint for triggerAnalysisJobsSetup (remove after testing on prod)
-app.post("/api/test-trigger-analysis-jobs", express.json(), (req, res) => {
-  const { interviewSessionId } = req.body;
-  
-  if (!interviewSessionId) {
-    return res.status(400).json({ error: "interviewSessionId is required in the request body" });
-  }
-
-  // Call the function without awaiting its result
-  triggerAnalysisJobsSetup(interviewSessionId)
-    .then(() => {
-      console.log("Analysis jobs setup triggered for session:", interviewSessionId);
-    })
-    .catch((error) => {
-      console.error("Error triggering analysis jobs setup:", error);
-    });
-
-  // Respond immediately
-  res.json({ message: "Analysis jobs setup triggered" });
-});
-
 // Routes
 app.use("/api/audio-response", audioResponseRoute);
 app.use("/api/get-tts-audio", getTtsAudioRoute);
@@ -102,8 +82,7 @@ app.use("/api/convert-and-download", convertAndDownloadMediaRoute);
 app.use("/api/create-study-data-export", createStudyDataExportRoute);
 app.use("/api/get-signed-upload-url", getSignedUploadUrlRoute);
 app.use("/api/getSignedReadUrl", getSignedReadUrlRoute);
-
-
+app.use("/api/reset-study-themes", resetStudyThemesRoute);
 
 // Server Startup
 const startServer = () => {

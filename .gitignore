@@ -15,3 +15,6 @@ server/src/gcs-credentials.json
 # Ignore all log files
 *.log
 
+# Ignore analysis results and generated data
+scripts/analysis_results.json
+scripts/generated_data.json
