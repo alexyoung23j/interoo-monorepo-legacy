@@ -191,6 +191,7 @@ const ResultsPageComponent: React.FC<ResultsPageComponentProps> = ({
                     handleViewResponses(question);
                   }}
                   isSelected={selectedQuestion?.id === question.id}
+                  orgId={study.organizationId}
                 />
               ))}
           </div>
