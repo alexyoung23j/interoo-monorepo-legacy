@@ -2,11 +2,13 @@
 
 import { CaretDown } from "@phosphor-icons/react";
 import SidebarItem from "./SidebarItem";
+import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 
 interface RouteItem {
   title: string;
   path: string;
   allowedWhenDraft: boolean;
+  featureFlagsRequired: string[];
 }
 
 interface SidebarSectionProps {
@@ -28,10 +30,21 @@ export default function SidebarSection({
   isDraft,
   allowedWhenDraft,
 }: SidebarSectionProps) {
+  const { isFeatureEnabled } = useFeatureFlags(orgId);
+
   const renderItem = (item: RouteItem) => {
     const itemPath = item.path
       .replace("[orgId]", orgId)
       .replace("[studyId]", studyId ?? "");
+
+    const isFlaggedOn =
+      item.featureFlagsRequired?.length === 0 ||
+      (item.featureFlagsRequired?.length > 0 &&
+        item.featureFlagsRequired?.every((flag) => isFeatureEnabled(flag)));
+
+    if (!isFlaggedOn) {
+      return null;
+    }
 
     return (
       <SidebarItem
@@ -51,7 +64,7 @@ export default function SidebarSection({
   }
 
   return (
-    <div className="w-full">
+    <div className="w-full empty:hidden">
       {title && (
         <h3
           className={`mb-1 flex items-center justify-between py-[6px] pl-2 text-sm font-medium text-theme-900 ${

@@ -81,6 +81,7 @@ function SideContent({ isDraft }: { isDraft: boolean }) {
                   title: section.title,
                   path: section.path,
                   allowedWhenDraft: section.allowedWhenDraft,
+                  featureFlagsRequired: section.featureFlagsRequired,
                 },
               ]
             }
