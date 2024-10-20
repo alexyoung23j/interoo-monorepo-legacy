@@ -8,7 +8,7 @@ import { z } from 'zod';
 
 const prisma = new PrismaClient();
 
-const BATCH_SIZE = 3;
+const BATCH_SIZE = 5;
 
 // Helper functions
 function isTranscriptionBody(obj: any): obj is TranscriptionBody {
@@ -214,11 +214,10 @@ export async function generateThemeAnalysis(
     I've also included a list of insights that have already been identified from the rest of the study. 
     You can think of the words "themes" and "insights" interchangeably in my instructions.
 
-    Please analyze the following transcribed responses and see if you can identify responses that support existing insights ("existingThemes") and if there are any new
+    Please analyze the following transcribed responses and see if you can identify quotes in the responses that support existing insights ("existingThemes") and if there are any new
     insights ("newThemes") that should be identified. Each insight should be a concise statement, ideally 6-7 words or less, that captures a key finding or observation in the responses.
     
-    Please also include citations for each insight, where each citation is a sentence or group of sentences from a response in the responses that supports the insight. Try to avoid using sentences that express a partial thought as a citation. Citations can and usually will be multiple sentences from a response combined. 
-    Avoid just finding sentences that just have similar words to the themes to use as citations- instead, try to really look at the meaning behind the sentences and if what the user is trying to convey supports the theme.
+    Please also include citations for each insight, where each citation is a sentence or group of sentences from a response in the responses that supports the insight.
 
     The question being responded to is:
     "{questionText}"
@@ -236,11 +235,14 @@ export async function generateThemeAnalysis(
     {existingThemes}
 
     For citations, please provide the index of the response (remember, each inner array in responseSentences represents a response), the index of the first sentence of the identified quote from that response, and the index of the last sentence of the quote from that response.
-    The granularity of the responses I am giving you is at the sentence level, so sometimes a quote you pick out may contain some extra words that don't actually support the insight but are part of the sentence that was quoted. That's okay and expected behavior.
+    Avoid using sentences that express a partial thought as a citation. Citations can and usually will be multiple sentences from a response combined. 
+    You can bias towards including more of the sentences from the response in the citation if you think it helps support the insight, and each theme does not need to have an equal number of citations.
 
-    Try to provide multiple citations for each insight where applicable. Have a decently high bar for what qualifies as a theme, and bias towards having fewer themes with more citations rather than a lot of themes with only a couple of citations each for example. You usually shouldn't have more 3-5 new themes identified.
-    If the name of a theme is "Health considerations drive choices", a good quote in a citation would be "I'm looking for that high protein item, low carb, low sugar, and low sodium.", and a bad quote would be "I can give you 2 items.". 
+    If the name of a theme is "Health considerations drive choices" for example, a good quote in a citation would be "I'm looking for that high protein item, low carb, low sugar, and low sodium.", and a bad quote would be "I can give you 2 items.". 
     Notice how in the bad quote, the user is expressing a partial thought that does not fully support the insight ("I can give you 2 items") rather than a complete thought that fully expresses an insight ("I can give you 2 items that are high protein, low carb, low sugar, and low sodium.").
+
+    Ensure that for something to qualify as a theme, it should have multiple citations. Have a VERY high bar for what qualifies as a new theme, and bias towards having fewer themes with more citations rather than a lot of themes with only a couple of citations each for example. 
+    *STRONGLY* bias towards trying to find citations for existing themes rather than generate new ones- You should almost never have more than 1-2 new themes identified, if any at all.
 
     Here's an example of the input format:
 
@@ -316,8 +318,6 @@ export async function generateThemeAnalysis(
         }}
       ]
     }}
-
-    Please analyze the provided responses and identify both existing insights and new insights with their respective citations. Remember to keep new insight names concise, ideally 5-6 words or less.
   `);
 
   const chain = RunnableSequence.from([prompt, model]);
@@ -356,6 +356,114 @@ export async function generateThemeAnalysis(
 const requestSchema = z.object({
   testMode: z.boolean().optional().default(false)
 });
+
+const CitationValidationSchema = z.object({
+  existingThemes: z.array(z.array(z.boolean())),
+  newThemes: z.array(z.array(z.boolean()))
+});
+
+type CitationValidationResult = z.infer<typeof CitationValidationSchema>;
+
+async function validateCitations(
+  analysisResult: ThemeAnalysisResult, 
+  themeData: { id: string; name: string; description: string | null }[],
+  studyBackground: string,
+  questionContext: string,
+  questionTitle: string,
+  apiKey?: string
+): Promise<CitationValidationResult> {
+  const model = new ChatOpenAI({
+    modelName: "gpt-4o",
+    temperature: 0,
+    openAIApiKey: apiKey ?? process.env.OPENAI_API_KEY,
+  }).withStructuredOutput(CitationValidationSchema, {
+    method: 'jsonSchema',
+    name: "CitationValidationResult",
+  });
+
+  const prompt = ChatPromptTemplate.fromTemplate(`
+    You are an expert in qualitative research and thematic analysis. Your task is to validate citations for themes identified among responses to a single question in a qualitative study. A citation is a quote from an individual response to the question in the study.
+    
+    The title of the question being responded to is:
+    {questionTitle}
+
+    The background of the study (which can describe useful additional information about the study like the goals of administering the interview) is:
+    {studyBackground}
+
+    The context of the question being responded to (which can describe useful additional information about the question like the goals of asking it) is:
+    {questionContext}
+
+    For each theme and its associated citations, determine whether each citation genuinely supports the theme. A good citation should clearly demonstrate or exemplify the theme it's associated with.
+
+    Here are some guidelines for validating citations:
+    1. The citation should directly relate to the theme's content.
+    2. The citation should provide clear evidence or an example of the theme by itself.
+    3. The citation should be substantial enough to support the theme (not just a brief, vague statement).
+    4. The citation should not be taken out of context in a way that misrepresents its meaning.
+
+    For each citation, return true if it's a valid support for the theme, and false if it should be removed. If the name for an existing theme is "Unknown", ignore that theme.
+
+    Note: We are providing the name and description of each theme. A citation is a quote from an individual response to the question in the study.
+
+    Example:
+    Theme: "Health considerations drive choices"
+    Good citation (should not be filtered out): "I'm looking for that high protein item, low carb, low sugar, and low sodium. That's really important for my diet and overall health."
+    Bad citation (should be filtered out): "I can give you 2 items."
+
+    The themes and citations are as follows:
+
+    Existing Themes:
+    {existingThemes}
+
+    New Themes:
+    {newThemes}
+
+    Please provide your analysis in the following format:
+    {{
+      "existingThemes": [
+        [true, false, true],  // Citations for the first existing theme
+        [false, true, true]   // Citations for the second existing theme
+      ],
+      "newThemes": [
+        [true, true, false],  // Citations for the first new theme
+        [false, true, true]   // Citations for the second new theme
+      ]
+    }}
+
+    Ensure that the number of boolean values for each theme matches the number of citations provided for that theme.
+  `);
+
+  const chain = RunnableSequence.from([prompt, model]);
+
+  const existingThemesWithDetails = analysisResult.existingThemes.map(theme => {
+    const matchingTheme = themeData.find(t => t.id === theme.id);
+    return {
+      id: theme.id,
+      name: matchingTheme?.name ?? 'Unknown',
+      description: matchingTheme?.description ?? '',
+      citations: theme.citations.map(citation => citation.text)
+    };
+  });
+
+  const response = await chain.invoke({ 
+    studyBackground,
+    questionContext,
+    questionTitle,
+    existingThemes: JSON.stringify(existingThemesWithDetails),
+    newThemes: JSON.stringify(analysisResult.newThemes.map(theme => ({
+      name: theme.name,
+      description: theme.description,
+      citations: theme.citations.map(citation => citation.text)
+    })))
+  });
+
+  // Log the raw response from the validation LLM call
+  logEntry('INFO', 'Raw validation LLM response', { 
+    rawResponse: JSON.stringify(response, null, 2)
+  });
+
+  return response;
+}
 
 // Main function
 export const questionThemeAnalysisForBatch: HttpFunction = async (req, res) => {
@@ -533,7 +641,11 @@ export const questionThemeAnalysisForBatch: HttpFunction = async (req, res) => {
     responses.forEach((response) => {
       try {
         if (!isTranscriptionBody(response.transcriptionBody)) {
-          throw new Error('Invalid transcriptionBody structure');
+          logEntry('WARNING', 'Invalid transcriptionBody structure, skipping response', { 
+            responseId: response.id, 
+            transcriptionBody: JSON.stringify(response.transcriptionBody)
+          });
+          return; // Skip this response and continue with the next one
         }
 
         const transcriptionBody = response.transcriptionBody;
@@ -547,7 +659,7 @@ export const questionThemeAnalysisForBatch: HttpFunction = async (req, res) => {
         })));
         responsesSentences.push(transcriptionBody.transcript.sentences.map(sentence => sentence.text));
       } catch (error) {
-        logEntry('ERROR', `Error processing transcriptionBody`, { 
+        logEntry('WARNING', `Error processing transcriptionBody, skipping response`, { 
           responseId: response.id, 
           error: (error as Error).message,
           transcriptionBody: JSON.stringify(response.transcriptionBody)
@@ -555,7 +667,7 @@ export const questionThemeAnalysisForBatch: HttpFunction = async (req, res) => {
       }
     });
 
-    // Add these log statements
+    // Add these log statements after the forEach loop
     logEntry('INFO', 'Processed response data', {
       responseIds: JSON.stringify(responseIds),
       sentenceMetadata: JSON.stringify(sentenceMetadata),
@@ -569,7 +681,7 @@ export const questionThemeAnalysisForBatch: HttpFunction = async (req, res) => {
     }));
 
     // Generate theme analysis
-    const analysisResult = await generateThemeAnalysis(
+    const analysisResult: ThemeAnalysisResult = await generateThemeAnalysis(
       questionWithFollowUps.title,
       questionWithFollowUps.context ?? "",
       study.studyBackground ?? "",
@@ -578,6 +690,55 @@ export const questionThemeAnalysisForBatch: HttpFunction = async (req, res) => {
       responseIds,
       sentenceMetadata
     );
+
+    logEntry('INFO', 'Generated theme analysis; beginning validation');
+
+    // Validate citations
+    const validationResult = await validateCitations(
+      analysisResult,
+      themeData,
+      study.studyBackground ?? "",
+      questionWithFollowUps.context ?? "",
+      questionWithFollowUps.title,
+      process.env.OPENAI_API_KEY
+    );
+
+    // Log filtered citations
+    let filteredCitations: { themeName: string, citations: string[] }[] = [];
+
+    // Apply validation results to analysisResult and log filtered citations
+    analysisResult.existingThemes = analysisResult.existingThemes.map((theme, themeIndex) => {
+      const filtered = theme.citations.filter((_, citationIndex) => !validationResult.existingThemes[themeIndex][citationIndex]);
+      if (filtered.length > 0) {
+        filteredCitations.push({
+          themeName: themeData.find(t => t.id === theme.id)?.name ?? 'Unknown Theme',
+          citations: filtered.map(c => c.text)
+        });
+      }
+      return {
+        ...theme,
+        citations: theme.citations.filter((_, citationIndex) => validationResult.existingThemes[themeIndex][citationIndex])
+      };
+    });
+
+    analysisResult.newThemes = analysisResult.newThemes.map((theme, themeIndex) => {
+      const filtered = theme.citations.filter((_, citationIndex) => !validationResult.newThemes[themeIndex][citationIndex]);
+      if (filtered.length > 0) {
+        filteredCitations.push({
+          themeName: theme.name,
+          citations: filtered.map(c => c.text)
+        });
+      }
+      return {
+        ...theme,
+        citations: theme.citations.filter((_, citationIndex) => validationResult.newThemes[themeIndex][citationIndex])
+      };
+    });
+
+    // Log the filtered citations
+    if (filteredCitations.length > 0) {
+      logEntry('INFO', 'Filtered citations', { filteredCitations: JSON.stringify(filteredCitations) });
+    }
 
     if (testMode) {
       // Log analysisResult

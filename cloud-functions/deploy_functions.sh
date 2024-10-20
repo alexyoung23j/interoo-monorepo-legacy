@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Define functions and their corresponding directories
-FUNCTION_NAMES=("summarizeInterview" "setUpAnalysis")
-FUNCTION_DIRS=("./summarizeInterview" "./setUpAnalysis")
+FUNCTION_NAMES=("summarizeInterview" "setUpAnalysis" "questionThemeAnalysisForBatch")
+FUNCTION_DIRS=("./summarizeInterview" "./setUpAnalysis" "./questionThemeAnalysisForBatch")
 
 # Function to deploy to a specific environment
 deploy_to_env() {
