@@ -22,6 +22,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import Fuse from "fuse.js";
 import { useQueryClient } from "@tanstack/react-query";
+import BasicInput from "@/app/_components/reusable/BasicInput";
+import BasicTextArea from "@/app/_components/reusable/BasicTextArea";
 
 interface ThemesPageComponentProps {
   studyId: string;
@@ -116,17 +118,17 @@ const ThemesPageComponent: React.FC<ThemesPageComponentProps> = ({
   }
 
   const columns = [
-    { key: "name", header: "Name", width: "60%", className: "justify-start" },
+    { key: "name", header: "Name", width: "40%", className: "justify-start" },
     {
       key: "quoteCount",
       header: "# Quotes",
-      width: "20%",
+      width: "30%",
       className: "justify-end text-right",
     },
     {
       key: "source",
       header: "Source",
-      width: "20%",
+      width: "30%",
       className: "justify-end text-right",
     },
   ];
@@ -150,7 +152,7 @@ const ThemesPageComponent: React.FC<ThemesPageComponentProps> = ({
       <SplitScreenLayout
         mainContent={
           <div className="flex flex-col gap-4">
-            <h1 className="text-2xl font-bold text-theme-900">Themes</h1>
+            <div className="text-lg font-medium text-theme-900">Themes</div>
             <p className="text-sm text-theme-600">
               Themes are concepts that our AI analysis identifies throughout
               your study responses. Themes can be created or generated via AI.
@@ -212,6 +214,11 @@ const ThemesPageComponent: React.FC<ThemesPageComponentProps> = ({
           <DialogHeader>
             <DialogTitle>Create New Theme</DialogTitle>
           </DialogHeader>
+          <div className="text-sm text-theme-600">
+            Themes are concepts that our AI analysis identifies throughout your
+            study responses. When you add a new theme, future interviews will be
+            analyzed to identify the theme in responses.
+          </div>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <label
@@ -220,11 +227,11 @@ const ThemesPageComponent: React.FC<ThemesPageComponentProps> = ({
               >
                 Name
               </label>
-              <Input
+              <BasicInput
                 id="name"
                 placeholder="Theme Name"
                 value={newThemeName}
-                onChange={(e) => setNewThemeName(e.target.value)}
+                onSetValue={(value) => setNewThemeName(value)}
               />
             </div>
             <div className="grid gap-2">
@@ -234,11 +241,12 @@ const ThemesPageComponent: React.FC<ThemesPageComponentProps> = ({
               >
                 Description
               </label>
-              <Textarea
+              <BasicTextArea
                 id="description"
                 placeholder="Theme Description"
                 value={newThemeDescription}
-                onChange={(e) => setNewThemeDescription(e.target.value)}
+                onSetValue={(value) => setNewThemeDescription(value)}
+                rows={3}
               />
             </div>
           </div>

@@ -30,20 +30,14 @@ export const INNER_SIDEBAR_ROUTES = [
     featureFlagsRequired: [],
   },
   {
-    title: "Results",
-    path: "/org/[orgId]/study/[studyId]/results",
-    allowedWhenDraft: false,
-    featureFlagsRequired: [],
-  },
-  {
     title: "Interviews",
     path: "/org/[orgId]/study/[studyId]/interviews",
     allowedWhenDraft: false,
     featureFlagsRequired: [],
   },
   {
-    title: "Favorites",
-    path: "/org/[orgId]/study/[studyId]/favorites",
+    title: "Results",
+    path: "/org/[orgId]/study/[studyId]/results",
     allowedWhenDraft: false,
     featureFlagsRequired: [],
   },
@@ -69,6 +63,13 @@ export const INNER_SIDEBAR_ROUTES = [
     ],
     //   allowedWhenDraft: false,
   },
+  {
+    title: "Favorites",
+    path: "/org/[orgId]/study/[studyId]/favorites",
+    allowedWhenDraft: false,
+    featureFlagsRequired: [],
+  },
+
   // {
   //   title: "Configuration",
   //   path: "/org/[orgId]/study/[studyId]/configuration",

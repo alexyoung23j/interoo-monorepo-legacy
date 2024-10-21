@@ -20,10 +20,7 @@ import { useRouter } from "next/navigation";
 import { api } from "@/trpc/react";
 import { useToast } from "@/hooks/use-toast";
 import BasicConfirmationModal from "@/app/_components/reusable/BasicConfirmationModal";
-
-interface ExtendedQuote extends Quote {
-  Favorites?: Favorite[];
-}
+import ThemeQuoteCard, { ExtendedQuote } from "./ThemeQuoteCard";
 
 interface ThemeDetailsViewProps {
   theme: Theme & {
@@ -211,96 +208,32 @@ const ThemeDetailsView: React.FC<ThemeDetailsViewProps> = ({
   return (
     <>
       <div className="flex flex-col gap-4">
-        <div className="flex items-start justify-between gap-4">
-          <div className="text-lg font-medium text-theme-900">{theme.name}</div>
-          <Button
-            variant="unstyled"
-            size="sm"
-            onClick={onClose}
-            className="rounded-full p-1 text-theme-900 hover:bg-theme-100"
-          >
-            <X size={24} />
-          </Button>
+        <div className="flex flex-col gap-1">
+          <div className="flex w-full items-start justify-between gap-3">
+            <div className="text-lg font-semibold">{theme.name}</div>
+            <div
+              className="cursor-pointer"
+              onClick={() => {
+                onClose();
+              }}
+            >
+              <X size={24} className="text-theme-900" />
+            </div>
+          </div>
+          <p className="text-sm text-theme-600">{theme.description}</p>
         </div>
-        <p className="text-sm text-theme-600">{theme.description}</p>
+        <div className="h-[1px] w-full bg-theme-200" />
         <div className="mt-4 flex flex-col gap-4">
-          {Array.from(responseMap.values()).map(({ response, quotes }) => {
-            const highlights: HighlightReference[] = quotes.map((quote) => ({
-              id: quote.id,
-              startWordIndex: quote.wordStartIndex,
-              endWordIndex: quote.wordEndIndex,
-              color: getColorWithOpacity(theme.tagColor, 0.3),
-            }));
-
-            return (
-              <BasicCard
-                key={response.id}
-                className="flex flex-col gap-2 shadow-standard"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-grow pr-4 text-sm font-semibold text-theme-900">
-                    {response.followUpQuestion?.title ??
-                      response.question?.title ??
-                      "Unknown Question"}
-                  </div>
-                  <div className="flex flex-shrink-0 items-center gap-2">
-                    <Star
-                      size={16}
-                      weight={
-                        (quotes[0] as ExtendedQuote).Favorites &&
-                        (quotes[0] as ExtendedQuote).Favorites!.length > 0
-                          ? "fill"
-                          : "regular"
-                      }
-                      className={`cursor-pointer ${
-                        (quotes[0] as ExtendedQuote).Favorites &&
-                        (quotes[0] as ExtendedQuote).Favorites!.length > 0
-                          ? "text-yellow-400"
-                          : "text-theme-900"
-                      }`}
-                      onClick={() =>
-                        handleToggleFavorite(quotes[0] as ExtendedQuote)
-                      }
-                    />
-                    <Trash
-                      size={16}
-                      className="cursor-pointer text-theme-900"
-                      onClick={() =>
-                        handleRemoveQuoteFromTheme(quotes[0] as ExtendedQuote)
-                      }
-                    />
-                  </div>
-                </div>
-                <div className="text-sm text-theme-600">
-                  <QuoteTextField
-                    transcriptBlob={
-                      response.transcriptionBody as FullTranscriptBlob
-                    }
-                    highlight={highlights[0] ?? null}
-                    className="text-sm text-theme-600"
-                    editMode={false}
-                  />
-                </div>
-                <div className="mb-3 mt-2 h-px bg-theme-200" />
-                <div className="flex items-center justify-between">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    className="text-sm text-theme-600 hover:text-theme-900"
-                    onClick={() => handleGoToResponse(response)}
-                  >
-                    <ArrowSquareOut size={16} className="mr-2" />
-                    Go to response
-                  </Button>
-                  {response.followUpQuestion && (
-                    <BasicTag className="py-0.5 text-xs">
-                      Follow-Up Question
-                    </BasicTag>
-                  )}
-                </div>
-              </BasicCard>
-            );
-          })}
+          {theme.quotes.map((quote) => (
+            <ThemeQuoteCard
+              key={quote.id}
+              quote={quote}
+              theme={theme}
+              response={quote.response}
+              onGoToResponse={handleGoToResponse}
+              onRemoveQuoteFromTheme={handleRemoveQuoteFromTheme}
+            />
+          ))}
         </div>
       </div>
       <BasicConfirmationModal
