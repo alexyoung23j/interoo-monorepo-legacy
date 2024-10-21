@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { X } from "@phosphor-icons/react";
+import { ArrowSquareOut, X } from "@phosphor-icons/react";
 import SplitScreenModal from "@/app/_components/layouts/org/SplitScreenModal";
 import type {
   Attribute,
@@ -19,6 +19,7 @@ import { formatDuration } from "@/app/utils/functions";
 import QuestionModalLeftContent from "./QuestionModalLeftContent";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ExtendedResponse } from "@shared/types";
+import { Button } from "@/components/ui/button";
 
 interface QuestionModalProps {
   isOpen: boolean;
@@ -70,29 +71,6 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
         )
       : "0:00";
 
-  useEffect(() => {
-    if (
-      isOpen &&
-      responsesWithTranscripts &&
-      responsesWithTranscripts.length > 0 &&
-      !selectedResponseId
-    ) {
-      console.log("setting initial response id");
-      setSelectedResponseId(responsesWithTranscripts[0]?.id ?? null);
-    }
-  }, [
-    isOpen,
-    responsesWithTranscripts,
-    selectedResponseId,
-    setSelectedResponseId,
-  ]);
-
-  useEffect(() => {
-    if (!isOpen) {
-      setSelectedResponseId(null);
-    }
-  }, [isOpen, setSelectedResponseId]);
-
   return (
     <SplitScreenModal
       isOpen={isOpen}
@@ -112,12 +90,27 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
               subtitle: "Question number",
             },
             {
-              title: `${responsesWithTranscripts ? responsesWithTranscripts.length - 1 : "-"}`,
-              subtitle: "# Follow Ups",
-            },
-            {
               title: totalTime,
               subtitle: "Total time",
+            },
+            {
+              title: "",
+              subtitle: "",
+              childNode: (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="flex items-center gap-2"
+                  onClick={() => {
+                    router.push(
+                      `/org/${study.organizationId}/study/${study.id}/interviews?interviewSessionId=${interviewSessionId}&modalOpen=true`,
+                    );
+                  }}
+                >
+                  See Interview
+                  <ArrowSquareOut size={16} />
+                </Button>
+              ),
             },
           ]}
         />

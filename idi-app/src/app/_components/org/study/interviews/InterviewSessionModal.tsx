@@ -18,15 +18,24 @@ import BasicTag from "@/app/_components/reusable/BasicTag";
 import BasicMediaViewer from "@/app/_components/reusable/BasicMediaViewer";
 import { useInterviewSessionMediaUrls } from "@/hooks/useInterviewSessionMediaUrls";
 import { Button } from "@/components/ui/button";
-import { CopySimple, Download, Info, Star } from "@phosphor-icons/react";
+import {
+  CopySimple,
+  DotsThree,
+  Download,
+  DownloadSimple,
+  Info,
+  Star,
+} from "@phosphor-icons/react";
 import { useMediaDownload } from "@/hooks/useMediaDownload";
-import { Sparkle } from "lucide-react";
+import { Sparkle, Trash } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { showSuccessToast } from "@/app/utils/toastUtils";
 import GeneralPopover from "@/app/_components/reusable/GeneralPopover";
 import { useToast } from "@/hooks/use-toast";
 import { ExtendedResponse, PauseInterval } from "@shared/types";
 import { ResponseModalCard } from "@/app/_components/reusable/ResponseModalCard";
+import { useDownloadInterviewTranscript } from "@/hooks/useDownloadInterviewTranscript";
+import BasicPopover from "@/app/_components/reusable/BasicPopover";
 
 interface InterviewSessionModalProps {
   isOpen: boolean;
@@ -53,6 +62,13 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
   );
   const [showFollowUps, setShowFollowUps] = useState(true);
   const { toast } = useToast();
+
+  const {
+    handleDownload: handleDownloadTranscript,
+    isDownloading: isDownloadingTranscript,
+  } = useDownloadInterviewTranscript({
+    interviewId: interviewSession.id,
+  });
 
   const {
     data: responsesData,
@@ -289,8 +305,23 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
     }
   };
 
-  const handleToggleFavorite = async (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const exportTranscript = async () => {
+    try {
+      await handleDownloadTranscript(
+        `${interviewSession.study.title}_${participantData?.demographicResponse?.name ?? "Anonymous Participant"}_${interviewSession.startTime?.toDateString() ?? ""}`,
+      );
+      toast({
+        title: "Exported Transcript",
+        variant: "default",
+        duration: 1500,
+      });
+    } catch (error) {
+      console.error("Failed to export transcript: ", error);
+    }
+  };
+
+  const handleToggleFavorite = async () => {
+    // e.stopPropagation();
     setIsFavorite((prev) => !prev);
 
     if (isFavorite) {
@@ -342,20 +373,48 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
               title: "",
               subtitle: "",
               childNode: (
-                <Button
-                  variant="secondary"
-                  className="flex gap-2 outline-none"
-                  onClick={handleToggleFavorite}
-                >
-                  {isFavorite ? "Unfavorite" : "Favorite"} Interview
-                  <Star
-                    size={16}
-                    weight={isFavorite ? "fill" : "regular"}
-                    className={
-                      isFavorite ? "text-yellow-400" : "text-theme-900"
-                    }
-                  />
-                </Button>
+                <BasicPopover
+                  trigger={
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="flex gap-2"
+                    >
+                      Actions <Star size={16} color="black" />{" "}
+                      <DownloadSimple size={16} color="black" />
+                    </Button>
+                  }
+                  options={[
+                    {
+                      text: `${isFavorite ? "Unfavorite" : "Favorite"} Interview`,
+                      icon: (
+                        <Star
+                          size={16}
+                          weight={isFavorite ? "fill" : "regular"}
+                          className={
+                            isFavorite ? "text-yellow-400" : "text-theme-900"
+                          }
+                        />
+                      ),
+                      onClick: () => {
+                        handleToggleFavorite().catch((err) => {
+                          console.error("Failed to toggle favorite: ", err);
+                        });
+                      },
+                    },
+                    {
+                      text: `Export Transcript`,
+                      icon: (
+                        <DownloadSimple size={16} className="text-theme-900" />
+                      ),
+                      onClick: () => {
+                        exportTranscript().catch((err) => {
+                          console.error("Failed to export transcript: ", err);
+                        });
+                      },
+                    },
+                  ]}
+                />
               ),
             },
           ]}

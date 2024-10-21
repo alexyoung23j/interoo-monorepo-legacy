@@ -20,6 +20,7 @@ import { createStudyDataExportRoute } from "./routes/createStudyDataExport";
 import { getSignedUploadUrlRoute } from "./routes/getSignedUploadUrl";
 import { getSignedReadUrlRoute } from "./routes/getSignedReadUrl";
 import { resetStudyThemesRoute } from './routes/resetStudyThemes';
+import { createInterviewTranscriptExportRoute } from "./routes/createInterviewTranscriptExport";
 
 // Configuration and Setup
 const rootDir = path.resolve(__dirname, "../..");
@@ -83,6 +84,7 @@ app.use("/api/create-study-data-export", createStudyDataExportRoute);
 app.use("/api/get-signed-upload-url", getSignedUploadUrlRoute);
 app.use("/api/getSignedReadUrl", getSignedReadUrlRoute);
 app.use("/api/reset-study-themes", resetStudyThemesRoute);
+app.use("/api/create-interview-transcript-export", createInterviewTranscriptExportRoute);
 
 // Server Startup
 const startServer = () => {

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Popover,
   PopoverContent,
@@ -20,8 +20,15 @@ interface BasicPopoverProps {
 }
 
 const BasicPopover: React.FC<BasicPopoverProps> = ({ trigger, options }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const handleOptionClick = (option: PopoverOption) => {
+    setIsOpen(false);
+    option.onClick?.();
+  };
+
   return (
-    <Popover>
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild className="cursor-pointer">
         {trigger}
       </PopoverTrigger>
@@ -33,7 +40,7 @@ const BasicPopover: React.FC<BasicPopoverProps> = ({ trigger, options }) => {
                 <hr className="my-1 border-theme-200 px-2" />
               ) : (
                 <button
-                  onClick={option.onClick}
+                  onClick={() => handleOptionClick(option)}
                   className={cn(
                     "flex flex-row items-center justify-between gap-4 rounded-sm px-2 py-2 text-sm outline-none transition-colors hover:bg-theme-50",
                     option.color ?? "text-theme-900",
