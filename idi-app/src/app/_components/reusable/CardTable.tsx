@@ -16,6 +16,7 @@ interface CardTableProps<T> {
   rowClassName?: string;
   tableClassName?: string;
   showHeader?: boolean;
+  rowStyle?: (row: T) => React.CSSProperties;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -26,6 +27,7 @@ function CardTable<T extends Record<string, any>>({
   rowClassName,
   tableClassName,
   showHeader = true,
+  rowStyle,
 }: CardTableProps<T>) {
   return (
     <div
@@ -68,6 +70,7 @@ function CardTable<T extends Record<string, any>>({
                 rowClassName,
               )}
               role="row"
+              style={rowStyle ? rowStyle(row) : {}}
             >
               {columns.map((column) => (
                 <div

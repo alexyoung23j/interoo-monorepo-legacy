@@ -47,27 +47,28 @@ export const INNER_SIDEBAR_ROUTES = [
     allowedWhenDraft: false,
     featureFlagsRequired: [],
   },
-  // {
-  //   title: "Analysis",
-  //   items: [
-  //     {
-  //       title: "Codebook",
-  //       path: "/org/[orgId]/study/[studyId]/analysis/codebook",
-  //       allowedWhenDraft: false,
-  //     },
-  //     {
-  //       title: "Approve Codes",
-  //       path: "/org/[orgId]/study/[studyId]/analysis/approve-codes",
-  //       allowedWhenDraft: false,
-  //     },
-  //     {
-  //       title: "Themes",
-  //       path: "/org/[orgId]/study/[studyId]/analysis/themes",
-  //       allowedWhenDraft: false,
-  //     },
-  //   ],
-  //   allowedWhenDraft: false,
-  // },
+  {
+    title: "Analysis",
+    items: [
+      //     {
+      //       title: "Codebook",
+      //       path: "/org/[orgId]/study/[studyId]/analysis/codebook",
+      //       allowedWhenDraft: false,
+      //     },
+      //     {
+      //       title: "Approve Codes",
+      //       path: "/org/[orgId]/study/[studyId]/analysis/approve-codes",
+      //       allowedWhenDraft: false,
+      //     },
+      {
+        title: "Themes",
+        path: "/org/[orgId]/study/[studyId]/analysis/themes",
+        allowedWhenDraft: false,
+        featureFlagsRequired: ["themes"],
+      },
+    ],
+    //   allowedWhenDraft: false,
+  },
   // {
   //   title: "Configuration",
   //   path: "/org/[orgId]/study/[studyId]/configuration",
