@@ -70,29 +70,6 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
         )
       : "0:00";
 
-  useEffect(() => {
-    if (
-      isOpen &&
-      responsesWithTranscripts &&
-      responsesWithTranscripts.length > 0 &&
-      !selectedResponseId
-    ) {
-      console.log("setting initial response id");
-      setSelectedResponseId(responsesWithTranscripts[0]?.id ?? null);
-    }
-  }, [
-    isOpen,
-    responsesWithTranscripts,
-    selectedResponseId,
-    setSelectedResponseId,
-  ]);
-
-  useEffect(() => {
-    if (!isOpen) {
-      setSelectedResponseId(null);
-    }
-  }, [isOpen, setSelectedResponseId]);
-
   return (
     <SplitScreenModal
       isOpen={isOpen}
