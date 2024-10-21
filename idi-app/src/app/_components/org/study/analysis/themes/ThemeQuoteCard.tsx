@@ -79,17 +79,15 @@ const ThemeQuoteCard: React.FC<ThemeQuoteCardProps> = ({
     try {
       setIsFavorite((prev) => !prev);
 
+      toast({
+        title: "Favorites updated",
+        variant: "default",
+        duration: 1500,
+      });
+
       const result = await toggleFavoriteMutation.mutateAsync({
         quoteId: quote.id,
         studyId: theme.studyId,
-      });
-
-      toast({
-        title: result.isFavorite
-          ? "Quote added to favorites"
-          : "Quote removed from favorites",
-        variant: "default",
-        duration: 1500,
       });
     } catch (error) {
       console.error("Error toggling favorite:", error);
