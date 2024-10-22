@@ -12,6 +12,7 @@ interface PopoverOption {
   onClick?: (e: React.MouseEvent) => void;
   color?: string;
   className?: string;
+  isDivider?: boolean;
 }
 
 interface BasicPopoverProps {
@@ -35,18 +36,23 @@ const BasicPopover: React.FC<BasicPopoverProps> = ({ trigger, options }) => {
       <PopoverContent className="w-auto px-2 py-2" align="end">
         <div className="flex flex-col outline-none">
           {options.map((option, index) => (
-            <button
-              key={index}
-              onClick={(e) => handleOptionClick(option, e)}
-              className={cn(
-                "flex flex-row items-center rounded-sm px-2 py-2 text-sm outline-none transition-colors hover:bg-theme-50",
-                option.color ?? "text-theme-900",
-                option.className,
+            <React.Fragment key={index}>
+              {option.isDivider ? (
+                <hr className="my-1 border-theme-200 px-2" />
+              ) : (
+                <button
+                  onClick={(e) => handleOptionClick(option, e)}
+                  className={cn(
+                    "flex flex-row items-center justify-between gap-4 rounded-sm px-2 py-2 text-sm outline-none transition-colors hover:bg-theme-50",
+                    option.color ?? "text-theme-900",
+                    option.className,
+                  )}
+                >
+                  <span>{option.text}</span>
+                  {option.icon && <span className="ml-2">{option.icon}</span>}
+                </button>
               )}
-            >
-              <span>{option.text}</span>
-              {option.icon && <span className="ml-2">{option.icon}</span>}
-            </button>
+            </React.Fragment>
           ))}
         </div>
       </PopoverContent>
