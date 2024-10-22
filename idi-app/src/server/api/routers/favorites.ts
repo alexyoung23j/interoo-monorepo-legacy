@@ -225,4 +225,54 @@ export const favoritesRouter = createTRPCRouter({
 
       return favoriteInterviewSessions;
     }),
+
+  toggleQuoteFavorite: privateProcedure
+    .input(
+      z.object({
+        quoteId: z.string(),
+        studyId: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { quoteId, studyId } = input;
+      const { user } = ctx;
+
+      const profile = await ctx.db.profile.findFirst({
+        where: {
+          supabaseUserID: user.id,
+        },
+      });
+
+      if (!profile) {
+        throw new Error("Profile not found");
+      }
+
+      const existingFavorite = await ctx.db.favorite.findFirst({
+        where: {
+          quoteId,
+          studyId,
+          createdById: profile.id,
+        },
+      });
+
+      if (existingFavorite) {
+        // Remove favorite
+        await ctx.db.favorite.delete({
+          where: {
+            id: existingFavorite.id,
+          },
+        });
+        return { isFavorite: false };
+      } else {
+        // Add favorite
+        await ctx.db.favorite.create({
+          data: {
+            quoteId,
+            studyId,
+            createdById: profile.id,
+          },
+        });
+        return { isFavorite: true };
+      }
+    }),
 });

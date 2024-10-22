@@ -386,6 +386,11 @@ model ThemesOnQuestion {
   questionId String
 }
 
+enum ThemeSource {
+  MANUAL
+  AI_GENERATED
+}
+
 model Theme {
   id String @id @default(uuid())
 
@@ -399,6 +404,8 @@ model Theme {
   description String?
 
   tagColor String
+
+  source ThemeSource @default(AI_GENERATED)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
