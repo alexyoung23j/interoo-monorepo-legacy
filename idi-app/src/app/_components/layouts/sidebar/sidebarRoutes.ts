@@ -43,6 +43,7 @@ export const INNER_SIDEBAR_ROUTES = [
   },
   {
     title: "Analysis",
+    featureFlagsRequired: ["themes"],
     items: [
       //     {
       //       title: "Codebook",
