@@ -90,6 +90,7 @@ function SideContent({ isDraft }: { isDraft: boolean }) {
             orgId={orgId}
             studyId={studyId}
             isDraft={isDraft}
+            featureFlagsRequired={section.featureFlagsRequired}
           />
         ))}
       </div>

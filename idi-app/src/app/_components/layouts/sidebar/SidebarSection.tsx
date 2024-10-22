@@ -19,6 +19,7 @@ interface SidebarSectionProps {
   studyId?: string;
   isDraft?: boolean;
   allowedWhenDraft?: boolean;
+  featureFlagsRequired: string[];
 }
 
 export default function SidebarSection({
@@ -29,6 +30,7 @@ export default function SidebarSection({
   studyId,
   isDraft,
   allowedWhenDraft,
+  featureFlagsRequired,
 }: SidebarSectionProps) {
   const { isFeatureEnabled } = useFeatureFlags(orgId);
 
@@ -59,7 +61,12 @@ export default function SidebarSection({
     );
   };
 
-  if (!items) {
+  const isFlaggedOn =
+    featureFlagsRequired?.length === 0 ||
+    (featureFlagsRequired?.length > 0 &&
+      featureFlagsRequired?.every((flag) => isFeatureEnabled(flag)));
+
+  if (!items || !isFlaggedOn) {
     return null;
   }
 
