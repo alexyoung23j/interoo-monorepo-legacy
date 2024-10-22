@@ -9,7 +9,13 @@ import { Theme } from "@shared/generated/client";
 import BasicTag from "@/app/_components/reusable/BasicTag";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MagnifyingGlass, Plus } from "@phosphor-icons/react";
+import {
+  MagnifyingGlass,
+  Plus,
+  DotsThree,
+  ArrowRight,
+  Trash,
+} from "@phosphor-icons/react";
 import ThemeDetailsView from "./ThemeDetailsView";
 import {
   Dialog,
@@ -18,12 +24,13 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import Fuse from "fuse.js";
 import { useQueryClient } from "@tanstack/react-query";
 import BasicInput from "@/app/_components/reusable/BasicInput";
 import BasicTextArea from "@/app/_components/reusable/BasicTextArea";
+import BasicPopover from "@/app/_components/reusable/BasicPopover";
+import BasicConfirmationModal from "@/app/_components/reusable/BasicConfirmationModal";
 
 interface ThemesPageComponentProps {
   studyId: string;
@@ -35,14 +42,24 @@ const ThemesPageComponent: React.FC<ThemesPageComponentProps> = ({
   orgId,
 }) => {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedThemeId, setSelectedThemeId] = useState<string | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [newThemeName, setNewThemeName] = useState("");
+  const [newThemeDescription, setNewThemeDescription] = useState("");
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingTheme, setEditingTheme] = useState<Theme | null>(null);
+  const [editThemeName, setEditThemeName] = useState("");
+  const [editThemeDescription, setEditThemeDescription] = useState("");
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [themeToDelete, setThemeToDelete] = useState<Theme | null>(null);
 
   const { data: themes, isLoading } = api.themes.getStudyThemes.useQuery(
     { studyId },
     { refetchOnWindowFocus: false },
   );
-
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedThemeId, setSelectedThemeId] = useState<string | null>(null);
 
   const { data: selectedThemeDetails, isLoading: isLoadingThemeDetails } =
     api.themes.getThemeDetails.useQuery(
@@ -50,17 +67,11 @@ const ThemesPageComponent: React.FC<ThemesPageComponentProps> = ({
       { enabled: !!selectedThemeId },
     );
 
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [newThemeName, setNewThemeName] = useState("");
-  const [newThemeDescription, setNewThemeDescription] = useState("");
-  const { toast } = useToast();
-
   const createThemeMutation = api.themes.createTheme.useMutation({
     onSuccess: () => {
       setIsCreateModalOpen(false);
       setNewThemeName("");
       setNewThemeDescription("");
-      // Invalidate and refetch the getStudyThemes query
       void queryClient.invalidateQueries({
         queryKey: [["themes", "getStudyThemes"], { input: { studyId } }],
       });
@@ -73,6 +84,52 @@ const ThemesPageComponent: React.FC<ThemesPageComponentProps> = ({
     onError: (error) => {
       toast({
         title: "Error creating theme",
+        description: error.message,
+        variant: "destructive",
+        duration: 3000,
+      });
+    },
+  });
+
+  const editThemeMutation = api.themes.editTheme.useMutation({
+    onSuccess: () => {
+      setIsEditModalOpen(false);
+      setEditingTheme(null);
+      void queryClient.invalidateQueries({
+        queryKey: [["themes", "getStudyThemes"], { input: { studyId } }],
+      });
+      toast({
+        title: "Theme updated successfully",
+        variant: "default",
+        duration: 3000,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error updating theme",
+        description: error.message,
+        variant: "destructive",
+        duration: 3000,
+      });
+    },
+  });
+
+  const deleteThemeMutation = api.themes.deleteTheme.useMutation({
+    onSuccess: () => {
+      setIsDeleteModalOpen(false);
+      setThemeToDelete(null);
+      void queryClient.invalidateQueries({
+        queryKey: [["themes", "getStudyThemes"], { input: { studyId } }],
+      });
+      toast({
+        title: "Theme deleted successfully",
+        variant: "default",
+        duration: 3000,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error deleting theme",
         description: error.message,
         variant: "destructive",
         duration: 3000,
@@ -96,6 +153,32 @@ const ThemesPageComponent: React.FC<ThemesPageComponentProps> = ({
     setSelectedThemeId(null);
   };
 
+  const handleEditTheme = (theme: Theme) => {
+    setEditingTheme(theme);
+    setEditThemeName(theme.name);
+    setEditThemeDescription(theme.description ?? "");
+    setIsEditModalOpen(true);
+  };
+
+  const handleDeleteTheme = (theme: Theme) => {
+    setThemeToDelete(theme);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleSaveEditTheme = async () => {
+    if (editingTheme) {
+      try {
+        await editThemeMutation.mutateAsync({
+          themeId: editingTheme.id,
+          name: editThemeName,
+          description: editThemeDescription,
+        });
+      } catch (error) {
+        console.error("Error editing theme:", error);
+      }
+    }
+  };
+
   const fuse = useMemo(() => {
     if (!themes) return null;
     return new Fuse(themes, {
@@ -109,16 +192,39 @@ const ThemesPageComponent: React.FC<ThemesPageComponentProps> = ({
     return fuse.search(searchTerm).map((result) => result.item);
   }, [searchTerm, fuse, themes]);
 
-  if (isLoading) {
-    return (
-      <div className="flex h-full items-center justify-center bg-theme-off-white">
-        <ClipLoader size={50} color="grey" loading={true} />
-      </div>
-    );
-  }
+  const renderActionsMenu = (theme: Theme) => (
+    <BasicPopover
+      trigger={
+        <div onClick={(e) => e.stopPropagation()}>
+          <DotsThree size={24} className="cursor-pointer text-theme-600" />
+        </div>
+      }
+      options={[
+        {
+          text: "Edit Theme",
+          icon: <ArrowRight size={16} />,
+          onClick: (e) => {
+            e.stopPropagation();
+            handleEditTheme(theme);
+          },
+          className: "w-40 justify-between",
+        },
+        {
+          text: "Delete Theme",
+          icon: <Trash size={16} />,
+          onClick: (e) => {
+            e.stopPropagation();
+            handleDeleteTheme(theme);
+          },
+          color: "text-red-500",
+          className: "w-40 justify-between",
+        },
+      ]}
+    />
+  );
 
   const columns = [
-    { key: "name", header: "Name", width: "40%", className: "justify-start" },
+    { key: "name", header: "Name", width: "35%", className: "justify-start" },
     {
       key: "quoteCount",
       header: "# Quotes",
@@ -128,7 +234,13 @@ const ThemesPageComponent: React.FC<ThemesPageComponentProps> = ({
     {
       key: "source",
       header: "Source",
-      width: "30%",
+      width: "25%",
+      className: "justify-end text-right",
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      width: "10%",
       className: "justify-end text-right",
     },
   ];
@@ -140,12 +252,33 @@ const ThemesPageComponent: React.FC<ThemesPageComponentProps> = ({
       source: (
         <div className="flex w-full justify-end">
           <BasicTag color="bg-[#D5DDE1]" borderColor="border-[#426473]">
-            AI Generated
+            {theme.source === "MANUAL" ? "Manual" : "AI Generated"}
           </BasicTag>
         </div>
       ),
+      actions: renderActionsMenu(theme),
       originalTheme: theme,
     })) ?? [];
+
+  if (isLoading) {
+    return (
+      <div className="flex h-full items-center justify-center bg-theme-off-white">
+        <ClipLoader size={50} color="grey" loading={true} />
+      </div>
+    );
+  }
+
+  const confirmDeleteTheme = async () => {
+    if (themeToDelete) {
+      try {
+        await deleteThemeMutation.mutateAsync({
+          themeId: themeToDelete.id,
+        });
+      } catch (error) {
+        console.error("Error deleting theme:", error);
+      }
+    }
+  };
 
   return (
     <>
@@ -260,6 +393,67 @@ const ThemesPageComponent: React.FC<ThemesPageComponentProps> = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Theme</DialogTitle>
+          </DialogHeader>
+          <div className="text-sm text-theme-600">
+            Edit the name and description of your theme.
+          </div>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <label
+                htmlFor="edit-name"
+                className="text-sm font-medium text-theme-900"
+              >
+                Name
+              </label>
+              <BasicInput
+                id="edit-name"
+                placeholder="Theme Name"
+                value={editThemeName}
+                onSetValue={(value) => setEditThemeName(value)}
+              />
+            </div>
+            <div className="grid gap-2">
+              <label
+                htmlFor="edit-description"
+                className="text-sm font-medium text-theme-900"
+              >
+                Description
+              </label>
+              <BasicTextArea
+                id="edit-description"
+                placeholder="Theme Description"
+                value={editThemeDescription}
+                onSetValue={(value) => setEditThemeDescription(value)}
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              onClick={handleSaveEditTheme}
+              className="text-theme-off-white"
+            >
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <BasicConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onOpenChange={setIsDeleteModalOpen}
+        title="Delete Theme"
+        subtitle="Deleting a theme will remove all associated quotes. Are you sure you want to delete?"
+        onCancel={() => setIsDeleteModalOpen(false)}
+        onConfirm={confirmDeleteTheme}
+        confirmButtonText="Delete"
+        confirmButtonColor="bg-red-600"
+      />
     </>
   );
 };

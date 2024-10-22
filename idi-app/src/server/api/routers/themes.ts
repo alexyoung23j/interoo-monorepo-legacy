@@ -101,6 +101,7 @@ export const themesRouter = createTRPCRouter({
           studyId,
           name,
           description,
+          source: "MANUAL",
           tagColor:
             "#" +
             Math.floor(Math.random() * 16777215)
@@ -138,6 +139,44 @@ export const themesRouter = createTRPCRouter({
         where: {
           quoteId,
           themeId,
+        },
+      });
+
+      return { success: true };
+    }),
+
+  editTheme: privateProcedure
+    .input(
+      z.object({
+        themeId: z.string(),
+        name: z.string(),
+        description: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { themeId, name, description } = input;
+
+      const updatedTheme = await ctx.db.theme.update({
+        where: { id: themeId },
+        data: {
+          name,
+          description,
+        },
+      });
+
+      return updatedTheme;
+    }),
+
+  deleteTheme: privateProcedure
+    .input(z.object({ themeId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const { themeId } = input;
+
+      // Delete the theme
+      // This will automatically delete related QuotesOnTheme records due to the cascade delete
+      await ctx.db.theme.delete({
+        where: {
+          id: themeId,
         },
       });
 
