@@ -17,6 +17,7 @@ interface CardTableProps<T> {
   tableClassName?: string;
   showHeader?: boolean;
   rowStyle?: (row: T) => React.CSSProperties;
+  isRowSelected?: (row: T) => boolean;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -28,6 +29,7 @@ function CardTable<T extends Record<string, any>>({
   tableClassName,
   showHeader = true,
   rowStyle,
+  isRowSelected,
 }: CardTableProps<T>) {
   return (
     <div
@@ -62,15 +64,18 @@ function CardTable<T extends Record<string, any>>({
           {data.map((row, index) => (
             <div
               key={index}
-              onClick={() => onRowClick && onRowClick(row)}
+              onClick={() => onRowClick?.(row)}
               className={cn(
-                "flex w-full items-center rounded-sm border border-theme-200 bg-theme-off-white p-4 shadow-light",
-                "transition-colors duration-200 hover:bg-theme-50",
+                "flex w-full items-center rounded-sm border border-theme-200 p-4 shadow-light",
+                "transition-colors duration-200",
                 onRowClick && "cursor-pointer",
+                isRowSelected?.(row)
+                  ? "bg-theme-50"
+                  : "bg-theme-off-white hover:bg-theme-50",
                 rowClassName,
               )}
               role="row"
-              style={rowStyle ? rowStyle(row) : {}}
+              style={rowStyle?.(row)}
             >
               {columns.map((column) => (
                 <div

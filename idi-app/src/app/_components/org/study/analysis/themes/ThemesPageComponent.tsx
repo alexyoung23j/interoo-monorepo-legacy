@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { api } from "@/trpc/react";
 import { ClipLoader } from "react-spinners";
 import SplitScreenLayout from "@/app/_components/layouts/org/SplitScreenLayout";
@@ -31,6 +31,7 @@ import BasicInput from "@/app/_components/reusable/BasicInput";
 import BasicTextArea from "@/app/_components/reusable/BasicTextArea";
 import BasicPopover from "@/app/_components/reusable/BasicPopover";
 import BasicConfirmationModal from "@/app/_components/reusable/BasicConfirmationModal";
+import { useSearchParams } from "next/navigation";
 
 interface ThemesPageComponentProps {
   studyId: string;
@@ -43,6 +44,7 @@ const ThemesPageComponent: React.FC<ThemesPageComponentProps> = ({
 }) => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const searchParams = useSearchParams();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedThemeId, setSelectedThemeId] = useState<string | null>(null);
@@ -179,18 +181,22 @@ const ThemesPageComponent: React.FC<ThemesPageComponentProps> = ({
     }
   };
 
+  const sortedThemes = useMemo(() => {
+    return themes?.sort((a, b) => b.quoteCount - a.quoteCount) ?? [];
+  }, [themes]);
+
   const fuse = useMemo(() => {
-    if (!themes) return null;
-    return new Fuse(themes, {
+    if (!sortedThemes) return null;
+    return new Fuse(sortedThemes, {
       keys: ["name", "description"],
       threshold: 0.3,
     });
-  }, [themes]);
+  }, [sortedThemes]);
 
   const filteredThemes = useMemo(() => {
-    if (!searchTerm || !fuse) return themes;
+    if (!searchTerm || !fuse) return sortedThemes;
     return fuse.search(searchTerm).map((result) => result.item);
-  }, [searchTerm, fuse, themes]);
+  }, [searchTerm, fuse, sortedThemes]);
 
   const renderActionsMenu = (theme: Theme) => (
     <BasicPopover
@@ -260,6 +266,13 @@ const ThemesPageComponent: React.FC<ThemesPageComponentProps> = ({
       originalTheme: theme,
     })) ?? [];
 
+  useEffect(() => {
+    const themeFromUrl = searchParams.get("selectedTheme");
+    if (themeFromUrl) {
+      setSelectedThemeId(themeFromUrl);
+    }
+  }, [searchParams]);
+
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center bg-theme-off-white">
@@ -319,7 +332,16 @@ const ThemesPageComponent: React.FC<ThemesPageComponentProps> = ({
                 columns={columns}
                 rowStyle={(row) => ({
                   borderLeft: `4px solid ${(row.originalTheme as Theme).tagColor}`,
+                  ...(selectedThemeId === (row.originalTheme as Theme).id
+                    ? {
+                        borderColor: "var(--theme-500)",
+                        boxShadow: "shadow-sm",
+                      }
+                    : {}),
                 })}
+                isRowSelected={(row) =>
+                  selectedThemeId === (row.originalTheme as Theme).id
+                }
                 onRowClick={(row) =>
                   setSelectedThemeId((row.originalTheme as Theme).id)
                 }
