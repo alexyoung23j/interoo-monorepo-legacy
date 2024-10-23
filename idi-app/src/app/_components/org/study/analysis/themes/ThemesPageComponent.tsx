@@ -32,6 +32,7 @@ import BasicTextArea from "@/app/_components/reusable/BasicTextArea";
 import BasicPopover from "@/app/_components/reusable/BasicPopover";
 import BasicConfirmationModal from "@/app/_components/reusable/BasicConfirmationModal";
 import { useSearchParams } from "next/navigation";
+import { cn } from "@/lib/utils";
 
 interface ThemesPageComponentProps {
   studyId: string;
@@ -330,18 +331,23 @@ const ThemesPageComponent: React.FC<ThemesPageComponentProps> = ({
               <CardTable
                 data={tableData}
                 columns={columns}
+                rowClassName={(row) =>
+                  cn(
+                    "border-l-4 transition-colors duration-200",
+                    selectedThemeId === (row.originalTheme as Theme).id
+                      ? "bg-theme-50 border-theme-500"
+                      : "bg-theme-off-white hover:bg-theme-50",
+                    `border-l-[${(row.originalTheme as Theme).tagColor}]`,
+                  )
+                }
                 rowStyle={(row) => ({
                   borderLeft: `4px solid ${(row.originalTheme as Theme).tagColor}`,
                   ...(selectedThemeId === (row.originalTheme as Theme).id
                     ? {
-                        borderColor: "var(--theme-500)",
-                        boxShadow: "shadow-sm",
+                        boxShadow: "0 0 0 1px var(--theme-500)",
                       }
                     : {}),
                 })}
-                isRowSelected={(row) =>
-                  selectedThemeId === (row.originalTheme as Theme).id
-                }
                 onRowClick={(row) =>
                   setSelectedThemeId((row.originalTheme as Theme).id)
                 }

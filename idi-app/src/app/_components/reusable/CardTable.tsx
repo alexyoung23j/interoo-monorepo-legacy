@@ -13,23 +13,20 @@ interface CardTableProps<T> {
   columns: Column[];
   footer?: ReactNode;
   onRowClick?: (row: T) => void;
-  rowClassName?: string;
+  rowClassName?: string | ((row: T) => string);
+  rowStyle?: (row: T) => React.CSSProperties;
   tableClassName?: string;
   showHeader?: boolean;
-  rowStyle?: (row: T) => React.CSSProperties;
-  isRowSelected?: (row: T) => boolean;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function CardTable<T extends Record<string, any>>({
   data,
   columns,
   onRowClick,
   rowClassName,
+  rowStyle,
   tableClassName,
   showHeader = true,
-  rowStyle,
-  isRowSelected,
 }: CardTableProps<T>) {
   return (
     <div
@@ -69,13 +66,12 @@ function CardTable<T extends Record<string, any>>({
                 "flex w-full items-center rounded-sm border border-theme-200 p-4 shadow-light",
                 "transition-colors duration-200",
                 onRowClick && "cursor-pointer",
-                isRowSelected?.(row)
-                  ? "bg-theme-50"
-                  : "bg-theme-off-white hover:bg-theme-50",
-                rowClassName,
+                typeof rowClassName === "function"
+                  ? rowClassName(row)
+                  : rowClassName,
               )}
               role="row"
-              style={rowStyle?.(row)}
+              style={rowStyle ? rowStyle(row) : {}}
             >
               {columns.map((column) => (
                 <div
@@ -92,7 +88,6 @@ function CardTable<T extends Record<string, any>>({
                   }}
                   role="cell"
                 >
-                  {/* eslint-disable-next-line @typescript-eslint/no-unsafe-argument */}
                   {React.isValidElement(row[column.key])
                     ? row[column.key]
                     : String(row[column.key])}
