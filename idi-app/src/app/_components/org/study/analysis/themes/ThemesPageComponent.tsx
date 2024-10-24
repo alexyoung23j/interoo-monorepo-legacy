@@ -33,10 +33,15 @@ import BasicPopover from "@/app/_components/reusable/BasicPopover";
 import BasicConfirmationModal from "@/app/_components/reusable/BasicConfirmationModal";
 import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useThemes } from "@/hooks/useThemes";
 
 interface ThemesPageComponentProps {
   studyId: string;
   orgId: string;
+}
+
+interface ExtendedTheme extends Theme {
+  quoteCount: number;
 }
 
 const ThemesPageComponent: React.FC<ThemesPageComponentProps> = ({
@@ -59,10 +64,7 @@ const ThemesPageComponent: React.FC<ThemesPageComponentProps> = ({
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [themeToDelete, setThemeToDelete] = useState<Theme | null>(null);
 
-  const { data: themes, isLoading } = api.themes.getStudyThemes.useQuery(
-    { studyId },
-    { refetchOnWindowFocus: false },
-  );
+  const { data: themes, isLoading } = useThemes(studyId);
 
   const { data: selectedThemeDetails, isLoading: isLoadingThemeDetails } =
     api.themes.getThemeDetails.useQuery(
@@ -183,7 +185,7 @@ const ThemesPageComponent: React.FC<ThemesPageComponentProps> = ({
   };
 
   const sortedThemes = useMemo(() => {
-    return themes?.sort((a, b) => b.quoteCount - a.quoteCount) ?? [];
+    return themes ?? [];
   }, [themes]);
 
   const fuse = useMemo(() => {
@@ -253,7 +255,7 @@ const ThemesPageComponent: React.FC<ThemesPageComponentProps> = ({
   ];
 
   const tableData =
-    filteredThemes?.map((theme) => ({
+    filteredThemes?.map((theme: ExtendedTheme) => ({
       name: theme.name,
       quoteCount: theme.quoteCount,
       source: (
