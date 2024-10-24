@@ -22,6 +22,11 @@ import { useExportData } from "@/hooks/useExportData";
 import { ClipLoader } from "react-spinners";
 import { showErrorToast } from "@/app/utils/toastUtils";
 import { api } from "@/trpc/react";
+import { useThemes } from "@/hooks/useThemes";
+
+interface ExtendedTheme extends Theme {
+  quoteCount: number;
+}
 
 export type ExtendedStudy = Study & {
   completedInterviewsCount: number;
@@ -54,6 +59,8 @@ const ResultsPageComponent: React.FC<ResultsPageComponentProps> = ({
       refetchOnWindowFocus: false,
     },
   ) as { data: ExtendedStudy; isLoading: boolean };
+
+  const { data: themes, isLoading: isLoadingThemes } = useThemes(studyId);
 
   const { handleExport, isExporting } = useExportData({
     studyId: study?.id,
@@ -111,7 +118,7 @@ const ResultsPageComponent: React.FC<ResultsPageComponentProps> = ({
     );
   };
 
-  if (isLoading || !study) {
+  if (isLoading || isLoadingThemes || !study) {
     return (
       <div className="flex h-full items-center justify-center bg-theme-off-white">
         <ClipLoader size={50} color="grey" loading={true} />
@@ -199,6 +206,7 @@ const ResultsPageComponent: React.FC<ResultsPageComponentProps> = ({
                   isSelected={selectedQuestion?.id === question.id}
                   orgId={study.organizationId}
                   onThemeClick={handleThemeClick}
+                  themes={(themes ?? []) as ExtendedTheme[]}
                 />
               ))}
           </div>

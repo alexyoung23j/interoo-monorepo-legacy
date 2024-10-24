@@ -3,7 +3,7 @@ import {
   FollowUpLevel,
   Question,
   QuestionType,
-  Theme,
+  Theme as BaseTheme,
   ThemesOnQuestion,
 } from "@shared/generated/client";
 import BasicCard from "@/app/_components/reusable/BasicCard";
@@ -19,20 +19,23 @@ import MultipleChoiceMetadataDisplay from "./MultipleChoiceMetadataDisplay";
 import BasicTag from "@/app/_components/reusable/BasicTag";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 
+interface ExtendedTheme extends BaseTheme {
+  quoteCount: number;
+}
+
 interface ResultsQuestionCardProps {
   orgId: string;
   question: Question & {
     _count?: { Response: number };
     ThemesOnQuestion: (ThemesOnQuestion & {
-      theme: Theme & {
-        _count?: { QuotesOnTheme: number };
-      };
+      theme: BaseTheme;
     })[];
   };
   index: number;
   onViewResponses: () => void;
   isSelected: boolean;
   onThemeClick: (themeId: string) => void;
+  themes: ExtendedTheme[];
 }
 
 const getFollowUpLevelAverage = (level: FollowUpLevel): number => {
@@ -57,24 +60,14 @@ const ResultsQuestionCard: React.FC<ResultsQuestionCardProps> = ({
   isSelected,
   orgId,
   onThemeClick,
+  themes,
 }) => {
   const [showAllThemes, setShowAllThemes] = useState(false);
   const { isFeatureEnabled, isLoading: featureFlagsLoading } =
     useFeatureFlags(orgId);
   const themesEnabled = isFeatureEnabled("themes");
 
-  const themes = Array.from(
-    new Map(
-      question.ThemesOnQuestion.map((theme) => [theme.theme.id, theme.theme]),
-    ).values(),
-  );
-
-  const themesWithQuoteCounts = themes.map((theme) => ({
-    ...theme,
-    quoteCount: theme._count?.QuotesOnTheme ?? 0,
-  }));
-
-  const relevantThemes = themesWithQuoteCounts
+  const relevantThemes = themes
     .filter((theme) => theme.quoteCount >= 3)
     .sort((a, b) => b.quoteCount - a.quoteCount);
 
