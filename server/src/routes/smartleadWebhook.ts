@@ -68,7 +68,7 @@ async function ensureSheetExists(sheets: any, spreadsheetId: string, sheetName: 
   
   router.post('/', async (req, res) => {
     try {
-      const { to_email, sequence_number, campaign_status, event_type, campaign_name, from_email, event_timestamp } = req.body;
+      const { to_email, sequence_number, campaign_status, event_type, campaign_name, from_email, event_timestamp, to_name } = req.body;
   
       if (sequence_number > 1) {
         return res.status(200).json({ message: 'Ignoring, not a new lead' });
@@ -88,8 +88,6 @@ async function ensureSheetExists(sheets: any, spreadsheetId: string, sheetName: 
       const response = await axios.get<SmartLeadResponse>(smartLeadUrl);
   
       const linkedinProfile = response.data.linkedin_profile ?? '';
-      const firstName = response.data.first_name ?? '';
-      const lastName = response.data.last_name ?? '';
       const companyUrl = response.data.company_url ?? '';
   
       // Write to Google Sheet
@@ -103,7 +101,7 @@ async function ensureSheetExists(sheets: any, spreadsheetId: string, sheetName: 
       const range = `${sheetName}!A1:E1`; 
   
       const values = [
-        ['', `${firstName} ${lastName}`, linkedinProfile, companyUrl, event_timestamp]
+        ['', `${to_name}`, linkedinProfile, companyUrl, event_timestamp]
       ];
   
       const result = await sheets.spreadsheets.values.append({
