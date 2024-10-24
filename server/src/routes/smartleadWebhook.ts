@@ -100,34 +100,18 @@ async function ensureSheetExists(sheets: any, spreadsheetId: string, sheetName: 
       // Ensure the sheet exists
       await ensureSheetExists(sheets, spreadsheetId, sheetName);
   
-      const range = `${sheetName}!A:E`;
-
-      // First, get the current values in the sheet
-      const currentValues = await sheets.spreadsheets.values.get({
-        spreadsheetId,
-        range,
-      });
+      const range = `${sheetName}!A1:E1`; // Adjusted to include the new time_sent column
   
-      // Determine the next row number
-      const nextRow = (currentValues.data.values?.length ?? 0) + 1;
-  
-      // Prepare the new row data
-      const newRow = [
-        nextRow.toString(), // Add row number as the first column
-        `${firstName} ${lastName}`,
-        linkedinProfile,
-        companyUrl,
-        event_timestamp
+      const values = [
+        ['', `${firstName} ${lastName}`, linkedinProfile, companyUrl, event_timestamp]
       ];
   
-      // Append the new row
       const result = await sheets.spreadsheets.values.append({
         spreadsheetId,
         range,
         valueInputOption: 'USER_ENTERED',
-        insertDataOption: 'INSERT_ROWS', // Ensure new rows are inserted
         requestBody: {
-          values: [newRow],
+          values,
         },
       });
   
