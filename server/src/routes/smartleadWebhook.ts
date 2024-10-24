@@ -101,7 +101,7 @@ async function ensureSheetExists(sheets: any, spreadsheetId: string, sheetName: 
       const range = `${sheetName}!A1:E1`; 
   
       const values = [
-        ['', `${to_name}`, linkedinProfile, companyUrl, event_timestamp]
+        ['not_connected', `${to_name}`, linkedinProfile, companyUrl, event_timestamp]
       ];
   
       const result = await sheets.spreadsheets.values.append({
