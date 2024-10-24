@@ -74,15 +74,15 @@ const ResultsQuestionCard: React.FC<ResultsQuestionCardProps> = ({
     quoteCount: theme._count?.QuotesOnTheme ?? 0,
   }));
 
-  const sortedThemes = themesWithQuoteCounts.sort(
-    (a, b) => b.quoteCount - a.quoteCount,
-  );
-  const prominentThemes = sortedThemes.filter((theme) => theme.quoteCount >= 3);
-  const otherThemes = sortedThemes.filter((theme) => theme.quoteCount < 3);
+  const relevantThemes = themesWithQuoteCounts
+    .filter((theme) => theme.quoteCount >= 3)
+    .sort((a, b) => b.quoteCount - a.quoteCount);
 
-  const visibleThemes = showAllThemes ? sortedThemes : prominentThemes;
+  const visibleThemes = showAllThemes
+    ? relevantThemes
+    : relevantThemes.slice(0, 7);
 
-  const renderThemes = (themesToRender: typeof sortedThemes) => (
+  const renderThemes = (themesToRender: typeof relevantThemes) => (
     <div className="flex flex-wrap items-center gap-2">
       {themesToRender.map((theme) => (
         <BasicTag
@@ -137,7 +137,7 @@ const ResultsQuestionCard: React.FC<ResultsQuestionCardProps> = ({
                 Summary has not been generated yet.
               </div>
             </div>
-            {themesEnabled && themesWithQuoteCounts.length > 0 && (
+            {themesEnabled && relevantThemes.length > 0 && (
               <div className="mt-4 flex flex-col gap-2">
                 <div className="flex flex-col">
                   <div className="flex flex-row items-center gap-2 text-base font-medium text-theme-900">
@@ -155,7 +155,7 @@ const ResultsQuestionCard: React.FC<ResultsQuestionCardProps> = ({
                 </div>
                 <div className="flex flex-col gap-2">
                   {renderThemes(visibleThemes)}
-                  {otherThemes.length > 0 && (
+                  {relevantThemes.length > 7 && (
                     <Button
                       variant="unstyled"
                       size="sm"
@@ -164,7 +164,7 @@ const ResultsQuestionCard: React.FC<ResultsQuestionCardProps> = ({
                     >
                       {showAllThemes
                         ? "Hide"
-                        : `See ${otherThemes.length} more`}
+                        : `See ${relevantThemes.length - 7} more`}
                       <CaretDown
                         size={16}
                         className={`transition-transform ${showAllThemes ? "rotate-180" : ""}`}
