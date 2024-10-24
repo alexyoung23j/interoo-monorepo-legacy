@@ -69,7 +69,6 @@ async function ensureSheetExists(sheets: any, spreadsheetId: string, sheetName: 
   router.post('/', async (req, res) => {
     try {
       const { to_email, sequence_number, campaign_status, event_type, campaign_name, from_email, event_timestamp } = req.body;
-      console.log('req.body', req.body);
   
       if (sequence_number > 1) {
         return res.status(200).json({ message: 'Ignoring, not a new lead' });
@@ -101,18 +100,34 @@ async function ensureSheetExists(sheets: any, spreadsheetId: string, sheetName: 
       // Ensure the sheet exists
       await ensureSheetExists(sheets, spreadsheetId, sheetName);
   
-      const range = `${sheetName}!A:E`; // Adjusted to include the new time_sent column
+      const range = `${sheetName}!A:E`;
+
+      // First, get the current values in the sheet
+      const currentValues = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range,
+      });
   
-      const values = [
-        ['', `${firstName} ${lastName}`, linkedinProfile, companyUrl, event_timestamp]
+      // Determine the next row number
+      const nextRow = (currentValues.data.values?.length ?? 0) + 1;
+  
+      // Prepare the new row data
+      const newRow = [
+        nextRow.toString(), // Add row number as the first column
+        `${firstName} ${lastName}`,
+        linkedinProfile,
+        companyUrl,
+        event_timestamp
       ];
   
+      // Append the new row
       const result = await sheets.spreadsheets.values.append({
         spreadsheetId,
         range,
         valueInputOption: 'USER_ENTERED',
+        insertDataOption: 'INSERT_ROWS', // Ensure new rows are inserted
         requestBody: {
-          values,
+          values: [newRow],
         },
       });
   
