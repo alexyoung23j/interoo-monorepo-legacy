@@ -105,6 +105,12 @@ const ResultsPageComponent: React.FC<ResultsPageComponentProps> = ({
     }
   };
 
+  const handleThemeClick = (themeId: string) => {
+    router.push(
+      `/org/${study.organizationId}/study/${studyId}/analysis/themes?selectedTheme=${themeId}`,
+    );
+  };
+
   if (isLoading || !study) {
     return (
       <div className="flex h-full items-center justify-center bg-theme-off-white">
@@ -192,6 +198,7 @@ const ResultsPageComponent: React.FC<ResultsPageComponentProps> = ({
                   }}
                   isSelected={selectedQuestion?.id === question.id}
                   orgId={study.organizationId}
+                  onThemeClick={handleThemeClick}
                 />
               ))}
           </div>

@@ -236,7 +236,7 @@ export async function generateThemeAnalysis(
 
     For citations, please provide the index of the response (remember, each inner array in responseSentences represents a response), the index of the first sentence of the identified quote from that response, and the index of the last sentence of the quote from that response.
     Avoid using sentences that express a partial thought as a citation. Citations can and usually will be multiple sentences from a response combined. 
-    You can bias towards including more of the sentences from the response in the citation if you think it helps support the insight, and each theme does not need to have an equal number of citations.
+    You can bias towards including more of the sentences from the response in the citation if you think it helps support the insight, and each theme does not need to have an equal number of citations. However, avoid including *entire* responses as citations and avoid including just a few words as citations.
 
     If the name of a theme is "Health considerations drive choices" for example, a good quote in a citation would be "I'm looking for that high protein item, low carb, low sugar, and low sodium.", and a bad quote would be "I can give you 2 items.". 
     Notice how in the bad quote, the user is expressing a partial thought that does not fully support the insight ("I can give you 2 items") rather than a complete thought that fully expresses an insight ("I can give you 2 items that are high protein, low carb, low sugar, and low sodium.").
@@ -400,8 +400,9 @@ async function validateCitations(
     2. The citation should provide clear evidence or an example of the theme by itself.
     3. The citation should be substantial enough to support the theme (not just a brief, vague statement).
     4. The citation should not be taken out of context in a way that misrepresents its meaning.
+    5. The citation should be more than 3 words.
 
-    For each citation, return true if it's a valid support for the theme, and false if it should be removed. If the name for an existing theme is "Unknown", ignore that theme.
+    For each citation, return true if it's a valid support for the theme, and false if it violates the guidelines above and should be removed. If the name for an existing theme is "Unknown", ignore that theme.
 
     Note: We are providing the name and description of each theme. A citation is a quote from an individual response to the question in the study.
 

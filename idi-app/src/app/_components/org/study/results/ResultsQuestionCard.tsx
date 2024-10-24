@@ -10,14 +10,11 @@ import BasicCard from "@/app/_components/reusable/BasicCard";
 import { Button } from "@/components/ui/button";
 import {
   CaretRight,
-  ChatCircle,
-  Clock,
   ListChecks,
   Sparkle,
   Waveform,
+  CaretDown,
 } from "@phosphor-icons/react";
-import BasicTitleSection from "@/app/_components/reusable/BasicTitleSection";
-import { api } from "@/trpc/react";
 import MultipleChoiceMetadataDisplay from "./MultipleChoiceMetadataDisplay";
 import BasicTag from "@/app/_components/reusable/BasicTag";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
@@ -27,12 +24,15 @@ interface ResultsQuestionCardProps {
   question: Question & {
     _count?: { Response: number };
     ThemesOnQuestion: (ThemesOnQuestion & {
-      theme: Theme;
+      theme: Theme & {
+        _count?: { QuotesOnTheme: number };
+      };
     })[];
   };
   index: number;
   onViewResponses: () => void;
   isSelected: boolean;
+  onThemeClick: (themeId: string) => void;
 }
 
 const getFollowUpLevelAverage = (level: FollowUpLevel): number => {
@@ -56,17 +56,49 @@ const ResultsQuestionCard: React.FC<ResultsQuestionCardProps> = ({
   onViewResponses,
   isSelected,
   orgId,
+  onThemeClick,
 }) => {
-  const hasThemes = question.ThemesOnQuestion.length > 0;
+  const [showAllThemes, setShowAllThemes] = useState(false);
+  const { isFeatureEnabled, isLoading: featureFlagsLoading } =
+    useFeatureFlags(orgId);
+  const themesEnabled = isFeatureEnabled("themes");
+
   const themes = Array.from(
     new Map(
       question.ThemesOnQuestion.map((theme) => [theme.theme.id, theme.theme]),
     ).values(),
   );
 
-  const { isFeatureEnabled, isLoading: featureFlagsLoading } =
-    useFeatureFlags(orgId);
-  const themesEnabled = isFeatureEnabled("themes");
+  const themesWithQuoteCounts = themes.map((theme) => ({
+    ...theme,
+    quoteCount: theme._count?.QuotesOnTheme ?? 0,
+  }));
+
+  const relevantThemes = themesWithQuoteCounts
+    .filter((theme) => theme.quoteCount >= 3)
+    .sort((a, b) => b.quoteCount - a.quoteCount);
+
+  const visibleThemes = showAllThemes
+    ? relevantThemes
+    : relevantThemes.slice(0, 7);
+
+  const renderThemes = (themesToRender: typeof relevantThemes) => (
+    <div className="flex flex-wrap items-center gap-2">
+      {themesToRender.map((theme) => (
+        <BasicTag
+          key={theme.id}
+          style={{
+            borderColor: theme.tagColor,
+            backgroundColor: `${theme.tagColor}33`,
+          }}
+          className="flex cursor-pointer gap-2 border py-1 transition-colors duration-200 ease-in-out"
+          onClick={() => onThemeClick(theme.id)}
+        >
+          {theme.name}
+        </BasicTag>
+      ))}
+    </div>
+  );
 
   const renderQuestionTypeMetadata = () => {
     switch (question.questionType) {
@@ -105,7 +137,7 @@ const ResultsQuestionCard: React.FC<ResultsQuestionCardProps> = ({
                 Summary has not been generated yet.
               </div>
             </div>
-            {hasThemes && !featureFlagsLoading && themesEnabled && (
+            {themesEnabled && relevantThemes.length > 0 && (
               <div className="mt-4 flex flex-col gap-2">
                 <div className="flex flex-col">
                   <div className="flex flex-row items-center gap-2 text-base font-medium text-theme-900">
@@ -121,21 +153,24 @@ const ResultsQuestionCard: React.FC<ResultsQuestionCardProps> = ({
                     respondents.
                   </div>
                 </div>
-                <div className="text-sm text-theme-600">
-                  <div className="flex flex-wrap gap-2">
-                    {themes.map((theme) => (
-                      <BasicTag
-                        key={theme.id}
-                        style={{
-                          borderColor: theme.tagColor,
-                          backgroundColor: `${theme.tagColor}33`, // 33 represents 20% opacity in hex
-                        }}
-                        className="flex cursor-pointer gap-2 border py-1 transition-colors duration-200 ease-in-out"
-                      >
-                        {theme.name}
-                      </BasicTag>
-                    ))}
-                  </div>
+                <div className="flex flex-col gap-2">
+                  {renderThemes(visibleThemes)}
+                  {relevantThemes.length > 7 && (
+                    <Button
+                      variant="unstyled"
+                      size="sm"
+                      onClick={() => setShowAllThemes(!showAllThemes)}
+                      className="flex h-auto items-center gap-1 whitespace-nowrap p-0 text-theme-600"
+                    >
+                      {showAllThemes
+                        ? "Hide"
+                        : `See ${relevantThemes.length - 7} more`}
+                      <CaretDown
+                        size={16}
+                        className={`transition-transform ${showAllThemes ? "rotate-180" : ""}`}
+                      />
+                    </Button>
+                  )}
                 </div>
               </div>
             )}

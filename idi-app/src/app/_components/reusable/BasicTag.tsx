@@ -9,6 +9,7 @@ interface BasicTagProps {
   className?: string;
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
+  onClick?: () => void;
 }
 
 const BasicTag: React.FC<BasicTagProps> = ({
@@ -20,6 +21,7 @@ const BasicTag: React.FC<BasicTagProps> = ({
   style,
   onMouseEnter,
   onMouseLeave,
+  onClick,
 }) => {
   return (
     <div
@@ -29,6 +31,7 @@ const BasicTag: React.FC<BasicTagProps> = ({
       style={style}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
+      onClick={onClick}
     >
       {children}
     </div>
