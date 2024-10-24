@@ -18,6 +18,7 @@ import { formatDuration, formatElapsedTime } from "@/app/utils/functions";
 import { api } from "@/trpc/react";
 import { ClipLoader } from "react-spinners";
 import { PauseInterval } from "@shared/types";
+import { cn } from "@/lib/utils";
 
 interface InterviewPageComponentProps {
   studyId: string;
@@ -238,6 +239,21 @@ const InterviewPageComponent: React.FC<InterviewPageComponentProps> = ({
                   `${pathname}?interviewSessionId=${row.originalSession.id}&modalOpen=true`,
                 );
               }}
+              rowClassName={(row) =>
+                cn(
+                  "transition-colors duration-200",
+                  selectedInterview?.id === row.originalSession.id
+                    ? "bg-theme-50"
+                    : "bg-theme-off-white hover:bg-theme-50",
+                )
+              }
+              rowStyle={(row) => ({
+                ...(selectedInterview?.id === row.originalSession.id
+                  ? {
+                      boxShadow: "0 0 0 1px var(--theme-500)",
+                    }
+                  : {}),
+              })}
             />
           </div>
         }

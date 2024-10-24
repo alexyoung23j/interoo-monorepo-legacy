@@ -19,7 +19,7 @@ interface CardTableProps<T> {
   showHeader?: boolean;
 }
 
-function CardTable<T extends Record<string, any>>({
+function CardTable<T extends Record<string, unknown>>({
   data,
   columns,
   onRowClick,
@@ -28,6 +28,16 @@ function CardTable<T extends Record<string, any>>({
   tableClassName,
   showHeader = true,
 }: CardTableProps<T>) {
+  const renderCellContent = (value: unknown): ReactNode => {
+    if (React.isValidElement(value)) {
+      return value;
+    }
+    if (value == null) {
+      return "";
+    }
+    return String(value);
+  };
+
   return (
     <div
       className={cn("flex flex-col space-y-2", tableClassName)}
@@ -88,9 +98,7 @@ function CardTable<T extends Record<string, any>>({
                   }}
                   role="cell"
                 >
-                  {React.isValidElement(row[column.key])
-                    ? row[column.key]
-                    : String(row[column.key])}
+                  {renderCellContent(row[column.key])}
                 </div>
               ))}
             </div>
