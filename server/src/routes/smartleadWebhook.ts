@@ -98,7 +98,7 @@ async function ensureSheetExists(sheets: any, spreadsheetId: string, sheetName: 
       // Ensure the sheet exists
       await ensureSheetExists(sheets, spreadsheetId, sheetName);
   
-      const range = `${sheetName}!A1:E1`; 
+      const range = `${sheetName}!A1`; 
   
       const values = [
         ['not_connected', `${to_name}`, linkedinProfile, companyUrl, event_timestamp]
