@@ -21,6 +21,7 @@ import { getSignedUploadUrlRoute } from "./routes/getSignedUploadUrl";
 import { getSignedReadUrlRoute } from "./routes/getSignedReadUrl";
 import { resetStudyThemesRoute } from './routes/resetStudyThemes';
 import { createInterviewTranscriptExportRoute } from "./routes/createInterviewTranscriptExport";
+import { smartLeadWebhookRoute } from "./routes/smartleadWebhook";
 
 // Configuration and Setup
 const rootDir = path.resolve(__dirname, "../..");
@@ -85,6 +86,7 @@ app.use("/api/get-signed-upload-url", getSignedUploadUrlRoute);
 app.use("/api/getSignedReadUrl", getSignedReadUrlRoute);
 app.use("/api/reset-study-themes", resetStudyThemesRoute);
 app.use("/api/create-interview-transcript-export", createInterviewTranscriptExportRoute);
+app.use('/webhook/smartlead', smartLeadWebhookRoute);
 
 // Server Startup
 const startServer = () => {
