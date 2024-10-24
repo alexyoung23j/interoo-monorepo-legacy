@@ -14,6 +14,7 @@ import { useMediaDownload } from "@/hooks/useMediaDownload";
 import { api } from "@/trpc/react";
 import GeneralPopover from "@/app/_components/reusable/GeneralPopover";
 import { useToast } from "@/hooks/use-toast";
+import { useThemes } from "@/hooks/useThemes";
 
 interface QuestionModalLeftContentProps {
   responses:
@@ -64,6 +65,8 @@ const QuestionModalLeftContent: React.FC<QuestionModalLeftContentProps> = ({
       studyId: study.id,
       questionId: question.id,
     });
+
+  const { data: themes } = useThemes(study.id);
 
   if (!responses || !mediaUrlData || isLoading) {
     return (
