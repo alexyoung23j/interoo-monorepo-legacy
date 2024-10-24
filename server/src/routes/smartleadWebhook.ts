@@ -47,6 +47,7 @@ async function ensureSheetExists(sheets: any, spreadsheetId: string, sheetName: 
         ranges: [sheetName],
       });
     } catch (error) {
+      console.log('Sheet doesn\'t exist, creating it');
       // Sheet doesn't exist, create it
       await sheets.spreadsheets.batchUpdate({
         spreadsheetId,
