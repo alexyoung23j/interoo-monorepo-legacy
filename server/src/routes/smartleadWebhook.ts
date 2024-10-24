@@ -28,7 +28,7 @@ router.post('/', async (req, res) => {
 
     const linkedinProfile = response.data.linkedin_profile ?? '';
 
-    console.log('linkedinProfile', linkedinProfile);
+    console.log('profile: ', linkedinProfile);
 
     // Here you can do something with the linkedinProfile, such as storing it in a database
 
