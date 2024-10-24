@@ -68,14 +68,14 @@ async function ensureSheetExists(sheets: any, spreadsheetId: string, sheetName: 
   
   router.post('/', async (req, res) => {
     try {
-      const { to_email, sequence_number, campaign_status, event_type, campaign_name, from_email, time_sent } = req.body;
+      const { to_email, sequence_number, campaign_status, event_type, campaign_name, from_email, event_timestamp } = req.body;
       console.log('req.body', req.body);
   
       if (sequence_number > 1) {
         return res.status(200).json({ message: 'Ignoring, not a new lead' });
       }
   
-      if (!to_email || !campaign_name || !time_sent) {
+      if (!to_email || !campaign_name || !event_timestamp) {
         return res.status(400).json({ error: 'to_email, campaign_name, and time_sent are required in the webhook payload' });
       }
   
@@ -104,7 +104,7 @@ async function ensureSheetExists(sheets: any, spreadsheetId: string, sheetName: 
       const range = `${sheetName}!A:E`; // Adjusted to include the new time_sent column
   
       const values = [
-        ['', `${firstName} ${lastName}`, linkedinProfile, companyUrl, time_sent]
+        ['', `${firstName} ${lastName}`, linkedinProfile, companyUrl, event_timestamp]
       ];
   
       const result = await sheets.spreadsheets.values.append({
