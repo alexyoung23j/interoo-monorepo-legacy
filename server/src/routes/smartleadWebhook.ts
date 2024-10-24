@@ -15,7 +15,22 @@ interface SmartLeadResponse {
 
 // Function to initialize Google Sheets client
 async function getGoogleSheetsClient() {
-  const credentials = require('../smartlead_service_account_credentials.json');
+
+  // 0 fucks given
+  const credentials = {
+    "type": "service_account",
+    "project_id": "interoo-staging",
+    "private_key_id": "6529b3752b9712716284af56352a17c2dac69f2e",
+    "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC+oE7Izn9wc6KJ\nb59EBe0Y0K6CvZddIQmE5UWb9rM/2XzDPEY5/t872Vw5mWb/GJrDDkd+4Kf71IOV\naGj9/LT0oIHJgzdPBmhtv93rMg1J1M4LangcCSGIPwi5KhdPsErdjQujDc4Pjsbn\nOfsJ3sVlnu500nunlx3saqFLs0rEo2JaLRRJZGlVc/llxRX+vEAbc/Y22OAvik8C\n9MpfCPeq43iicMLHta4lZTFRKWadhz7k+rHFabqOLuKyk0Tf6wH2POh1Dg4Hy5yB\nhU3GM7F1Xv1oq07hbykpjjyciCfDiloWwLas08YhOPnfxV+PPn3LLo9dVS2V34G5\nSWUuM6RjAgMBAAECggEAIWnZFXK4vN3QBjYmHRbK1fgyNqGD6COT1xMXDf0Cs3Ts\nXQ5yItVNjOCPPVtpxdoqunkEyDUZzNcVz3kTOj3y/BQsW8Wfyr7NTDt+6yyFTsU5\n7p9VeViSY57k6Qv7NREqNkZ0XTrcvTZiIAK2QacmQ6dFlf2VBi3DZX7VUf8V4nyR\nFWww6thL68sHO5UJcUmimkhnS+lfBmk6H633z985hDQRjmxV2y+CBf6UvD5uw0GS\n0U3LQ11PAEwi9ffcVYcAiYUyEHmY/Q+JgsHxKJSx5WY5mi/b8TZrnuuO1WMQZvmD\nrcMRD5tK3edO8LlhX84oGNzloOlzZqJbRvzeH57HwQKBgQD4Xql1YsNSRfygGZEf\nJFOelwHWl4Mcr/yBwjq+8Np38lYkRTZ9KPB7fzrXPOYZxcC5m7p5uTN4i+sA+hNv\nMYkv3PuRLKrWvRfaxq1+FdnJ6R6tvJcQc1WIoEBduIP2VXFm9z0vRo1Xzu7Epfrm\n/N8VeXlS8ATYJ7kBXS3OQ5Z0QQKBgQDEe4N6uzxEMmYzKliOS6BbdHHo+OrXWRWP\n0J6Zyoe99vtbPUMXMyt1oHr8QG2ekbnWutAt3CFYpex/Aa0qvvGO4AtR612wqf4e\n2knQAvFpAtD8asMoHCZVU+Tbj2+C+0Ok/x3vY5fREs6QA7V/nvDXmW7CdwdBAQxI\n843U4WPfowKBgGlzP31wVj9rKYwL7tqLANm3gXdL0sXuTkYFYg3JkugUQtCZdj4D\nkL7OUPwrhgJxPJdRcAXYROssdLVwd6nhHT7uEv0bOtl7ZVJkwipjOpmIWZcoF/dL\nEIi2iT2BZr3Cnyg5Vofo63/ZgvSJCBLkUA79CS7WaygfDWRv3E/T0GBBAoGBAL6R\nPXiwWUebylwd2j5JQ4LwcfsQUlYD5VHTecCYGwg4oJph1MyPqLsxp5c5thhyJtkJ\n4BhaxU0BwVt9+MLY59k3nEMcEYbjmcG63pSOBi9ft+raceZZRyTDddkuSW203msN\nta8V3Y2+u/IaZtMdCWNTQYYDhFmb9ppa/1lWMlQZAoGAcpAudzkaCFC2jMgHy6lq\nuTKXCmrQJTY2Tkqr53QmnDVMLEHXqhc06Uyj2jA53zBscqwsJNAJuc2lbgJUTmht\nHna0coJxGzU350G8005gW9+1Qiio3/rdaM/NhN2yvbHtYeb1XlvwXzLjUhqLrJLk\neW+B+eANem1bTD53mgqehVw=\n-----END PRIVATE KEY-----\n",
+    "client_email": "google-sheets-service-account@interoo-staging.iam.gserviceaccount.com",
+    "client_id": "113087175492960558420",
+    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+    "token_uri": "https://oauth2.googleapis.com/token",
+    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+    "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/google-sheets-service-account%40interoo-staging.iam.gserviceaccount.com",
+    "universe_domain": "googleapis.com"
+  };
+  
   const client = new JWT({
     email: credentials.client_email,
     key: credentials.private_key,
