@@ -10,7 +10,8 @@ interface SmartLeadResponse {
 
 router.post('/', async (req, res) => {
   try {
-    const { to_email } = req.body;
+    const { to_email, sequence_number, campaign_status, event_type, campaign_name } = req.body;
+    console.log('req.body', req.body);
 
     if (!to_email) {
       return res.status(400).json({ error: 'to_email is required in the webhook payload' });

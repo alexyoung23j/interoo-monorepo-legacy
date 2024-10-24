@@ -86,7 +86,7 @@ app.use("/api/get-signed-upload-url", getSignedUploadUrlRoute);
 app.use("/api/getSignedReadUrl", getSignedReadUrlRoute);
 app.use("/api/reset-study-themes", resetStudyThemesRoute);
 app.use("/api/create-interview-transcript-export", createInterviewTranscriptExportRoute);
-app.use('/webhook/smartlead', smartLeadWebhookRoute);
+app.use('/api/webhook/smartlead', smartLeadWebhookRoute);
 
 // Server Startup
 const startServer = () => {
