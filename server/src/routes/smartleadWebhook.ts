@@ -100,7 +100,7 @@ async function ensureSheetExists(sheets: any, spreadsheetId: string, sheetName: 
       // Ensure the sheet exists
       await ensureSheetExists(sheets, spreadsheetId, sheetName);
   
-      const range = `${sheetName}!A1:E1`; // Adjusted to include the new time_sent column
+      const range = `${sheetName}!A1:E1`; 
   
       const values = [
         ['', `${firstName} ${lastName}`, linkedinProfile, companyUrl, event_timestamp]
@@ -110,6 +110,7 @@ async function ensureSheetExists(sheets: any, spreadsheetId: string, sheetName: 
         spreadsheetId,
         range,
         valueInputOption: 'USER_ENTERED',
+        insertDataOption: 'INSERT_ROWS',
         requestBody: {
           values,
         },
