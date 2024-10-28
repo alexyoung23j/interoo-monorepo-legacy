@@ -79,7 +79,7 @@ const ResultsQuestionCard: React.FC<ResultsQuestionCardProps> = ({
 
   const visibleThemes = showAllThemes
     ? relevantThemes
-    : relevantThemes.slice(0, 3); // Only show first 7 themes unless "show more" is clicked
+    : relevantThemes.slice(0, 3); // Only show first 3 themes unless "show more" is clicked
 
   const renderThemes = (themesToRender: typeof relevantThemes) => (
     <div className="flex flex-wrap items-center gap-2">
@@ -154,7 +154,7 @@ const ResultsQuestionCard: React.FC<ResultsQuestionCardProps> = ({
                 </div>
                 <div className="flex flex-col gap-2">
                   {renderThemes(visibleThemes)}
-                  {relevantThemes.length > 7 && (
+                  {relevantThemes.length > 3 && (
                     <Button
                       variant="unstyled"
                       size="sm"
@@ -163,7 +163,7 @@ const ResultsQuestionCard: React.FC<ResultsQuestionCardProps> = ({
                     >
                       {showAllThemes
                         ? "Hide"
-                        : `See ${relevantThemes.length - 7} more`}
+                        : `See ${relevantThemes.length - 3} more`}
                       <CaretDown
                         size={16}
                         className={`transition-transform ${showAllThemes ? "rotate-180" : ""}`}
