@@ -68,12 +68,18 @@ const ResultsQuestionCard: React.FC<ResultsQuestionCardProps> = ({
   const themesEnabled = isFeatureEnabled("themes");
 
   const relevantThemes = themes
-    .filter((theme) => theme.quoteCount >= 3)
+    .filter(
+      (theme) =>
+        // Only show themes that are associated with this question through ThemesOnQuestion
+        question.ThemesOnQuestion.some((toq) => toq.themeId === theme.id) &&
+        // And still maintain the minimum quote threshold
+        theme.quoteCount >= 3,
+    )
     .sort((a, b) => b.quoteCount - a.quoteCount);
 
   const visibleThemes = showAllThemes
     ? relevantThemes
-    : relevantThemes.slice(0, 7);
+    : relevantThemes.slice(0, 7); // Only show first 7 themes unless "show more" is clicked
 
   const renderThemes = (themesToRender: typeof relevantThemes) => (
     <div className="flex flex-wrap items-center gap-2">
