@@ -79,7 +79,7 @@ const ResultsQuestionCard: React.FC<ResultsQuestionCardProps> = ({
 
   const visibleThemes = showAllThemes
     ? relevantThemes
-    : relevantThemes.slice(0, 7); // Only show first 7 themes unless "show more" is clicked
+    : relevantThemes.slice(0, 3); // Only show first 7 themes unless "show more" is clicked
 
   const renderThemes = (themesToRender: typeof relevantThemes) => (
     <div className="flex flex-wrap items-center gap-2">
