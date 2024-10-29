@@ -45,14 +45,21 @@ export const InterviewScreenLayout: React.FC<InterviewScreenLayoutProps> = ({
               unoptimized
             />
           ) : (
-            <Image
-              src="/logo_v1.png"
-              alt=""
-              width={100}
-              height={100}
-              className="mt-2 max-h-[20px] max-w-[100px] object-contain md:mt-4"
-              unoptimized
-            />
+            <div
+              className="cursor-pointer"
+              onClick={() => {
+                window.open("https://interoo.ai", "_blank");
+              }}
+            >
+              <Image
+                src="/logo_v1.png"
+                alt=""
+                width={100}
+                height={100}
+                className="mt-2 max-h-[20px] max-w-[100px] object-contain md:mt-4"
+                unoptimized
+              />
+            </div>
           )}
         </div>
         <div className="flex items-center gap-2 md:hidden">
