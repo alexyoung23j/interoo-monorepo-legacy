@@ -330,9 +330,6 @@ export default function QuestionsPage({
         onConfirm={async () => {
           try {
             await handleSaveQuestions();
-            await updateStudyMutation.mutateAsync({
-              id: params.studyId,
-            });
             showSuccessToast("Study updated successfully");
             router.push(
               `/org/${study?.organizationId}/study/${study?.id}/results`,
