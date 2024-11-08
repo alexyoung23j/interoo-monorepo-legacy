@@ -1,0 +1,22 @@
+{
+    "name": "website-filter",
+    "version": "1.0.0",
+    "type": "module",
+    "scripts": {
+      "build": "tsc",
+      "start": "tsx index.ts",
+      "dev": "tsx watch index.ts"
+    },
+    "dependencies": {
+      "playwright": "^1.40.1",
+      "cheerio": "^1.0.0-rc.12",
+      "csv-parse": "^5.5.3",
+      "csv-stringify": "^6.4.5",
+      "axios": "^1.6.2"
+    },
+    "devDependencies": {
+      "@types/node": "^20.10.4",
+      "typescript": "^5.3.3",
+      "tsx": "^4.6.2"
+    }
+  }
