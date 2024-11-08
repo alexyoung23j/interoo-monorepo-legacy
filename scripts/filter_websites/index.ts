@@ -28,8 +28,8 @@ function prioritizeLinks(links: string[]): string[] {
     priorityBuckets[keyword] = [];
   });
 
-  // Sort links into buckets
-  links.forEach(link => {
+  // Filter out sitemap URLs and sort remaining links into buckets
+  links.filter(link => !link.toLowerCase().includes('sitemap')).forEach(link => {
     const lowercaseLink = link.toLowerCase();
     let assigned = false;
 
@@ -49,7 +49,7 @@ function prioritizeLinks(links: string[]): string[] {
   // Combine links in priority order
   const prioritizedLinks = [
     ...PRIORITY_KEYWORDS.flatMap(keyword => priorityBuckets[keyword]),
-    ...normalLinks.slice(0, 2) // Only take first 5 non-priority links
+    ...normalLinks.slice(0, 2) // Only take first 2 non-priority links
   ];
 
   console.log('\n  📊 Link prioritization summary:');
