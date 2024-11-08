@@ -1,2 +1,2 @@
-/outputs
-/input_csvs
+./outputs/*
+./input_csvs/*
