@@ -100,7 +100,7 @@ const InterviewPageComponent: React.FC<InterviewPageComponentProps> = ({
     { key: "respondent", header: "Respondent", width: "33%" },
     {
       key: "dateTaken",
-      header: "Date Started",
+      header: "Date Taken",
       width: "22%",
       className: "justify-end",
     },
@@ -170,11 +170,40 @@ const InterviewPageComponent: React.FC<InterviewPageComponentProps> = ({
     return formatElapsedTime(averageElapsedTime);
   };
 
-  const tableData = interviewData?.interviewSessions.map((session) => ({
+  const sortedInterviewData = React.useMemo(() => {
+    if (!interviewData?.interviewSessions) return [];
+
+    return [...interviewData.interviewSessions].sort((a, b) => {
+      // If both are completed, sort by lastUpdatedTime
+      if (
+        a.status === InterviewSessionStatus.COMPLETED &&
+        b.status === InterviewSessionStatus.COMPLETED
+      ) {
+        return (
+          new Date(b.lastUpdatedTime ?? 0).getTime() -
+          new Date(a.lastUpdatedTime ?? 0).getTime()
+        );
+      }
+
+      // If only one is completed, completed ones come first
+      if (a.status === InterviewSessionStatus.COMPLETED) return -1;
+      if (b.status === InterviewSessionStatus.COMPLETED) return 1;
+
+      // For non-completed interviews, sort by startTime
+      return (
+        new Date(b.startTime ?? 0).getTime() -
+        new Date(a.startTime ?? 0).getTime()
+      );
+    });
+  }, [interviewData?.interviewSessions]);
+
+  const tableData = sortedInterviewData.map((session) => ({
     respondent: session.participant?.demographicResponse?.name ?? "Anonymous",
     dateTaken: (
       <div className="text-xs font-light text-theme-600">
-        {formatDate(session.startTime)}
+        {session.status === InterviewSessionStatus.COMPLETED
+          ? formatDate(session.lastUpdatedTime)
+          : formatDate(session.startTime)}
       </div>
     ),
     timeTaken: (
