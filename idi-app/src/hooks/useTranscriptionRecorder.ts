@@ -171,6 +171,9 @@ export function useTranscriptionRecorder({
       });
 
       try {
+        Sentry.captureMessage(`Submitting audio to /api/audio-response`, {
+          level: "info",
+        });
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/audio-response`,
           {
