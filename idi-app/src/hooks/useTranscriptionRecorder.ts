@@ -63,22 +63,25 @@ export function useTranscriptionRecorder({
       if (recordingTimeout.current) {
         clearTimeout(recordingTimeout.current);
       }
-      // Add a short delay before stopping the recorder
+
+      mediaRecorder.current.stream.getTracks().forEach((track) => {
+        track.stop();
+      });
+
       setTimeout(() => {
         mediaRecorder.current?.stop();
-      }, 200); // 200ms delay
+      }, 200);
     } else {
       Sentry.captureMessage(
         "Attempted to stop recording, but MediaRecorder is inactive",
-        {
-          level: "warning",
-        },
+        { level: "warning" },
       );
     }
   }, []);
 
   const startRecording = useCallback(async () => {
     try {
+      audioChunks.current = [];
       setIsRecording(true);
       setRecordingStartTime(Date.now());
       Sentry.captureMessage("Starting recording", {
@@ -331,8 +334,12 @@ export function useTranscriptionRecorder({
         clearTimeout(recordingTimeout.current);
       }
       if (mediaRecorder.current && mediaRecorder.current.state !== "inactive") {
+        mediaRecorder.current.stream.getTracks().forEach((track) => {
+          track.stop();
+        });
         mediaRecorder.current.stop();
       }
+      audioChunks.current = [];
     };
   }, []);
 
