@@ -141,7 +141,12 @@ export function useTranscriptionRecorder({
 
   const submitAudio = useCallback(
     async (additionalData: TranscribeAndGenerateNextQuestionRequest) => {
-      if (audioChunks.current.length === 0) return null;
+      if (audioChunks.current.length === 0) {
+        Sentry.captureMessage(`No audio chunks to submit`, {
+          level: "info",
+        });
+        return null;
+      }
 
       const currentEndTime = Date.now();
 
