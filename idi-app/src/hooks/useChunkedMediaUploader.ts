@@ -197,8 +197,14 @@ export function useChunkedMediaUploader() {
             );
           }, 8000);
 
+          // Store tracks reference before stopping
+          const tracks = mediaRecorder.current.stream.getTracks();
+
           mediaRecorder.current.onstop = async () => {
-            uploadStartTime.current = Date.now(); // Start timing here
+            // Stop all tracks after recorder stops
+            tracks.forEach((track) => track.stop());
+
+            uploadStartTime.current = Date.now();
             setIsRecording(false);
             console.log("Setting isUploadingFinalChunks to true");
             Sentry.captureMessage("Setting isUploadingFinalChunks to true", {
