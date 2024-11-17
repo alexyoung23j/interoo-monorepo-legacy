@@ -38,6 +38,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import * as Sentry from "@sentry/nextjs";
 
 interface InterviewBottomBarProps {
   organization: Organization;
@@ -127,18 +128,29 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
   const startResponse = async () => {
     if (!navigator.mediaDevices?.getUserMedia) {
       console.error("getUserMedia is not supported in this browser");
+      Sentry.captureMessage("getUserMedia is not supported in this browser", {
+        level: "error",
+      });
       return;
     }
 
     try {
+      Sentry.captureMessage("Starting response recording", { level: "info" });
       stopTtsAudio();
       setIsFullyRecording(true);
       await startChunkedMediaUploader(
         study.videoEnabled ?? false,
         currentFacingMode,
       );
+      Sentry.captureMessage("Chunked media uploader started", {
+        level: "info",
+      });
       await transcriptionRecorder.startRecording();
+      Sentry.captureMessage("Transcription recorder started", {
+        level: "info",
+      });
     } catch (err) {
+      Sentry.captureException(err, { level: "error" });
       console.error("Error starting response:", err);
       showErrorToast("Error starting response. Please try again.");
       setIsFullyRecording(false);
@@ -152,9 +164,11 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
     // Start the stopping process without waiting for it to complete
     stopChunkedMediaUploader().catch((error) => {
       console.error("Error stopping chunked media uploader:", error);
+      Sentry.captureException(error, { level: "error" });
     });
 
     transcriptionRecorder.stopRecording();
+    Sentry.captureMessage("Transcription recorder stopped", { level: "info" });
 
     const requestBody = calculateTranscribeAndGenerateNextQuestionRequest({
       currentQuestion,
@@ -167,11 +181,16 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
 
     try {
       const res = await transcriptionRecorder.submitAudio(requestBody);
+      Sentry.captureMessage("Audio submitted successfully", {
+        level: "info",
+        extra: { response: res },
+      });
       setIsThinking(false);
       if (res?.textToPlay && audioOn) {
         void playTtsAudio(res.textToPlay); // Use void to indicate we're not awaiting this
       }
     } catch (err) {
+      Sentry.captureException(err, { level: "error" });
       console.error("Error submitting audio:", err);
       showErrorToast("Error uploading your answer. Please try again.");
       setIsThinking(false);
@@ -358,6 +377,19 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
   };
 
   const showWebcamPreview = study.videoEnabled;
+
+  // Log state changes related to recording
+  useEffect(() => {
+    Sentry.captureMessage(`isFullyRecording changed: ${isFullyRecording}`, {
+      level: "info",
+    });
+  }, [isFullyRecording]);
+
+  useEffect(() => {
+    Sentry.captureMessage(`isThinking changed: ${isThinking}`, {
+      level: "info",
+    });
+  }, [isThinking]);
 
   return (
     <div className="flex w-full flex-col items-center justify-between bg-theme-off-white p-4 md:flex-row md:px-2 md:py-0">
