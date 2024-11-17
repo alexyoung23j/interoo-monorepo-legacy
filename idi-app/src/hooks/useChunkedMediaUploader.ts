@@ -50,6 +50,9 @@ export function useChunkedMediaUploader() {
               : null; // This corresponds to "Already uploading"
 
         if (reason) {
+          Sentry.captureMessage(`uploadNextChunk returning early: ${reason}`, {
+            level: "info",
+          });
           console.log("uploadNextChunk returning early", { reason });
         }
         return;
@@ -57,6 +60,11 @@ export function useChunkedMediaUploader() {
 
       try {
         isUploading.current = true;
+        Sentry.captureMessage("Starting upload chunk", {
+          level: "info",
+          extra: { chunkSize: CHUNK_SIZE, uploadedSize: uploadedSize.current },
+        });
+
         const chunkSize = Math.min(CHUNK_SIZE, buffer.current.size);
         const chunk = buffer.current.slice(0, chunkSize);
 
@@ -71,6 +79,14 @@ export function useChunkedMediaUploader() {
           },
           body: chunk,
         });
+
+        Sentry.captureMessage(
+          `Upload chunk response status: ${response.status}`,
+          {
+            level: "info",
+          },
+        );
+        console.log(`Upload chunk response status: ${response.status}`);
 
         if (
           response.status === 308 ||
@@ -87,24 +103,43 @@ export function useChunkedMediaUploader() {
 
           if (response.status === 308) {
             buffer.current = buffer.current.slice(chunkSize);
+            Sentry.captureMessage("Chunk uploaded, continuing upload", {
+              level: "info",
+            });
           } else {
             setUploadProgress(100);
             uploadComplete.current = true;
             setIsUploadComplete(true);
+            Sentry.captureMessage("Upload completed successfully", {
+              level: "info",
+            });
             return true;
           }
 
           setUploadProgress((uploadedSize.current / totalSize.current) * 100);
           return false; // Indicate that upload should continue
         } else {
+          Sentry.captureMessage(
+            `Unexpected response status during upload: ${response.status}`,
+            {
+              level: "error",
+            },
+          );
           throw new Error(`Unexpected response: ${response.status}`);
         }
       } catch (error) {
+        Sentry.captureException(error, { level: "error" });
         console.error("Chunk upload failed:", error);
         setError("Failed to upload media chunk. Please try again.");
         throw error; // Re-throw the error instead of returning null
       } finally {
         isUploading.current = false;
+        Sentry.captureMessage(
+          "Upload chunk process completed (success or fail)",
+          {
+            level: "info",
+          },
+        );
       }
     },
     [currentResponseAndUploadUrl, buffer, isUploading, uploadComplete],
@@ -139,6 +174,12 @@ export function useChunkedMediaUploader() {
             console.log(
               "Video recording stop process timed out after 18 seconds",
             );
+            Sentry.captureMessage(
+              "Recording stop process timed out after 18 seconds",
+              {
+                level: "warning",
+              },
+            );
             cancelUpload.current = true;
             setIsUploadComplete(true);
             reject(new Error("Recording stop process timed out"));
@@ -148,15 +189,30 @@ export function useChunkedMediaUploader() {
             showWarningToast(
               "Your internet connection seems slow. Consider relocating for better upload speed.",
             );
+            Sentry.captureMessage(
+              "Poor internet connection detected during recording",
+              {
+                level: "warning",
+              },
+            );
           }, 8000);
 
           mediaRecorder.current.onstop = async () => {
             uploadStartTime.current = Date.now(); // Start timing here
             setIsRecording(false);
             console.log("Setting isUploadingFinalChunks to true");
+            Sentry.captureMessage("Setting isUploadingFinalChunks to true", {
+              level: "info",
+            });
             setIsUploadingFinalChunks(true);
             console.log(
               "Recording stopped, waiting for any in-progress uploads to complete...",
+            );
+            Sentry.captureMessage(
+              "Recording stopped, waiting for any in-progress uploads to complete",
+              {
+                level: "info",
+              },
             );
 
             // Wait for any in-progress uploads to complete
@@ -165,6 +221,7 @@ export function useChunkedMediaUploader() {
             }
 
             console.log("Uploading final chunks...");
+            Sentry.captureMessage("Uploading final chunks", { level: "info" });
 
             try {
               while (
@@ -177,6 +234,7 @@ export function useChunkedMediaUploader() {
               }
 
               console.log("Final upload complete");
+              Sentry.captureMessage("Final upload complete", { level: "info" });
 
               // Log timing to Sentry
               if (uploadStartTime.current) {
@@ -193,11 +251,15 @@ export function useChunkedMediaUploader() {
                 uploadStartTime.current = null; // Reset for next upload
               }
             } catch (error) {
+              Sentry.captureException(error, { level: "error" });
               console.log("Error during final upload:", error);
               setError("Failed to upload all chunks. Please try again.");
             } finally {
               setIsUploadComplete(true);
               console.log("Setting isUploadingFinalChunks to false");
+              Sentry.captureMessage("Setting isUploadingFinalChunks to false", {
+                level: "info",
+              });
               setIsUploadingFinalChunks(false);
             }
 
@@ -266,8 +328,15 @@ export function useChunkedMediaUploader() {
         recordingTimeout.current = setTimeout(() => {
           void stopRecording();
           showWarningToast("Recording time limit reached (10 minutes).");
+          Sentry.captureMessage(
+            "Recording time limit reached, stopped recording",
+            {
+              level: "warning",
+            },
+          );
         }, MAX_RECORDING_TIME);
       } catch (err) {
+        Sentry.captureException(err, { level: "error" });
         console.error("Error starting recording:", err);
         setError("Failed to start recording. Please check your permissions.");
       }
