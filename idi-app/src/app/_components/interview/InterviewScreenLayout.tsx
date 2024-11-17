@@ -25,7 +25,7 @@ export const InterviewScreenLayout: React.FC<InterviewScreenLayoutProps> = ({
 }) => {
   return (
     <div
-      className="relative flex h-dvh flex-col bg-org-primary px-4 pb-2 pt-16 md:px-32 md:py-20"
+      className="relative flex h-svh flex-col bg-org-primary px-4 pb-2 pt-16 md:px-32 md:py-20"
       style={
         {
           "--org-primary-color": organization.primaryColor,

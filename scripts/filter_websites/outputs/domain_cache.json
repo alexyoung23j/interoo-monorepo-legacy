@@ -1,0 +1,856 @@
+{
+  "nuelementsmedia.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T21:28:39.635Z",
+    "processed": true
+  },
+  "maizeagency.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T21:29:27.019Z",
+    "processed": true
+  },
+  "lwmcadistributors.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "UNKNOWN",
+    "timestamp": "2024-11-17T21:29:29.250Z",
+    "processed": true
+  },
+  "horizonpeakconsulting.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T21:30:11.176Z",
+    "processed": true
+  },
+  "axcelerated.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T21:30:29.568Z",
+    "processed": true
+  },
+  "phronesis-partners.com": {
+    "keyword_match_link": "https://phronesis-partners.com",
+    "matched_keywords": "market research",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T21:30:43.063Z",
+    "processed": true
+  },
+  "precisionopinion.com": {
+    "keyword_match_link": "https://precisionopinion.com",
+    "matched_keywords": "market research",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T21:30:53.976Z",
+    "processed": true
+  },
+  "marketresearchpulse.com": {
+    "keyword_match_link": "https://marketresearchpulse.com",
+    "matched_keywords": "market research",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T21:31:03.405Z",
+    "processed": true
+  },
+  "pacificmarketresearch.com": {
+    "keyword_match_link": "https://pacificmarketresearch.com",
+    "matched_keywords": "market research",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T21:31:14.326Z",
+    "processed": true
+  },
+  "verifiedmarketreports.com": {
+    "keyword_match_link": "https://verifiedmarketreports.com",
+    "matched_keywords": "market research, interviews",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T21:31:23.870Z",
+    "processed": true
+  },
+  "psbinsights.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T21:31:37.796Z",
+    "processed": true
+  },
+  "http://facebook.com/magnitudedigital": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T21:35:16.679Z",
+    "processed": true
+  },
+  "http://www.10fold.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T21:35:47.437Z",
+    "processed": true
+  },
+  "http://www.1q.com": {
+    "keyword_match_link": "http://www.1q.com",
+    "matched_keywords": "market research",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T21:35:59.574Z",
+    "processed": true
+  },
+  "http://www.5by5agency.com": {
+    "keyword_match_link": "http://www.5by5agency.com",
+    "matched_keywords": "market research",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T21:36:10.586Z",
+    "processed": true
+  },
+  "http://www.5metacom.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T21:36:48.691Z",
+    "processed": true
+  },
+  "http://www.aboldagency.com": {
+    "keyword_match_link": "http://www.aboldagency.com",
+    "matched_keywords": "interviews",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T21:37:07.341Z",
+    "processed": true
+  },
+  "http://www.aboutsage.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T21:39:31.641Z",
+    "processed": true
+  },
+  "http://www.abrandstrategy.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T21:41:06.249Z",
+    "processed": true
+  },
+  "http://www.accudata.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T21:41:39.548Z",
+    "processed": true
+  },
+  "http://www.accuratefocus.com": {
+    "keyword_match_link": "http://www.accuratefocus.com",
+    "matched_keywords": "market research, interviews",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T21:41:50.912Z",
+    "processed": true
+  },
+  "http://www.acrossoceansgroup.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "UNKNOWN",
+    "timestamp": "2024-11-17T21:41:54.162Z",
+    "processed": true
+  },
+  "http://www.actionbased.com": {
+    "keyword_match_link": "http://www.actionbased.com/about/",
+    "matched_keywords": "market research, interviews",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T21:42:15.743Z",
+    "processed": true
+  },
+  "http://www.actresearch.net": {
+    "keyword_match_link": "https://www.actresearch.net/solutions/manufacturers",
+    "matched_keywords": "market research",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T21:43:10.481Z",
+    "processed": true
+  },
+  "http://www.adaptivetiers.com": {
+    "keyword_match_link": "https://www.adaptivetiers.com/services-and-pricing",
+    "matched_keywords": "market research",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T21:43:31.891Z",
+    "processed": true
+  },
+  "http://www.adcreativegroup.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T21:44:21.080Z",
+    "processed": true
+  },
+  "http://www.add1marketing.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T21:44:33.642Z",
+    "processed": true
+  },
+  "http://www.adforum.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "UNKNOWN",
+    "timestamp": "2024-11-17T21:45:06.560Z",
+    "processed": true
+  },
+  "http://www.adspacecommunications.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T21:45:36.687Z",
+    "processed": true
+  },
+  "http://www.advance-ohio.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T21:49:15.932Z",
+    "processed": true
+  },
+  "http://www.advantageresearchinc.com": {
+    "keyword_match_link": "http://www.advantageresearchinc.com",
+    "matched_keywords": "market research, interviews",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T21:49:25.668Z",
+    "processed": true
+  },
+  "http://www.advertise.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "UNKNOWN",
+    "timestamp": "2024-11-17T21:49:57.718Z",
+    "processed": true
+  },
+  "http://www.agroup.com": {
+    "keyword_match_link": "http://www.agroup.com",
+    "matched_keywords": "market research",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T21:50:09.461Z",
+    "processed": true
+  },
+  "http://www.ahamarketing.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T21:50:40.776Z",
+    "processed": true
+  },
+  "http://www.aimpointresearch.com": {
+    "keyword_match_link": "http://www.aimpointresearch.com",
+    "matched_keywords": "market research",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T21:50:53.362Z",
+    "processed": true
+  },
+  "http://www.aircre.com": {
+    "keyword_match_link": "http://www.aircre.com",
+    "matched_keywords": "market research",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T21:51:06.615Z",
+    "processed": true
+  },
+  "http://www.akademosresearch.com": {
+    "keyword_match_link": "http://www.akademosresearch.com",
+    "matched_keywords": "market research, interviews",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T21:51:16.516Z",
+    "processed": true
+  },
+  "http://www.alecanmarketing.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T21:53:09.643Z",
+    "processed": true
+  },
+  "http://www.alpstrategies.com": {
+    "keyword_match_link": "http://www.alpstrategies.com",
+    "matched_keywords": "market research",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T21:53:19.422Z",
+    "processed": true
+  },
+  "http://www.alteragents.com": {
+    "keyword_match_link": "http://www.alteragents.com",
+    "matched_keywords": "market research",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T21:53:29.336Z",
+    "processed": true
+  },
+  "http://www.amg-research.com": {
+    "keyword_match_link": "http://www.amg-research.com",
+    "matched_keywords": "market research",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T21:53:39.553Z",
+    "processed": true
+  },
+  "http://www.amg.team": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T21:54:09.509Z",
+    "processed": true
+  },
+  "http://www.amplimark.com": {
+    "keyword_match_link": "http://www.amplimark.com",
+    "matched_keywords": "market research",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T21:54:26.872Z",
+    "processed": true
+  },
+  "http://www.amview.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "UNKNOWN",
+    "timestamp": "2024-11-17T21:55:33.425Z",
+    "processed": true
+  },
+  "http://www.analytics-iq.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "UNKNOWN",
+    "timestamp": "2024-11-17T21:56:20.508Z",
+    "processed": true
+  },
+  "http://www.andersoneconomicgroup.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T21:57:39.385Z",
+    "processed": true
+  },
+  "http://www.annodyne.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "UNKNOWN",
+    "timestamp": "2024-11-17T21:58:10.562Z",
+    "processed": true
+  },
+  "http://www.anr.com": {
+    "keyword_match_link": "http://www.anr.com",
+    "matched_keywords": "market research",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T21:58:25.085Z",
+    "processed": true
+  },
+  "http://www.anthemrepublic.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T22:01:03.993Z",
+    "processed": true
+  },
+  "http://www.antonioandparis.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T22:01:20.943Z",
+    "processed": true
+  },
+  "http://www.apcorp.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T22:01:33.839Z",
+    "processed": true
+  },
+  "http://www.arachnidworks.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T22:03:46.595Z",
+    "processed": true
+  },
+  "http://www.asbtdc.org": {
+    "keyword_match_link": "http://www.asbtdc.org",
+    "matched_keywords": "market research",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T22:03:59.790Z",
+    "processed": true
+  },
+  "http://www.ascendexconsulting.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T22:04:14.531Z",
+    "processed": true
+  },
+  "http://www.ashermedia.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T22:04:36.902Z",
+    "processed": true
+  },
+  "http://www.askpivot.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T22:05:05.218Z",
+    "processed": true
+  },
+  "http://www.aspiresix.com": {
+    "keyword_match_link": "http://www.aspiresix.com",
+    "matched_keywords": "interviews",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T22:05:23.491Z",
+    "processed": true
+  },
+  "http://www.atozcommunications.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T22:05:48.474Z",
+    "processed": true
+  },
+  "http://www.autopacific.com": {
+    "keyword_match_link": "http://www.autopacific.com",
+    "matched_keywords": "market research, interviews",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T22:05:59.320Z",
+    "processed": true
+  },
+  "http://www.avenuem.org": {
+    "keyword_match_link": "https://www.avenuem.org/case-study/brooklyn-public-library/",
+    "matched_keywords": "interviews",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T22:08:05.361Z",
+    "processed": true
+  },
+  "http://www.avidinc.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T22:08:36.277Z",
+    "processed": true
+  },
+  "http://www.b2edata.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T22:10:24.675Z",
+    "processed": true
+  },
+  "http://www.baileylauerman.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T22:10:55.827Z",
+    "processed": true
+  },
+  "http://www.barfly.pm": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T22:11:10.223Z",
+    "processed": true
+  },
+  "http://www.bbcresearch.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T22:12:23.733Z",
+    "processed": true
+  },
+  "http://www.bbdosf.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T22:12:49.930Z",
+    "processed": true
+  },
+  "http://www.bbim.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T22:13:05.786Z",
+    "processed": true
+  },
+  "http://www.bbmg.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "UNKNOWN",
+    "timestamp": "2024-11-17T22:13:08.371Z",
+    "processed": true
+  },
+  "http://www.bdsa.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T22:13:41.843Z",
+    "processed": true
+  },
+  "http://www.beep2b.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T22:14:10.411Z",
+    "processed": true
+  },
+  "http://www.bendurepr.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T22:21:06.956Z",
+    "processed": true
+  },
+  "http://www.benniongroup.com": {
+    "keyword_match_link": "http://www.benniongroup.com",
+    "matched_keywords": "market research",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T22:21:18.101Z",
+    "processed": true
+  },
+  "http://www.bereps.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T22:21:28.773Z",
+    "processed": true
+  },
+  "http://www.bespokeak.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T22:22:02.619Z",
+    "processed": true
+  },
+  "http://www.beunanimous.com": {
+    "keyword_match_link": "http://www.beunanimous.com",
+    "matched_keywords": "market research",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T22:22:17.349Z",
+    "processed": true
+  },
+  "http://www.bgadgroup.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T22:22:28.659Z",
+    "processed": true
+  },
+  "http://www.bixaresearch.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "UNKNOWN",
+    "timestamp": "2024-11-17T22:23:01.415Z",
+    "processed": true
+  },
+  "http://www.bloomcommunications.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T22:23:15.588Z",
+    "processed": true
+  },
+  "http://www.bluemagnetinteractive.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T22:24:49.448Z",
+    "processed": true
+  },
+  "http://www.bmsllc.biz": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T22:25:02.875Z",
+    "processed": true
+  },
+  "http://www.boltontechnology.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T22:25:38.469Z",
+    "processed": true
+  },
+  "http://www.bostondigital.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "UNKNOWN",
+    "timestamp": "2024-11-17T22:26:11.345Z",
+    "processed": true
+  },
+  "http://www.bottomlinerealtyadvisors.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T22:26:40.161Z",
+    "processed": true
+  },
+  "http://www.brand33.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T22:32:08.337Z",
+    "processed": true
+  },
+  "http://www.brandedgear.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T22:33:45.691Z",
+    "processed": true
+  },
+  "http://www.branderamarketing.com": {
+    "keyword_match_link": "http://www.branderamarketing.com",
+    "matched_keywords": "interviews",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T22:33:58.227Z",
+    "processed": true
+  },
+  "http://www.brandfirstnj.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T22:36:20.103Z",
+    "processed": true
+  },
+  "http://www.brandgenetics.com": {
+    "keyword_match_link": "http://www.brandgenetics.com/what-we-do/",
+    "matched_keywords": "interviews",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T22:36:43.631Z",
+    "processed": true
+  },
+  "http://www.brandiq.biz": {
+    "keyword_match_link": "http://www.brandiq.biz",
+    "matched_keywords": "market research",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T22:36:57.398Z",
+    "processed": true
+  },
+  "http://www.branditonline.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "UNKNOWN",
+    "timestamp": "2024-11-17T22:37:24.514Z",
+    "processed": true
+  },
+  "http://www.brandmovers.com": {
+    "keyword_match_link": "https://www.brandmovers.com/s-pellegrino-wedding-sweepstakes-case-study",
+    "matched_keywords": "interviews",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T22:38:44.601Z",
+    "processed": true
+  },
+  "http://www.brandoutlook.com": {
+    "keyword_match_link": "http://www.brandoutlook.com",
+    "matched_keywords": "market research",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T22:38:54.957Z",
+    "processed": true
+  },
+  "http://www.brandtrust.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T22:39:58.556Z",
+    "processed": true
+  },
+  "http://www.bridgeim.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T22:40:09.843Z",
+    "processed": true
+  },
+  "http://www.brightcomarketers.com": {
+    "keyword_match_link": "http://www.brightcomarketers.com",
+    "matched_keywords": "market research",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T22:40:23.682Z",
+    "processed": true
+  },
+  "http://www.brightfieldgroup.com": {
+    "keyword_match_link": "\r\n            https://www.brightfieldgroup.com/datalanding/our-guide-to-cannabis-market-research\r\n        ",
+    "matched_keywords": "market research",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T22:40:51.935Z",
+    "processed": true
+  },
+  "http://www.brightideaengine.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T22:41:59.547Z",
+    "processed": true
+  },
+  "http://www.bucketagency.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T22:42:43.632Z",
+    "processed": true
+  },
+  "http://www.burtonadvertising.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T22:43:02.143Z",
+    "processed": true
+  },
+  "http://www.buzzback.com": {
+    "keyword_match_link": "https://www.buzzback.com/blog/press-awards/buzzbacks-silvena-milenkova-featured-in-survey-magazines-20-researchers-you-need-to-know",
+    "matched_keywords": "market research",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T22:43:22.130Z",
+    "processed": true
+  },
+  "http://www.camares.com": {
+    "keyword_match_link": "https://www.camares.com/casestudies/",
+    "matched_keywords": "market research, interviews",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T22:43:55.066Z",
+    "processed": true
+  },
+  "http://www.cambridgefocus.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T22:44:25.596Z",
+    "processed": true
+  },
+  "http://www.camp-king.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T22:45:25.648Z",
+    "processed": true
+  },
+  "http://www.campfire.co.uk": {
+    "keyword_match_link": "http://www.campfire.co.uk",
+    "matched_keywords": "market research",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T22:45:39.222Z",
+    "processed": true
+  },
+  "http://www.campos.com": {
+    "keyword_match_link": "http://www.campos.com",
+    "matched_keywords": "market research",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T22:45:51.212Z",
+    "processed": true
+  },
+  "http://www.capetivate.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T22:46:34.769Z",
+    "processed": true
+  },
+  "http://www.captureconnectmedia.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T22:46:57.947Z",
+    "processed": true
+  },
+  "http://www.carrollcomarketing.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T22:47:07.951Z",
+    "processed": true
+  },
+  "http://www.carterjmrn.com": {
+    "keyword_match_link": "http://www.carterjmrn.com",
+    "matched_keywords": "market research, interviews",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T22:47:21.243Z",
+    "processed": true
+  },
+  "http://www.cascadeinsights.com": {
+    "keyword_match_link": "http://www.cascadeinsights.com",
+    "matched_keywords": "market research, interviews",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T22:47:33.393Z",
+    "processed": true
+  },
+  "http://www.catalystmarketing.io": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T22:47:50.866Z",
+    "processed": true
+  },
+  "http://www.cbcads.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T22:48:38.845Z",
+    "processed": true
+  },
+  "http://www.ccrsurveys.com": {
+    "keyword_match_link": "http://www.ccrsurveys.com",
+    "matched_keywords": "market research, interviews",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T22:48:52.382Z",
+    "processed": true
+  },
+  "http://www.centralis.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T23:00:19.975Z",
+    "processed": true
+  },
+  "http://www.certusinsights.com": {
+    "keyword_match_link": "http://www.certusinsights.com",
+    "matched_keywords": "market research, interviews",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T23:00:33.506Z",
+    "processed": true
+  },
+  "http://www.chapterandver.se": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T23:01:00.757Z",
+    "processed": true
+  },
+  "http://www.chulavistamarketing.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T23:01:20.176Z",
+    "processed": true
+  },
+  "http://www.cierant.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T23:07:45.799Z",
+    "processed": true
+  },
+  "http://www.clarityresearch.com": {
+    "keyword_match_link": "https://www.clarityresearch.com/analysis",
+    "matched_keywords": "interviews",
+    "keyword_status": "MATCHED",
+    "timestamp": "2024-11-17T23:08:31.717Z",
+    "processed": true
+  },
+  "http://www.clearstrategy.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T23:09:04.631Z",
+    "processed": true
+  },
+  "http://www.clevercreative.com": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "NO_MATCH",
+    "timestamp": "2024-11-17T23:10:44.308Z",
+    "processed": true
+  },
+  "http://www.cloudlead.co": {
+    "keyword_match_link": "",
+    "matched_keywords": "",
+    "keyword_status": "UNKNOWN",
+    "timestamp": "2024-11-17T23:11:17.001Z",
+    "processed": true
+  }
+}
