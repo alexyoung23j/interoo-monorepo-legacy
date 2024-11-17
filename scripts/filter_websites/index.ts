@@ -7,16 +7,26 @@ import { stringify } from 'csv-stringify/sync';
 import axios from 'axios';
 
 interface WebsiteData {
-  domain: string;
-  [key: string]: string; // For other columns in the CSV
+  [key: string]: string; // All columns are now dynamic
 }
 
 interface OutputData extends WebsiteData {
   keyword_match_link: string;
   matched_keywords: string;
+  keyword_status: 'MATCHED' | 'NO_MATCH' | 'UNKNOWN';
+}
+
+interface CachedResult {
+  keyword_match_link: string;
+  matched_keywords: string;
+  keyword_status: 'MATCHED' | 'NO_MATCH' | 'UNKNOWN';
+  timestamp: string;
+  processed: boolean;
 }
 
 const PRIORITY_KEYWORDS = ['research', 'services', 'service', 'solutions', 'insights', 'case'];
+
+const processedDomains = new Map<string, CachedResult>();
 
 function prioritizeLinks(links: string[]): string[] {
   // Create buckets for prioritized links
@@ -34,7 +44,7 @@ function prioritizeLinks(links: string[]): string[] {
     let assigned = false;
 
     for (const keyword of PRIORITY_KEYWORDS) {
-      if (lowercaseLink.includes(keyword)) {
+      if (lowercaseLink.includes(keyword) && priorityBuckets[keyword].length < 5) {
         priorityBuckets[keyword].push(link);
         assigned = true;
         break; // Only put in first matching bucket
@@ -54,7 +64,7 @@ function prioritizeLinks(links: string[]): string[] {
 
   console.log('\n  📊 Link prioritization summary:');
   PRIORITY_KEYWORDS.forEach(keyword => {
-    console.log(`    - ${keyword}: ${priorityBuckets[keyword].length} links`);
+    console.log(`    - ${keyword}: ${priorityBuckets[keyword].length} links (max 5)`);
   });
   console.log(`    - other: ${normalLinks.length} links (using up to 2)`);
 
@@ -287,8 +297,24 @@ async function processWebsite(
   outputPath: string,
   isFirst: boolean
 ): Promise<void> {
-  console.log(`\n📌 Processing website: ${data.domain}`);
+  const websiteColumn = process.argv[3];
+  console.log(`\n📌 Processing website: ${data[websiteColumn]}`);
   
+  // Check cache first
+  const cachedResult = processedDomains.get(data[websiteColumn]);
+  if (cachedResult?.processed) {
+    console.log(`  📋 Found cached result from ${cachedResult.timestamp}`);
+    const result: OutputData = {
+      ...data,
+      keyword_match_link: cachedResult.keyword_match_link,
+      matched_keywords: cachedResult.matched_keywords,
+      keyword_status: cachedResult.keyword_status
+    };
+    await appendToCsv(result, outputPath, isFirst);
+    console.log(`  ✅ Wrote cached result to CSV`);
+    return;
+  }
+
   // Enhanced stealth configuration
   const context = await browser.newContext({
     userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
@@ -371,7 +397,7 @@ async function processWebsite(
     await page.waitForTimeout(delay);
   };
 
-  let domain = data.domain;
+  let domain = data[websiteColumn];
   if (!domain.startsWith('http')) {
     domain = `https://${domain}`;
   }
@@ -449,8 +475,19 @@ async function processWebsite(
         const result: OutputData = {
           ...data,
           keyword_match_link: domain,
-          matched_keywords: homePageMatches.join(', ')
+          matched_keywords: homePageMatches.join(', '),
+          keyword_status: 'MATCHED'
         };
+        
+        // Cache the positive result
+        processedDomains.set(data[websiteColumn], {
+          keyword_match_link: domain,
+          matched_keywords: homePageMatches.join(', '),
+          keyword_status: 'MATCHED',
+          timestamp: new Date().toISOString(),
+          processed: true
+        });
+        
         await appendToCsv(result, outputPath, isFirst);
         await page.close();
         await context.close();
@@ -477,8 +514,19 @@ async function processWebsite(
           const result: OutputData = {
             ...data,
             keyword_match_link: link,
-            matched_keywords: matchedKeywords.join(', ')
+            matched_keywords: matchedKeywords.join(', '),
+            keyword_status: 'MATCHED'
           };
+          
+          // Cache the positive result
+          processedDomains.set(data[websiteColumn], {
+            keyword_match_link: link,
+            matched_keywords: matchedKeywords.join(', '),
+            keyword_status: 'MATCHED',
+            timestamp: new Date().toISOString(),
+            processed: true
+          });
+          
           await appendToCsv(result, outputPath, isFirst);
           console.log(`  ✅ Found match! Result written to CSV`);
           await page.close();
@@ -487,52 +535,116 @@ async function processWebsite(
         }
       }
 
+      // If we got here, we successfully checked pages but found no matches
+      const noMatchResult: OutputData = {
+        ...data,
+        keyword_match_link: '',
+        matched_keywords: '',
+        keyword_status: 'NO_MATCH'
+      };
+
+      // Cache the negative result
+      processedDomains.set(data[websiteColumn], {
+        keyword_match_link: '',
+        matched_keywords: '',
+        keyword_status: 'NO_MATCH',
+        timestamp: new Date().toISOString(),
+        processed: true
+      });
+
+      await appendToCsv(noMatchResult, outputPath, isFirst);
+      console.log(`  ⚠️ No matches found. Writing NO_MATCH result to CSV.`);
+      await page.close();
+      await context.close();
+
     } catch (error) {
       console.log(`  ❌ Error processing homepage: ${error}`);
       throw error;
     }
 
-    // No matches found - don't write to CSV
-    console.log(`  ⚠️ No matches found. Skipping CSV entry.`);
-    await page.close();
-    await context.close();
   } catch (error) {
-    console.log(`  ❌ Error processing website: ${error}`);
+    // Handle error case with UNKNOWN status
+    const unknownResult: OutputData = {
+      ...data,
+      keyword_match_link: '',
+      matched_keywords: '',
+      keyword_status: 'UNKNOWN'
+    };
+
+    // Cache the error case
+    processedDomains.set(data[websiteColumn], {
+      keyword_match_link: '',
+      matched_keywords: '',
+      keyword_status: 'UNKNOWN',
+      timestamp: new Date().toISOString(),
+      processed: true
+    });
+
+    await appendToCsv(unknownResult, outputPath, isFirst);
+    console.log(`  ❌ Error processing website. Writing UNKNOWN status to CSV.`);
     await page.close();
     await context.close();
+  }
+}
+
+async function saveCacheToFile(): Promise<void> {
+  const cacheFile = path.join(process.cwd(), 'outputs', 'domain_cache.json');
+  const cacheData = Object.fromEntries(processedDomains);
+  await fs.promises.writeFile(cacheFile, JSON.stringify(cacheData, null, 2));
+  console.log(`\n💾 Cache saved to ${cacheFile}`);
+}
+
+async function loadCacheFromFile(): Promise<void> {
+  const cacheFile = path.join(process.cwd(), 'outputs', 'domain_cache.json');
+  try {
+    const cacheData = JSON.parse(await fs.promises.readFile(cacheFile, 'utf-8'));
+    Object.entries(cacheData).forEach(([domain, result]) => {
+      processedDomains.set(domain, result as CachedResult);
+    });
+    console.log(`\n📂 Loaded ${processedDomains.size} cached results`);
+  } catch (error) {
+    console.log('\n📂 No existing cache found');
   }
 }
 
 async function main(): Promise<void> {
   console.log('🚀 Starting website filter process...');
   
+  // Load cache at start
+  await loadCacheFromFile();
+  
   // Get command line arguments and handle quotes/spaces
   const args = process.argv.slice(2);
   let csvPath: string | undefined;
+  let websiteColumn: string | undefined;
   const keywords: string[] = [];
   
   // Parse arguments handling quoted strings
   let currentArg = '';
   let inQuotes = false;
   
-  for (const arg of args) {
-    if (!csvPath) {
-      csvPath = arg;
-      continue;
-    }
-    
+  // First two arguments are CSV path and website column name
+  if (args.length < 3) {
+    console.error('Usage: npm start -- path/to/your.csv website_column_name "keyword with spaces" keyword2');
+    process.exit(1);
+  }
+
+  csvPath = args[0];
+  websiteColumn = args[1];
+  
+  // Process remaining arguments as keywords
+  for (const arg of args.slice(2)) {
     if (arg.startsWith('"') && !inQuotes) {
       inQuotes = true;
-      currentArg = arg.slice(1); // Remove starting quote
+      currentArg = arg.slice(1);
     } else if (arg.endsWith('"') && inQuotes) {
       inQuotes = false;
-      currentArg += ' ' + arg.slice(0, -1); // Remove ending quote
+      currentArg += ' ' + arg.slice(0, -1);
       keywords.push(currentArg.trim());
       currentArg = '';
     } else if (inQuotes) {
       currentArg += ' ' + arg;
     } else if (arg.includes('"')) {
-      // Handle single-argument quoted string
       keywords.push(arg.replace(/"/g, '').trim());
     } else {
       keywords.push(arg.trim());
@@ -544,19 +656,27 @@ async function main(): Promise<void> {
     keywords.push(currentArg.trim());
   }
 
-  if (!csvPath || keywords.length === 0) {
-    console.error('Usage: npm start -- path/to/your.csv "keyword with spaces" keyword2 "another spaced keyword"');
+  if (!csvPath || !websiteColumn || keywords.length === 0) {
+    console.error('Usage: npm start -- path/to/your.csv website_column_name "keyword with spaces" keyword2');
     process.exit(1);
   }
 
   console.log('\n📋 Configuration:');
   console.log(`CSV Path: ${csvPath}`);
+  console.log(`Website Column: ${websiteColumn}`);
   console.log(`Keywords: ${keywords.join(', ')}`);
 
   // Read CSV file
   console.log('\n📂 Reading CSV file...');
   const fileContent = fs.readFileSync(csvPath, 'utf-8');
   const records = csv.parse(fileContent, { columns: true }) as WebsiteData[];
+
+  // Validate that the specified column exists
+  if (!records[0] || !(websiteColumn in records[0])) {
+    console.error(`❌ Column "${websiteColumn}" not found in CSV file`);
+    process.exit(1);
+  }
+
   console.log(`📊 Found ${records.length} websites to process`);
 
   // Create output directory if it doesn't exist
@@ -619,11 +739,22 @@ async function main(): Promise<void> {
   console.log('\n🔄 Starting website processing...');
   for (let i = 0; i < records.length; i++) {
     console.log(`\n[${i + 1}/${records.length}]`);
-    await processWebsite(records[i], keywords, browser, outputPath, i === 0);
+    const websiteData = records[i];
+    const domain = websiteData[websiteColumn]; // Use the specified column
+    if (!domain) {
+      console.log(`⚠️ Skipping record ${i + 1}: No website URL found in column "${websiteColumn}"`);
+      continue;
+    }
+    await processWebsite(websiteData, keywords, browser, outputPath, i === 0);
+    await saveCacheToFile();
   }
 
   // Close browser
   await browser.close();
+
+  // Save cache at end
+  await saveCacheToFile();
+  
   console.log('\n✅ Process completed!');
   console.log(`📊 Results written to ${outputPath}`);
 }
