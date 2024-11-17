@@ -183,7 +183,7 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
       const res = await transcriptionRecorder.submitAudio(requestBody);
       Sentry.captureMessage("Audio submitted successfully", {
         level: "info",
-        extra: { response: res },
+        extra: { textToPlay: res?.textToPlay },
       });
       setIsThinking(false);
       if (res?.textToPlay && audioOn) {
