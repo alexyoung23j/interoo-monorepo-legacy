@@ -197,12 +197,21 @@ export function useChunkedMediaUploader() {
             );
           }, 8000);
 
-          // Store tracks reference before stopping
+          // Get all tracks before stopping
           const tracks = mediaRecorder.current.stream.getTracks();
 
           mediaRecorder.current.onstop = async () => {
-            // Stop all tracks after recorder stops
-            tracks.forEach((track) => track.stop());
+            // Immediately stop and release all tracks
+            tracks.forEach((track) => {
+              track.stop();
+              track.enabled = false;
+            });
+
+            // Release the stream entirely
+            mediaRecorder.current!.stream.getTracks().forEach((track) => {
+              track.stop();
+              mediaRecorder.current!.stream.removeTrack(track);
+            });
 
             uploadStartTime.current = Date.now();
             setIsRecording(false);
