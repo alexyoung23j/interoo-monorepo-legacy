@@ -64,23 +64,35 @@ export function useTranscriptionRecorder({
         clearTimeout(recordingTimeout.current);
       }
 
-      mediaRecorder.current.stream.getTracks().forEach((track) => {
+      // Get tracks before stopping
+      const tracks = mediaRecorder.current.stream.getTracks();
+
+      // Stop and disable all tracks
+      tracks.forEach((track) => {
         track.stop();
+        track.enabled = false;
       });
 
-      setTimeout(() => {
-        mediaRecorder.current?.stop();
-      }, 200);
-    } else {
-      Sentry.captureMessage(
-        "Attempted to stop recording, but MediaRecorder is inactive",
-        { level: "warning" },
-      );
+      // Release the stream entirely
+      mediaRecorder.current.stream.getTracks().forEach((track) => {
+        mediaRecorder.current!.stream.removeTrack(track);
+      });
+
+      mediaRecorder.current.stop();
     }
   }, []);
 
   const startRecording = useCallback(async () => {
     try {
+      // Clean up any existing recorder and tracks
+      if (mediaRecorder.current) {
+        mediaRecorder.current.stream.getTracks().forEach((track) => {
+          track.stop();
+          track.enabled = false;
+        });
+        mediaRecorder.current = null;
+      }
+
       audioChunks.current = [];
       setIsRecording(true);
       setRecordingStartTime(Date.now());
