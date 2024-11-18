@@ -84,25 +84,25 @@ export function useTranscriptionRecorder({
 
   const startRecording = useCallback(async () => {
     try {
-      // Clean up any existing recorder and tracks
+      // Clean up first
       if (mediaRecorder.current) {
-        mediaRecorder.current.stream.getTracks().forEach((track) => {
+        const tracks = mediaRecorder.current.stream.getTracks();
+        tracks.forEach((track) => {
           track.stop();
           track.enabled = false;
         });
         mediaRecorder.current = null;
       }
 
+      // Reset state before starting
       audioChunks.current = [];
-      setIsRecording(true);
-      setRecordingStartTime(Date.now());
-      Sentry.captureMessage("Starting recording", {
-        level: "info",
-        extra: { timestamp: recordingStartTime },
-      });
+      setIsRecording(false);
+      setRecordingStartTime(null);
 
+      // Get new stream
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
+      // Determine supported MIME type
       let mimeType: string | undefined;
       if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
         mimeType = "audio/webm;codecs=opus";
@@ -122,19 +122,22 @@ export function useTranscriptionRecorder({
         );
       }
 
+      // Setup new recorder with supported MIME type
       mediaRecorder.current = new MediaRecorder(stream, { mimeType });
 
-      audioChunks.current = [];
-
+      // Set up event handlers before starting
       mediaRecorder.current.ondataavailable = (event) => {
         if (event.data.size > 0) {
           audioChunks.current.push(event.data);
         }
       };
 
-      mediaRecorder.current.start(100); // collect data every 100ms
-      Sentry.captureMessage("MediaRecorder started", { level: "info" });
+      // Finally start recording
+      setRecordingStartTime(Date.now());
+      setIsRecording(true);
+      mediaRecorder.current.start(100);
 
+      // Set timeout after everything is running
       recordingTimeout.current = setTimeout(() => {
         stopRecording();
         showWarningToast("Recording time limit reached (10 minutes).");
