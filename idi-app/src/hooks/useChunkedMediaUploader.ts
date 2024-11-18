@@ -307,39 +307,52 @@ export function useChunkedMediaUploader() {
       }
 
       try {
-        const mimeType = getSupportedMimeType(isVideoEnabled);
+        // Clean up first, before any new setup
+        if (mediaRecorder.current) {
+          const tracks = mediaRecorder.current.stream.getTracks();
+          tracks.forEach((track) => {
+            track.stop();
+            track.enabled = false;
+          });
+          mediaRecorder.current = null;
+        }
+
+        // Reset all states before starting new recording
         uploadedSize.current = 0;
         totalSize.current = 0;
         buffer.current = new Blob([], {
-          type: mimeType,
+          type: getSupportedMimeType(isVideoEnabled),
         });
         isUploading.current = false;
         uploadComplete.current = false;
         setIsUploadComplete(false);
+        setIsRecording(false); // Ensure we're in a clean state
 
-        buffer.current = new Blob([], { type: mimeType });
-
+        // Now get new stream
         const stream = await navigator.mediaDevices.getUserMedia({
           video: isVideoEnabled ? { facingMode } : false,
           audio: true,
         });
 
+        // Setup new recorder
         mediaRecorder.current = new MediaRecorder(stream, {
-          mimeType,
+          mimeType: getSupportedMimeType(isVideoEnabled),
           videoBitsPerSecond: isVideoEnabled ? 2500000 : undefined,
           audioBitsPerSecond: 128000,
         });
 
+        // Set up event handlers before starting
         mediaRecorder.current.ondataavailable = (event) => {
           if (event.data.size > 0) {
             addChunkToBuffer(event.data);
           }
         };
 
+        // Finally start recording
         setIsRecording(true);
         mediaRecorder.current.start(500);
 
-        // Set timeout to stop recording after 10 minutes
+        // Set timeout after everything is running
         recordingTimeout.current = setTimeout(() => {
           void stopRecording();
           showWarningToast("Recording time limit reached (10 minutes).");
