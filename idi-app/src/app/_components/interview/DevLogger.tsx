@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -18,24 +20,6 @@ const DevLogger = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [hasNewLogs, setHasNewLogs] = useState(false);
   const logsContainerRef = useRef<HTMLDivElement>(null);
-  const shouldScrollRef = useRef(true);
-
-  // Improved scroll to bottom effect
-  useEffect(() => {
-    if (logsContainerRef.current && shouldScrollRef.current) {
-      logsContainerRef.current.scrollTop =
-        logsContainerRef.current.scrollHeight;
-    }
-  }, [logs]);
-
-  // Handle manual scroll
-  const handleScroll = () => {
-    if (!logsContainerRef.current) return;
-
-    const { scrollTop, scrollHeight, clientHeight } = logsContainerRef.current;
-    const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
-    shouldScrollRef.current = isAtBottom;
-  };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const formatLogContent = (content: any): string => {
@@ -63,10 +47,8 @@ const DevLogger = () => {
     const originalConsoleLog = console.log;
     const originalConsoleError = console.error;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const createLogEntry = (args: any[], type: "log" | "error"): LogEntry => ({
       id: Date.now().toString() + Math.random(),
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       content: args.length === 1 ? args[0] : args,
       type,
       timestamp: new Date().toLocaleTimeString(),
@@ -74,13 +56,13 @@ const DevLogger = () => {
     });
 
     console.log = (...args) => {
-      setLogs((prev) => [...prev, createLogEntry(args, "log")]);
+      setLogs((prev) => [createLogEntry(args, "log"), ...prev]);
       setHasNewLogs(true);
       originalConsoleLog.apply(console, args);
     };
 
     console.error = (...args) => {
-      setLogs((prev) => [...prev, createLogEntry(args, "error")]);
+      setLogs((prev) => [createLogEntry(args, "error"), ...prev]);
       setHasNewLogs(true);
       originalConsoleError.apply(console, args);
     };
@@ -121,6 +103,9 @@ const DevLogger = () => {
             <DialogTitle className="text-lg font-bold text-theme-900">
               Developer Console
             </DialogTitle>
+            <div className="text-xs text-theme-600">
+              (latest logs at top of screen)
+            </div>
             <button
               onClick={() => setLogs([])}
               className="rounded px-2 py-1 text-sm text-theme-300 hover:bg-theme-700 hover:text-theme-900"
@@ -128,11 +113,7 @@ const DevLogger = () => {
               Clear
             </button>
           </div>
-          <div
-            ref={logsContainerRef}
-            className="flex-1 overflow-y-auto px-6"
-            onScroll={handleScroll}
-          >
+          <div ref={logsContainerRef} className="flex-1 overflow-y-auto px-6">
             <div className="flex flex-col">
               {logs.map((log) => (
                 <div
