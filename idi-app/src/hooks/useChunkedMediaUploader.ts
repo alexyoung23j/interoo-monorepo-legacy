@@ -197,19 +197,18 @@ export function useChunkedMediaUploader() {
             );
           }, 8000);
 
-          // Get all tracks before stopping
-          const tracks = mediaRecorder.current.stream.getTracks();
-
+          // Set up onstop handler before stopping
           mediaRecorder.current.onstop = async () => {
-            // Immediately stop and release all tracks
+            // Wait for MediaRecorder to fully stop
+            // Then stop tracks
+            const tracks = mediaRecorder.current!.stream.getTracks();
+
             tracks.forEach((track) => {
               track.stop();
               track.enabled = false;
             });
 
-            // Release the stream entirely
             mediaRecorder.current!.stream.getTracks().forEach((track) => {
-              track.stop();
               mediaRecorder.current!.stream.removeTrack(track);
             });
 
@@ -346,6 +345,13 @@ export function useChunkedMediaUploader() {
           if (event.data.size > 0) {
             addChunkToBuffer(event.data);
           }
+        };
+
+        mediaRecorder.current.onerror = (event) => {
+          console.error("MediaRecorder error:", event);
+          Sentry.captureException(event, { level: "error" });
+          setError("An error occurred during recording. Please try again.");
+          stopRecording();
         };
 
         // Finally start recording
