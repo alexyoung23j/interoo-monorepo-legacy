@@ -72,7 +72,41 @@ app.use((req, res, next) => {
   req.headers['x-goog-api-key'] = process.env.GOOGLE_CLOUD_API_KEY;
   next();
 });
-app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
+
+// Add this before your CORS middleware
+app.use((req, res, next) => {
+  console.log('Incoming request from origin:', req.headers.origin);
+  next();
+});
+
+app.use(cors({ 
+  origin: (origin, callback) => {
+    const allowedOrigins = [
+      process.env.FRONTEND_URL as string,
+      'https://*.ngrok-free.app'
+    ];
+    
+    // Check if origin matches any of our patterns
+    const isAllowed = allowedOrigins.some(pattern => {
+      if (pattern.includes('*')) {
+        const regexPattern = pattern.replace('*', '.*');
+        return new RegExp(regexPattern).test(origin ?? '');
+      }
+      return origin === pattern;
+    });
+
+    if (!origin || isAllowed) {
+      callback(null, true);
+    } else {
+      console.log('Origin not allowed:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-goog-api-key', 'ngrok-skip-browser-warning'],
+}));
+
 app.use(express.json());
 
 // Routes

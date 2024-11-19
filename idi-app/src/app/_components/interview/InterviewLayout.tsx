@@ -36,6 +36,7 @@ import { api } from "@/trpc/react";
 import BasicConfirmationModal from "../reusable/BasicConfirmationModal";
 import { BasicLinkCopy } from "../reusable/BasicLinkCopy";
 import { Button } from "@/components/ui/button";
+import DevLogger from "./DevLogger";
 
 interface InterviewLayoutProps {
   study: Study & {
@@ -295,6 +296,7 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
           {renderInterviewContent()}
         </div>
       </div>
+      {process.env.NODE_ENV === "development" && <DevLogger />}
     </InterviewScreenLayout>
   );
 };
