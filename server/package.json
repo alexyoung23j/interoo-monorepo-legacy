@@ -1,6 +1,7 @@
 {
   "scripts": {
     "dev": "nodemon --watch 'src/**/*.ts' --exec 'ts-node -r tsconfig-paths/register' src/index.ts",
+    "dev:mobile": "concurrently --names \"SERVER,TUNNELS\" -c \"blue,yellow\" \"npm run dev\" \"ngrok start --all --log=stdout | pino-pretty -c -f\"",
     "build": "tsc",
     "start:prod": "node -r tsconfig-paths/register -r ts-node/register/transpile-only dist/server/src/index.js"
   },
@@ -44,6 +45,9 @@
     "@types/node": "^22.5.0",
     "nodemon": "^3.1.4",
     "ts-node": "^10.9.2",
-    "typescript": "^5.5.4"
+    "ngrok": "5.0.0-beta.2",
+    "typescript": "^5.5.4",
+    "concurrently": "^9.1.0",
+    "pino-pretty": "^10.0.0"
   }
 }
