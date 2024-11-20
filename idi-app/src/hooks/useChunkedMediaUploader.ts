@@ -347,13 +347,6 @@ export function useChunkedMediaUploader() {
           }
         };
 
-        mediaRecorder.current.onerror = (event) => {
-          console.error("MediaRecorder error:", event);
-          Sentry.captureException(event, { level: "error" });
-          setError("An error occurred during recording. Please try again.");
-          stopRecording();
-        };
-
         // Finally start recording
         setIsRecording(true);
         mediaRecorder.current.start(500);
