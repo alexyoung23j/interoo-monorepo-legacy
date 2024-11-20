@@ -214,3 +214,16 @@ export const formatElapsedTime = (milliseconds: number): string => {
     return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
   }
 };
+
+export const isIOSDevice = () => {
+  if (typeof window === "undefined") return true;
+
+  // Check for iOS devices using userAgent and maxTouchPoints
+  const isIOS =
+    // Check for iOS devices in user agent
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    // Check for iPad specifically (newer iPads report as MacOS)
+    (/Mac/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+
+  return isIOS;
+};

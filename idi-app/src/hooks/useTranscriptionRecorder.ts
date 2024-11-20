@@ -60,23 +60,29 @@ export function useTranscriptionRecorder({
     if (mediaRecorder.current && mediaRecorder.current.state !== "inactive") {
       setIsRecording(false);
       Sentry.captureMessage("Stopping recording", { level: "info" });
+
       if (recordingTimeout.current) {
         clearTimeout(recordingTimeout.current);
       }
 
-      // Get tracks before stopping
-      const tracks = mediaRecorder.current.stream.getTracks();
-
-      // Stop and disable all tracks
-      tracks.forEach((track) => {
-        track.stop();
-        track.enabled = false;
-      });
-
-      // Release the stream entirely
-      mediaRecorder.current.stream.getTracks().forEach((track) => {
-        mediaRecorder.current!.stream.removeTrack(track);
-      });
+      // Stop the MediaRecorder first and wait for it to fully stop
+      mediaRecorder.current.onstop = () => {
+        // Now that MediaRecorder has stopped, stop all media tracks
+        if (mediaRecorder.current) {
+          const tracks = mediaRecorder.current.stream.getTracks();
+          tracks.forEach((track) => {
+            track.stop();
+            track.enabled = false;
+          });
+          mediaRecorder.current.stream.getTracks().forEach((track) => {
+            mediaRecorder.current!.stream.removeTrack(track);
+          });
+          mediaRecorder.current = null;
+        }
+        Sentry.captureMessage("Recording stopped successfully", {
+          level: "info",
+        });
+      };
 
       mediaRecorder.current.stop();
     }
@@ -130,6 +136,19 @@ export function useTranscriptionRecorder({
         if (event.data.size > 0) {
           audioChunks.current.push(event.data);
         }
+      };
+
+      mediaRecorder.current.onerror = (event) => {
+        console.error("MediaRecorder error:", event);
+        Sentry.captureException(event, { level: "error" });
+        setError("An error occurred during recording. Please try again.");
+        stopRecording();
+      };
+
+      mediaRecorder.current.onstop = () => {
+        Sentry.captureMessage("MediaRecorder onstop event fired", {
+          level: "info",
+        });
       };
 
       // Finally start recording

@@ -39,6 +39,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import * as Sentry from "@sentry/nextjs";
+import { isIOSDevice } from "@/app/utils/functions";
 
 interface InterviewBottomBarProps {
   organization: Organization;
@@ -125,18 +126,23 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
     isThinking,
   ]);
 
-  const startResponse = async () => {
+  const startResponse = useCallback(async () => {
     if (!navigator.mediaDevices?.getUserMedia) {
       console.error("getUserMedia is not supported in this browser");
       Sentry.captureMessage("getUserMedia is not supported in this browser", {
         level: "error",
       });
+      showErrorToast("Your browser does not support audio/video recording.");
       return;
     }
 
     try {
       Sentry.captureMessage("Starting response recording", { level: "info" });
       stopTtsAudio();
+
+      // Introduce a 500ms delay to allow iOS to clean up audio resources
+      // await new Promise((resolve) => setTimeout(resolve, 500));
+
       setIsFullyRecording(true);
       await startChunkedMediaUploader(
         study.videoEnabled ?? false,
@@ -155,9 +161,15 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
       showErrorToast("Error starting response. Please try again.");
       setIsFullyRecording(false);
     }
-  };
+  }, [
+    startChunkedMediaUploader,
+    study.videoEnabled,
+    currentFacingMode,
+    transcriptionRecorder,
+    stopTtsAudio,
+  ]);
 
-  const stopResponse = async () => {
+  const stopResponse = useCallback(async () => {
     setIsFullyRecording(false);
     setIsThinking(true);
 
@@ -186,8 +198,10 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
         extra: { textToPlay: res?.textToPlay },
       });
       setIsThinking(false);
-      if (res?.textToPlay && audioOn) {
-        void playTtsAudio(res.textToPlay); // Use void to indicate we're not awaiting this
+
+      // Only play TTS if not on iOS
+      if (res?.textToPlay && audioOn && !isIOSDevice()) {
+        void playTtsAudio(res.textToPlay);
       }
     } catch (err) {
       Sentry.captureException(err, { level: "error" });
@@ -195,7 +209,18 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
       showErrorToast("Error uploading your answer. Please try again.");
       setIsThinking(false);
     }
-  };
+  }, [
+    stopChunkedMediaUploader,
+    transcriptionRecorder,
+    currentQuestion,
+    interviewSession,
+    study,
+    responses,
+    followUpQuestions,
+    currentResponseAndUploadUrl.response?.id,
+    playTtsAudio,
+    audioOn,
+  ]);
 
   const getOpenEndedButtonText = () => {
     if (isThinking) return "Thinking...";

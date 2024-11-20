@@ -19,6 +19,7 @@ import {
 import { useAtom, useAtomValue } from "jotai";
 import BasicInput from "@/app/_components/reusable/BasicInput";
 import BasicTitleSection from "@/app/_components/reusable/BasicTitleSection";
+import { isIOSDevice } from "@/app/utils/functions";
 
 export enum Stage {
   Intro = "intro",
@@ -72,9 +73,13 @@ export const InterviewStartContent: React.FC<InterviewStartContentProps> = ({
         status: "NOT_STARTED",
       });
       onStartInterview(); //simply updates progress state
-      playTtsAudio(firstQuestion.title).catch((error) => {
-        console.error("Error playing TTS audio:", error);
-      });
+
+      // Only play TTS if not on iOS
+      if (!isIOSDevice()) {
+        playTtsAudio(firstQuestion.title).catch((error) => {
+          console.error("Error playing TTS audio:", error);
+        });
+      }
     } catch (error) {
       console.error("Error starting interview:", error);
       setAccessError(
