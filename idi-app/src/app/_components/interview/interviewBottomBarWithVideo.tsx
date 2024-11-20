@@ -39,6 +39,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import * as Sentry from "@sentry/nextjs";
+import { isIOSDevice } from "@/app/utils/functions";
 
 interface InterviewBottomBarProps {
   organization: Organization;
@@ -197,9 +198,11 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
         extra: { textToPlay: res?.textToPlay },
       });
       setIsThinking(false);
-      // if (res?.textToPlay && audioOn) {
-      //   void playTtsAudio(res.textToPlay); // Use void to indicate we're not awaiting this
-      // }
+
+      // Only play TTS if not on iOS
+      if (res?.textToPlay && audioOn && !isIOSDevice()) {
+        void playTtsAudio(res.textToPlay);
+      }
     } catch (err) {
       Sentry.captureException(err, { level: "error" });
       console.error("Error submitting audio:", err);
