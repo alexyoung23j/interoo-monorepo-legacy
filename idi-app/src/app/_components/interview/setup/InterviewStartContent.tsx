@@ -72,9 +72,9 @@ export const InterviewStartContent: React.FC<InterviewStartContentProps> = ({
         status: "NOT_STARTED",
       });
       onStartInterview(); //simply updates progress state
-      playTtsAudio(firstQuestion.title).catch((error) => {
-        console.error("Error playing TTS audio:", error);
-      });
+      // playTtsAudio(firstQuestion.title).catch((error) => {
+      //   console.error("Error playing TTS audio:", error);
+      // });
     } catch (error) {
       console.error("Error starting interview:", error);
       setAccessError(
