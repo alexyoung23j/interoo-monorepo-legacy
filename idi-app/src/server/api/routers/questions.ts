@@ -13,6 +13,20 @@ export const questionsRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       // Maybe need maybe dont
     }),
+  getNumCompletedResponses: privateProcedure
+    .input(z.object({ questionId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const numResponses = await ctx.db.response.count({
+        where: {
+          questionId: input.questionId,
+          OR: [
+            { fastTranscribedText: { not: "" } },
+            { multipleChoiceOptionId: { not: null } },
+          ],
+        },
+      });
+      return numResponses;
+    }),
   getResponses: privateProcedure
     .input(
       z.object({

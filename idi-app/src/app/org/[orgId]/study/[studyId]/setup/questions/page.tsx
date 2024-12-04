@@ -27,6 +27,8 @@ export default function QuestionsPage({
   params: { studyId: string };
 }) {
   const router = useRouter();
+  const numResponsesQuery =
+    api.questions.getNumCompletedResponses.useMutation();
   const { data: study, refetch: refetchStudy } = api.studies.getStudy.useQuery(
     {
       studyId: params.studyId,
@@ -55,7 +57,11 @@ export default function QuestionsPage({
         void refetchQuestions();
       },
     });
-  const updateStudyMutation = api.studies.updateStudy.useMutation();
+  const updateStudyMutation = api.studies.updateStudy.useMutation({
+    onSuccess: () => {
+      void refetchStudy();
+    },
+  });
   const deleteStudyMutation = api.studies.deleteStudy.useMutation();
 
   const [questions, setQuestions] = useState<LocalQuestion[]>([]);
@@ -211,12 +217,24 @@ export default function QuestionsPage({
   );
 
   const handleDeleteQuestion = useCallback(
-    (index: number) => {
-      if (study?.status === StudyStatus.PUBLISHED) {
-        showErrorToast(
-          "You cannot delete questions after the study has been published and responses have been collected.",
-        );
-        return;
+    async (index: number) => {
+      const questionInFetchedQuestions = fetchedQuestions?.some(
+        (q) => q.id === questions[index]?.id,
+      );
+
+      if (
+        study?.status === StudyStatus.PUBLISHED &&
+        questionInFetchedQuestions
+      ) {
+        const numQuestions = await numResponsesQuery.mutateAsync({
+          questionId: questions[index]?.id ?? "",
+        });
+        if (numQuestions > 0) {
+          showErrorToast(
+            "You cannot delete a question after the study has been published and responses have been collected.",
+          );
+          return;
+        }
       }
 
       setQuestions((prevQuestions) => {
@@ -232,7 +250,7 @@ export default function QuestionsPage({
 
       setHasUnsavedChanges(true);
     },
-    [study?.status],
+    [study?.status, questions, fetchedQuestions, numResponsesQuery],
   );
 
   const handleSaveQuestions = useCallback(async () => {

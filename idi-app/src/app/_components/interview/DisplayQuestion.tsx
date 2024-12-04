@@ -31,7 +31,7 @@ export const DisplayQuestion: React.FC<DisplayQuestionProps> = ({
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-4 p-4 pt-8 md:py-0">
       {currentQuestion?.questionType === "OPEN_ENDED" && (
-        <div className="max-h-[300px] w-full overflow-auto scrollbar-thin">
+        <div className="max-h-[400px] w-full overflow-auto scrollbar-thin">
           <div
             className={`py-2 text-center md:px-20 ${
               currentQuestion?.title?.length &&
@@ -49,7 +49,7 @@ export const DisplayQuestion: React.FC<DisplayQuestionProps> = ({
           </div>
         </div>
       )}
-      <div className="flex w-full overflow-y-auto scrollbar-thin">
+      <div className="flex max-h-[50%] w-full overflow-y-auto scrollbar-thin">
         {currentQuestion?.questionType === "RANGE" && (
           <RangeChoiceSelect
             question={currentQuestion as BaseQuestionExtended}
