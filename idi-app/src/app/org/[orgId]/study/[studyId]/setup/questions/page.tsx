@@ -131,8 +131,6 @@ export default function QuestionsPage({
     }
   }, [fetchedQuestions]);
 
-  console.log({ questions });
-
   const handleQuestionChange = useCallback(
     (index: number, updatedQuestion: LocalQuestion) => {
       setQuestions((prevQuestions) => {
@@ -441,6 +439,20 @@ export default function QuestionsPage({
             </div>
           </React.Fragment>
         ))}
+        <div>
+          {questionValidations.some((isValid) => !isValid) && (
+            <div className="text-sm text-red-500">
+              {questionValidations.filter((isValid) => !isValid).length === 1
+                ? "Error on Question"
+                : "Errors on Questions"}{" "}
+              {questionValidations
+                .map((isValid, index) => (!isValid ? index + 1 : null))
+                .filter((index): index is number => index !== null)
+                .join(", ")}
+              . Fix to save
+            </div>
+          )}
+        </div>
         <Button
           onClick={async () => {
             if (!allQuestionsValid) {
@@ -456,7 +468,7 @@ export default function QuestionsPage({
               setShowUpdateConfirmation(true);
             }
           }}
-          className="mt-4 text-theme-off-white"
+          className="mt-2 text-theme-off-white"
           disabled={
             (!hasUnsavedChanges && study?.status === StudyStatus.PUBLISHED) ||
             updateStudyQuestionsMutation.isPending ||

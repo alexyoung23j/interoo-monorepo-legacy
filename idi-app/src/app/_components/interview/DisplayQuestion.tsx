@@ -1,10 +1,5 @@
-import React, { useEffect, useState } from "react";
-import type {
-  Question,
-  VideoStimulusType,
-  Organization,
-} from "@shared/generated/client";
-import { ArrowLeft, ArrowRight } from "@phosphor-icons/react";
+import React from "react";
+import type { Organization } from "@shared/generated/client";
 import { ImageStimuli } from "./stimuli/ImageStimuli";
 import { VideoStimuli } from "./stimuli/VideoStimuli";
 import { WebsiteStimuli } from "./stimuli/WebsiteStimuli";
@@ -35,20 +30,25 @@ export const DisplayQuestion: React.FC<DisplayQuestionProps> = ({
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-4 p-4 pt-8 md:py-0">
-      <div
-        className={`animate-fade-in overflow-auto text-center md:px-20 ${
-          currentQuestion?.title.length && currentQuestion?.title.length > 180
-            ? "text-md md:text-lg"
-            : "text-lg md:text-2xl"
-        }`}
-      >
-        {currentQuestion?.title.split("\n").map((line, i) => (
-          <React.Fragment key={i}>
-            {line}
-            {i < currentQuestion.title.split("\n").length - 1 && <br />}
-          </React.Fragment>
-        ))}
-      </div>
+      {currentQuestion?.questionType === "OPEN_ENDED" && (
+        <div className="max-h-[300px] w-full overflow-auto scrollbar-thin">
+          <div
+            className={`py-2 text-center md:px-20 ${
+              currentQuestion?.title?.length &&
+              currentQuestion?.title?.length > 180
+                ? "text-md md:text-lg"
+                : "text-lg md:text-2xl"
+            }`}
+          >
+            {currentQuestion?.title.split("\n").map((line, i) => (
+              <React.Fragment key={i}>
+                {line}
+                {i < currentQuestion.title.split("\n").length - 1 && <br />}
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="flex w-full overflow-y-auto scrollbar-thin">
         {currentQuestion?.questionType === "RANGE" && (
           <RangeChoiceSelect

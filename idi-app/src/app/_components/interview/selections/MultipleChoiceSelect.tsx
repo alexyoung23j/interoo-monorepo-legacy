@@ -50,6 +50,20 @@ export const MultipleChoiceSelect: React.FC<MultipleChoiceSelectProps> = ({
 
   return (
     <div className="flex h-max w-full flex-col items-center justify-center gap-3 overflow-y-auto p-1 scrollbar-thin">
+      <div
+        className={`py-2 text-center md:px-20 ${
+          question?.title?.length && question?.title?.length > 180
+            ? "text-md md:text-lg"
+            : "text-lg md:text-2xl"
+        }`}
+      >
+        {question?.title.split("\n").map((line, i) => (
+          <React.Fragment key={i}>
+            {line}
+            {i < question.title.split("\n").length - 1 && <br />}
+          </React.Fragment>
+        ))}
+      </div>
       <div className="text-sm text-black opacity-50">Select One</div>
       <div className="flex w-full flex-col items-center gap-3">
         {question.multipleChoiceOptions.map((option) => (
