@@ -96,6 +96,20 @@ const QuestionSetupSection: React.FC<QuestionSetupSectionProps> = ({
         newErrors.multipleChoiceOptions = "At least 2 options are required";
         isValid = false;
       }
+
+      // Check for empty options and duplicates
+      const optionTexts = new Set<string>();
+      for (const option of question.multipleChoiceOptions ?? []) {
+        const trimmedText = option.field1.trim();
+        if (!trimmedText) {
+          newErrors.multipleChoiceOptions = "Option text is required";
+          isValid = false;
+        } else if (optionTexts.has(trimmedText)) {
+          newErrors.multipleChoiceOptions = "Duplicate options are not allowed";
+          isValid = false;
+        }
+        optionTexts.add(trimmedText);
+      }
     }
 
     setErrors(newErrors);

@@ -40,12 +40,21 @@ export default function QuestionsPage({
     data: fetchedQuestions,
     isLoading,
     refetch: refetchQuestions,
-  } = api.studies.getStudyQuestions.useQuery({
-    studyId: params.studyId,
-  });
+  } = api.studies.getStudyQuestions.useQuery(
+    {
+      studyId: params.studyId,
+    },
+    {
+      refetchOnWindowFocus: false,
+    },
+  );
 
   const updateStudyQuestionsMutation =
-    api.studies.updateStudyQuestions.useMutation();
+    api.studies.updateStudyQuestions.useMutation({
+      onSuccess: () => {
+        void refetchQuestions();
+      },
+    });
   const updateStudyMutation = api.studies.updateStudy.useMutation();
   const deleteStudyMutation = api.studies.deleteStudy.useMutation();
 
