@@ -57,13 +57,13 @@ export function useTranscriptionRecorder({
   );
 
   const stopRecording = useCallback(() => {
+    if (recordingTimeout.current) {
+      clearTimeout(recordingTimeout.current);
+    }
+
     if (mediaRecorder.current && mediaRecorder.current.state !== "inactive") {
       setIsRecording(false);
       Sentry.captureMessage("Stopping recording", { level: "info" });
-
-      if (recordingTimeout.current) {
-        clearTimeout(recordingTimeout.current);
-      }
 
       // Stop the MediaRecorder first and wait for it to fully stop
       mediaRecorder.current.onstop = () => {
@@ -157,6 +157,10 @@ export function useTranscriptionRecorder({
       mediaRecorder.current.start(100);
 
       // Set timeout after everything is running
+      if (recordingTimeout.current) {
+        clearTimeout(recordingTimeout.current);
+      }
+
       recordingTimeout.current = setTimeout(() => {
         stopRecording();
         showWarningToast("Recording time limit reached (10 minutes).");
@@ -358,7 +362,7 @@ export function useTranscriptionRecorder({
       setResponses,
       setCurrentResponseAndUploadUrl,
       recordingStartTime,
-      setRecordingStartTime,
+      setInterviewProgress,
     ],
   );
 

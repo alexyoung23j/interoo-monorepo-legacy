@@ -351,6 +351,9 @@ export function useChunkedMediaUploader() {
         setIsRecording(true);
         mediaRecorder.current.start(500);
 
+        if (recordingTimeout.current) {
+          clearTimeout(recordingTimeout.current);
+        }
         // Set timeout after everything is running
         recordingTimeout.current = setTimeout(() => {
           void stopRecording();
