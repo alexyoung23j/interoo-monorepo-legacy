@@ -36,13 +36,18 @@ export const DisplayQuestion: React.FC<DisplayQuestionProps> = ({
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-4 p-4 pt-8 md:py-0">
       <div
-        className={`animate-fade-in text-center md:px-20 ${
+        className={`animate-fade-in overflow-auto text-center md:px-20 ${
           currentQuestion?.title.length && currentQuestion?.title.length > 180
             ? "text-md md:text-lg"
             : "text-lg md:text-2xl"
         }`}
       >
-        {currentQuestion?.title}
+        {currentQuestion?.title.split("\n").map((line, i) => (
+          <React.Fragment key={i}>
+            {line}
+            {i < currentQuestion.title.split("\n").length - 1 && <br />}
+          </React.Fragment>
+        ))}
       </div>
       <div className="flex w-full overflow-y-auto scrollbar-thin">
         {currentQuestion?.questionType === "RANGE" && (
