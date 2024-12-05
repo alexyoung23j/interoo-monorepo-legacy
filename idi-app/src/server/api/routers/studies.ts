@@ -646,7 +646,7 @@ export const studiesRouter = createTRPCRouter({
           });
         },
         {
-          timeout: 30000, // 30 seconds in milliseconds
+          timeout: 60000, // 60 seconds in milliseconds
         },
       );
     }),
