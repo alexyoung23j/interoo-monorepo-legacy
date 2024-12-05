@@ -50,6 +50,20 @@ export const DisplayQuestion: React.FC<DisplayQuestionProps> = ({
         </div>
       )}
       <div className="flex max-h-[50%] w-full overflow-y-auto scrollbar-thin">
+        <ImageStimuli
+          imageStimuli={(currentQuestion as BaseQuestionExtended)?.imageStimuli}
+        />
+        <VideoStimuli
+          videoStimuli={(currentQuestion as BaseQuestionExtended)?.videoStimuli}
+        />
+        <WebsiteStimuli
+          websiteStimuli={
+            (currentQuestion as BaseQuestionExtended).websiteStimuli
+          }
+          isBackgroundLight={isBackgroundLight}
+        />
+      </div>
+      <div className="flex max-h-[90%] w-full overflow-y-auto scrollbar-thin">
         {currentQuestion?.questionType === "RANGE" && (
           <RangeChoiceSelect
             question={currentQuestion as BaseQuestionExtended}
@@ -74,18 +88,6 @@ export const DisplayQuestion: React.FC<DisplayQuestionProps> = ({
             }
           />
         )}
-        <ImageStimuli
-          imageStimuli={(currentQuestion as BaseQuestionExtended)?.imageStimuli}
-        />
-        <VideoStimuli
-          videoStimuli={(currentQuestion as BaseQuestionExtended)?.videoStimuli}
-        />
-        <WebsiteStimuli
-          websiteStimuli={
-            (currentQuestion as BaseQuestionExtended).websiteStimuli
-          }
-          isBackgroundLight={isBackgroundLight}
-        />
       </div>
     </div>
   );
