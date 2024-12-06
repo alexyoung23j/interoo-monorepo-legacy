@@ -363,6 +363,8 @@ const handleAudioResponse = async (req: Request, res: Response) => {
   try {
     const { audioBuffer, requestData } = await extractRequestData(req);
 
+    requestLogger.info('Extracted request data', { requestData });
+
     if (!validateRequestData(requestData)) {
       requestLogger.warn('Missing required fields', { requestData });
       return res.status(400).json({ error: 'Missing required fields' });
