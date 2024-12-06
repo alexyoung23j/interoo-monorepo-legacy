@@ -19,6 +19,7 @@ export function useTtsAudio({
   const [error, setError] = useState<string | null>(null);
   const [audioDuration, setAudioDuration] = useState<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const shouldPlayRef = useRef<boolean>(true);
 
   const fetchTtsAudio = useCallback(
     async (text: string): Promise<ArrayBuffer> => {
@@ -50,8 +51,14 @@ export function useTtsAudio({
       try {
         setIsLoading(true);
         setError(null);
+        shouldPlayRef.current = true;
 
         const audioData = await fetchTtsAudio(text);
+        // If stopAudio was called while fetching, don't play
+        if (!shouldPlayRef.current) {
+          setIsLoading(false);
+          return;
+        }
         const blob = new Blob([audioData], { type: "audio/mpeg" });
         const url = URL.createObjectURL(blob);
 
@@ -89,6 +96,7 @@ export function useTtsAudio({
   );
 
   const stopAudio = useCallback(() => {
+    shouldPlayRef.current = false;
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
@@ -96,6 +104,7 @@ export function useTtsAudio({
       audioRef.current.src = "";
     }
     setIsPlaying(false);
+    setIsLoading(false);
     setAudioDuration(null);
   }, []);
 

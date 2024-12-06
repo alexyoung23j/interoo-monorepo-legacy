@@ -19,7 +19,7 @@ import {
 } from "@/app/state/atoms";
 import { useAtom, useSetAtom } from "jotai";
 import InterviewBottomBarWithVideo from "./interviewBottomBarWithVideo";
-import { getSupportedMimeType } from "@/app/utils/functions";
+import { getSupportedMimeType, isIOSDevice } from "@/app/utils/functions";
 
 interface InterviewPerformContentProps {
   study: Study & {
@@ -126,7 +126,7 @@ export const InterviewPerformContent: React.FC<
 
     setAwaitingOptionResponse(false);
     setMultipleChoiceOptionSelectionId(null);
-    if (nextQuestion?.title && audioOn) {
+    if (nextQuestion?.title && audioOn && !isIOSDevice()) {
       await playTtsAudio(nextQuestion.title);
     }
   };
@@ -159,7 +159,7 @@ export const InterviewPerformContent: React.FC<
 
     setAwaitingOptionResponse(false);
     setRangeSelectionValue(null);
-    if (nextQuestion?.title && audioOn) {
+    if (nextQuestion?.title && audioOn && !isIOSDevice()) {
       await playTtsAudio(nextQuestion.title);
     }
   };
