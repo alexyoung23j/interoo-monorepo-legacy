@@ -527,6 +527,10 @@ export const questionThemeAnalysisForBatch: HttpFunction = async (req, res) => {
       });
 
       return result;
+    },
+    {
+      maxWait: 5000, // 5 seconds max wait to connect to prisma
+      timeout: 60000, // 60 seconds in milliseconds
     });
 
     if (!batch) {

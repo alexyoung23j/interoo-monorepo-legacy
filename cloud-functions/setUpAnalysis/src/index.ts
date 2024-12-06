@@ -69,6 +69,10 @@ export const setUpAnalysis: functions.HttpFunction = async (req, res) => {
           }
         });
       }
+    }, 
+    {
+      maxWait: 5000, // 5 seconds max wait to connect to prisma
+      timeout: 60000, // 60 seconds in milliseconds
     });
 
     console.log(`Analysis jobs created for interview session: ${interviewSessionId}`);
