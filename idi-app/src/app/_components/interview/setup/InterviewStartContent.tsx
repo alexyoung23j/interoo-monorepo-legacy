@@ -253,13 +253,15 @@ const FormContent: React.FC<{
   );
 
   const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+    // const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // return emailRegex.test(email);
+    return true;
   };
 
   const validatePhoneNumber = (phoneNumber: string) => {
-    const phoneRegex = /^\+?[\d\s()-]{7,}$/;
-    return phoneRegex.test(phoneNumber);
+    // const phoneRegex = /^\+?[\d\s()-]{7,}$/;
+    // return phoneRegex.test(phoneNumber);
+    return true;
   };
 
   const isFormValid = () => {
@@ -270,12 +272,8 @@ const FormContent: React.FC<{
     } = study.demographicQuestionConfiguration ?? {};
 
     if (nameRequired && name === "") return false;
-    if (emailRequired && (email === "" || !validateEmail(email))) return false;
-    if (
-      phoneRequired &&
-      (phoneNumber === "" || !validatePhoneNumber(phoneNumber))
-    )
-      return false;
+    if (emailRequired && email === "") return false;
+    if (phoneRequired && phoneNumber === "") return false;
 
     return true;
   };

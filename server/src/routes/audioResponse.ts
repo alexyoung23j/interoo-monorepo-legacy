@@ -358,7 +358,7 @@ const handleAudioResponse = async (req: Request, res: Response) => {
   const requestLogger = createRequestLogger();
   const startTime = Date.now();
 
-  requestLogger.info('Starting audio response processing');
+  requestLogger.info('Starting audio response processing', { requestData: req, currentTime: new Date().toISOString() });
 
   try {
     const { audioBuffer, requestData } = await extractRequestData(req);
