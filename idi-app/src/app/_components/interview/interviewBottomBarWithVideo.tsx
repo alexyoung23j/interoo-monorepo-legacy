@@ -93,6 +93,7 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
   const transcriptionRecorder = useTranscriptionRecorder({
     baseQuestions: study.questions,
   });
+  const [hasWebcamError, setHasWebcamError] = useState(false);
 
   const {
     startRecording: startChunkedMediaUploader,
@@ -111,19 +112,26 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
     [],
   );
 
+  const handleWebcamError = useCallback(() => {
+    setHasWebcamError(true);
+  }, []);
+
   const isButtonDisabled = useMemo(() => {
-    const disabled =
+    return Boolean(
       !currentResponseAndUploadUrl.uploadSessionUrl ||
-      (!isFullyRecording && !isUploadComplete) ||
-      isUploadingFinalChunks ||
-      isThinking;
-    return disabled;
+        (!isFullyRecording && !isUploadComplete) ||
+        isUploadingFinalChunks ||
+        isThinking ||
+        (study.videoEnabled && hasWebcamError),
+    );
   }, [
     currentResponseAndUploadUrl.uploadSessionUrl,
     isFullyRecording,
     isUploadComplete,
     isUploadingFinalChunks,
     isThinking,
+    study.videoEnabled,
+    hasWebcamError,
   ]);
 
   const startResponse = useCallback(async () => {
@@ -432,11 +440,12 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
           </div>
         </div>
         <div className="flex w-1/3 items-center justify-end">
-          {showWebcamPreview && (
+          {showWebcamPreview && !hasWebcamError && (
             <div className="">
               <WebcamPreview
                 onCameraSwitch={handleCameraSwitch}
                 isRecording={isFullyRecording}
+                onWebcamError={handleWebcamError}
               />{" "}
             </div>
           )}
@@ -466,10 +475,11 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
         </div>
 
         <div className="flex items-center justify-end md:w-1/3">
-          {showWebcamPreview && (
+          {showWebcamPreview && !hasWebcamError && (
             <WebcamPreview
               onCameraSwitch={handleCameraSwitch}
               isRecording={isFullyRecording}
+              onWebcamError={handleWebcamError}
             />
           )}
         </div>
