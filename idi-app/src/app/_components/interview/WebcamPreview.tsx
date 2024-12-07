@@ -1,10 +1,13 @@
 import { CameraRotate } from "@phosphor-icons/react";
 import React, { useRef, useEffect, useState, useCallback } from "react";
+import * as Sentry from "@sentry/nextjs";
+import { showErrorToast } from "@/app/utils/toastUtils";
 
 const WebcamPreview: React.FC<{
   onCameraSwitch: (facingMode: "user" | "environment") => void;
   isRecording: boolean;
-}> = ({ onCameraSwitch, isRecording }) => {
+  onWebcamError: () => void;
+}> = ({ onCameraSwitch, isRecording, onWebcamError }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
   const [hasMultipleCameras, setHasMultipleCameras] = useState(false);
@@ -18,31 +21,74 @@ const WebcamPreview: React.FC<{
         videoRef.current.srcObject = stream;
       }
     } catch (err) {
+      Sentry.captureException(err, {
+        tags: {
+          location: "WebcamPreview.startWebcam",
+          facingMode,
+        },
+      });
       console.error("Error accessing webcam:", err);
+      showErrorToast(
+        "We're having trouble accessing your camera. Please try using a different device or browser.",
+      );
+      onWebcamError();
     }
   };
 
   useEffect(() => {
     const checkCameras = async () => {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const videoDevices = devices.filter(
-        (device) => device.kind === "videoinput",
-      );
-      setHasMultipleCameras(videoDevices.length > 1);
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(
+          (device) => device.kind === "videoinput",
+        );
+        setHasMultipleCameras(videoDevices.length > 1);
+      } catch (err) {
+        Sentry.captureException(err, {
+          tags: {
+            location: "WebcamPreview.checkCameras",
+          },
+        });
+        console.error("Error checking cameras:", err);
+        showErrorToast(
+          "We're having trouble accessing your camera. Please try using a different device or browser.",
+        );
+        onWebcamError();
+      }
     };
 
     checkCameras().catch((err) => {
+      Sentry.captureException(err, {
+        tags: {
+          location: "WebcamPreview.checkCameras",
+        },
+      });
       console.error("Error checking cameras:", err);
+      showErrorToast(
+        "We're having trouble accessing your camera. Please try using a different device or browser.",
+      );
+      onWebcamError();
     });
+
     startWebcam(facingMode).catch((err) => {
+      Sentry.captureException(err, {
+        tags: {
+          location: "WebcamPreview.startWebcam",
+          facingMode,
+        },
+      });
       console.error("Error starting webcam:", err);
+      showErrorToast(
+        "We're having trouble accessing your camera. Please try using a different device or browser.",
+      );
+      onWebcamError();
     });
 
     return () => {
       const stream = videoRef.current?.srcObject as MediaStream;
       stream?.getTracks().forEach((track) => track.stop());
     };
-  }, [facingMode]);
+  }, [facingMode, onWebcamError]);
 
   const toggleCamera = useCallback(() => {
     if (!isRecording) {
