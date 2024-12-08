@@ -29,6 +29,29 @@ export const useInterviewSessionMediaUrls = ({
   const [loadingUrls, setLoadingUrls] = useState<Record<string, boolean>>({});
   const cachedUrls = useRef<Record<string, MediaUrlData>>({});
 
+  const fetchMediaUrlDirectly = async (
+    responseId: string,
+    questionId: string,
+  ) => {
+    try {
+      const supabase = createClient();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) throw new Error("No active session");
+
+      const result = (await fetchResponses({
+        responseIds: [responseId],
+        token: session.access_token,
+      })) as FetchResponsesResult;
+
+      return result.signedUrls[responseId] ?? null;
+    } catch (error) {
+      console.error("Error fetching media URL:", error);
+      return null;
+    }
+  };
+
   const fetchMediaUrl = useCallback(
     async (responseId: string, questionId: string) => {
       const now = Date.now();
@@ -82,5 +105,6 @@ export const useInterviewSessionMediaUrls = ({
     mediaUrls,
     loadingUrls,
     fetchMediaUrl,
+    fetchMediaUrlDirectly,
   };
 };
