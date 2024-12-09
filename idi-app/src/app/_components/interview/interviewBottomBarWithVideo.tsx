@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -64,6 +70,8 @@ interface InterviewBottomBarProps {
   setAudioOn: (audioOn: boolean) => void;
 }
 
+const MAX_RECORDING_TIME = 10 * 60 * 1000; // 10 minutes in milliseconds
+
 const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
   organization,
   study,
@@ -94,6 +102,7 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
     baseQuestions: study.questions,
   });
   const [hasWebcamError, setHasWebcamError] = useState(false);
+  const recordingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const {
     startRecording: startChunkedMediaUploader,
@@ -148,9 +157,6 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
       Sentry.captureMessage("Starting response recording", { level: "info" });
       stopTtsAudio();
 
-      // Introduce a 500ms delay to allow iOS to clean up audio resources
-      // await new Promise((resolve) => setTimeout(resolve, 500));
-
       setIsFullyRecording(true);
       await startChunkedMediaUploader(
         study.videoEnabled ?? false,
@@ -163,6 +169,16 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
       Sentry.captureMessage("Transcription recorder started", {
         level: "info",
       });
+
+      if (recordingTimeoutRef.current) {
+        clearTimeout(recordingTimeoutRef.current);
+      }
+      recordingTimeoutRef.current = setTimeout(() => {
+        void stopResponse();
+        Sentry.captureMessage("Recording time limit reached (10 minutes)", {
+          level: "info",
+        });
+      }, MAX_RECORDING_TIME);
     } catch (err) {
       Sentry.captureException(err, { level: "error" });
       console.error("Error starting response:", err);
@@ -178,6 +194,11 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
   ]);
 
   const stopResponse = useCallback(async () => {
+    if (recordingTimeoutRef.current) {
+      clearTimeout(recordingTimeoutRef.current);
+      recordingTimeoutRef.current = null;
+    }
+
     setIsFullyRecording(false);
     setIsThinking(true);
 
@@ -423,6 +444,15 @@ const InterviewBottomBarWithVideo: React.FC<InterviewBottomBarProps> = ({
       level: "info",
     });
   }, [isThinking]);
+
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      if (recordingTimeoutRef.current) {
+        clearTimeout(recordingTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div className="flex w-full flex-col items-center justify-between bg-theme-off-white p-4 md:flex-row md:px-2 md:py-0">

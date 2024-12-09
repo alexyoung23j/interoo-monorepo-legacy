@@ -7,7 +7,6 @@ import * as Sentry from "@sentry/nextjs";
 
 const CHUNK_SIZE = 2 * 1024 * 1024; // 2 MiB
 const UPLOAD_TIMEOUT = 7000; // 7 seconds in milliseconds
-const MAX_RECORDING_TIME = 10 * 60 * 1000; // 10 minutes in milliseconds
 
 export function useChunkedMediaUploader() {
   const currentResponseAndUploadUrl = useAtomValue(
@@ -350,21 +349,6 @@ export function useChunkedMediaUploader() {
         // Finally start recording
         setIsRecording(true);
         mediaRecorder.current.start(500);
-
-        if (recordingTimeout.current) {
-          clearTimeout(recordingTimeout.current);
-        }
-        // Set timeout after everything is running
-        recordingTimeout.current = setTimeout(() => {
-          void stopRecording();
-          showWarningToast("Recording time limit reached (10 minutes).");
-          Sentry.captureMessage(
-            "Recording time limit reached, stopped recording",
-            {
-              level: "warning",
-            },
-          );
-        }, MAX_RECORDING_TIME);
       } catch (err) {
         Sentry.captureException(err, { level: "error" });
         console.error("Error starting recording:", err);

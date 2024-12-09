@@ -28,8 +28,6 @@ interface AudioRecorderHook {
   noAnswerDetected: boolean;
 }
 
-const MAX_RECORDING_TIME = 10 * 60 * 1000; // 10 minutes in milliseconds
-
 export function useTranscriptionRecorder({
   baseQuestions,
 }: {
@@ -51,16 +49,11 @@ export function useTranscriptionRecorder({
   const [_, setInterviewProgress] = useAtom(interviewProgressAtom);
   const mediaRecorder = useRef<MediaRecorder | null>(null);
   const audioChunks = useRef<Blob[]>([]);
-  const recordingTimeout = useRef<NodeJS.Timeout | null>(null);
   const [recordingStartTime, setRecordingStartTime] = useState<number | null>(
     null,
   );
 
   const stopRecording = useCallback(() => {
-    if (recordingTimeout.current) {
-      clearTimeout(recordingTimeout.current);
-    }
-
     if (mediaRecorder.current && mediaRecorder.current.state !== "inactive") {
       setIsRecording(false);
       Sentry.captureMessage("Stopping recording", { level: "info" });
@@ -155,22 +148,6 @@ export function useTranscriptionRecorder({
       setRecordingStartTime(Date.now());
       setIsRecording(true);
       mediaRecorder.current.start(100);
-
-      // Set timeout after everything is running
-      if (recordingTimeout.current) {
-        clearTimeout(recordingTimeout.current);
-      }
-
-      recordingTimeout.current = setTimeout(() => {
-        stopRecording();
-        showWarningToast("Recording time limit reached (10 minutes).");
-        Sentry.captureMessage(
-          "Recording time limit reached, stopped recording",
-          {
-            level: "warning",
-          },
-        );
-      }, MAX_RECORDING_TIME);
     } catch (err) {
       Sentry.captureException(err, { level: "error" });
       console.error("Error starting recording:", err);
@@ -368,9 +345,6 @@ export function useTranscriptionRecorder({
 
   useEffect(() => {
     return () => {
-      if (recordingTimeout.current) {
-        clearTimeout(recordingTimeout.current);
-      }
       if (mediaRecorder.current && mediaRecorder.current.state !== "inactive") {
         mediaRecorder.current.stream.getTracks().forEach((track) => {
           track.stop();
