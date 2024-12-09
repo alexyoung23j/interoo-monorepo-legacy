@@ -10,7 +10,7 @@ import { bucket, bucketName } from "../index";
 import axios from "axios";
 import path from "path";
 import { googleAuth } from "../index";
-
+import { v4 as uuidv4 } from 'uuid';
 const router = Router();
 
 export async function triggerAnalysisJobsSetup(interviewSessionId: string): Promise<void> {
@@ -151,7 +151,7 @@ const handleNoTranscription = async (
   transcribedText: string,
 ): Promise<TranscribeAndGenerateNextQuestionResponse> => {
   const basePath = path.join(requestData.organizationId, requestData.studyId, requestData.currentBaseQuestionId, requestData.currentResponseId);
-  const fileName = 'recording';
+  const fileName = `recording_original_${uuidv4()}`;
   const filePath = path.join(basePath, fileName);
 
   const [signedUrl] = await bucket.file(filePath).getSignedUrl({

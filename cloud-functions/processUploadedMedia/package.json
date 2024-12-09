@@ -1,0 +1,18 @@
+{
+  "scripts": {
+    "build": "tsc",
+    "deploy": "gcloud functions deploy processUploadedMedia --gen2 --region=us-central1 --runtime=nodejs20 --trigger-http --timeout=3600",
+    "dev": "npm run build && npx @google-cloud/functions-framework --target=processUploadedMedia",
+    "gcp-build": "npm run build"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "@google-cloud/functions-framework": "^3.0.0",
+    "@google-cloud/storage": "^7.x.x",
+    "@supabase/supabase-js": "^2.39.3",
+    "fluent-ffmpeg": "^2.1.2",
+    "typescript": "^5.6.2",
+    "uuid": "^11.0.3"
+  }
+}
