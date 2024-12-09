@@ -9,7 +9,11 @@ const logger = winston.createLogger({
   ),
   defaultMeta: { service: 'audio-response-service' },
   transports: [
-    new winston.transports.Console(),
+    new winston.transports.Console({
+      handleExceptions: true,
+      handleRejections: true,
+      silent: false
+    }),
   ],
 });
 
