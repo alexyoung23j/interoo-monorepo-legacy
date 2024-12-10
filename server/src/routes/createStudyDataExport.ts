@@ -670,9 +670,13 @@ const formatExcelWorkbook = (excelData: ExcelData) => {
         { header: 'DATE COMPLETED', key: 'date', width: 20 },
         { header: 'FULL THREAD TRANSCRIPT', key: 'fullThreadTranscript', width: 50 },
         { header: 'QUESTION TRANSCRIPT', key: 'questionTranscript', width: 50 },
-        { header: 'RESPONSE ONLY', key: 'responseOnly', width: 50 },
       ];
-  
+
+      // Only add MULTIPLE CHOICE RESPONSE column for multiple choice questions
+      if (questionData.responses.some(r => r.questionTranscript.includes("Multiple Choice Selection:"))) {
+        columns.push({ header: 'MULTIPLE CHOICE RESPONSE', key: 'responseOnly', width: 50 });
+      }
+
       // Add follow-up columns dynamically
       const maxFollowUps = Math.max(...questionData.responses.map(r => r.followUps.length));
       for (let i = 1; i <= maxFollowUps; i++) {
@@ -687,8 +691,12 @@ const formatExcelWorkbook = (excelData: ExcelData) => {
           date: response.date,
           fullThreadTranscript: response.fullThreadTranscript,
           questionTranscript: response.questionTranscript,
-          responseOnly: response.responseOnly,
         };
+
+        // Only add responseOnly if it's a multiple choice question
+        if (response.questionTranscript.includes("Multiple Choice Selection:")) {
+          transcriptRow.responseOnly = response.responseOnly;
+        }
         
         response.followUps.forEach((followUp, index) => {
           transcriptRow[`followUp${index + 1}Transcript`] = followUp.transcript;
