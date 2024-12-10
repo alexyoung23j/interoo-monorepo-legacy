@@ -347,7 +347,6 @@ interface InterviewData {
   participantEmail: string;
   dateCompleted: Date;
   duration: string;
-  fullTranscript: string;
   videoLink: string;
 }
 
@@ -427,7 +426,6 @@ const createExcelData = (
       participantEmail: interview.participantEmail,
       dateCompleted: new Date(interview.lastUpdatedTime || ""),
       duration: "", // Duration (blank for now)
-      fullTranscript: getFullTranscript(interview),
       videoLink: getInterviewVideoLink(interview, orgId, origin),
     }),
   );
@@ -450,7 +448,6 @@ const createExcelData = (
       participantEmail: interview.participantEmail,
       dateCompleted: new Date(interview.lastUpdatedTime || ""),
       duration: "", // Duration (blank for now)
-      fullTranscript: getFullTranscript(interview),
       videoLink: getInterviewVideoLink(interview, orgId, origin),
     }),
   );
@@ -636,7 +633,6 @@ const formatExcelWorkbook = (excelData: ExcelData) => {
         { header: 'PARTICIPANT EMAIL', key: 'participantEmail', width: 20 },
         { header: 'DATE COMPLETED', key: 'dateCompleted', width: 20 },
         { header: 'DURATION', key: 'duration', width: 15 },
-        { header: 'FULL INTERVIEW TRANSCRIPT', key: 'fullTranscript', width: 50 },
         { header: 'RECORDING LINK', key: 'videoLink', width: 50 }
       ],
       excelData.completedInterviews,
@@ -653,7 +649,6 @@ const formatExcelWorkbook = (excelData: ExcelData) => {
         { header: 'PARTICIPANT EMAIL', key: 'participantEmail', width: 20 },
         { header: 'DATE UPDATED', key: 'dateCompleted', width: 20 },
         { header: 'DURATION', key: 'duration', width: 15 },
-        { header: 'FULL INTERVIEW TRANSCRIPT', key: 'fullTranscript', width: 50 },
         { header: 'RECORDING LINK', key: 'videoLink', width: 50 }
       ],
       excelData.incompleteInterviews,
