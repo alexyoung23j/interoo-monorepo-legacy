@@ -357,6 +357,7 @@ interface QuestionResponseData {
   fullThreadTranscript: string;
   questionTranscript: string;
   questionVideoLink: string;
+  responseOnly: string;
   followUps: {
     transcript: string;
     videoLink: string;
@@ -375,6 +376,25 @@ interface ExcelData {
   incompleteInterviews: InterviewData[];
   questions: QuestionData[];
 }
+
+const getResponseOnly = (
+  question: ProcessedQuestion,
+  questionResponse: QuestionResponse
+): string => {
+  if (!questionResponse.mainResponse) return "";
+
+  switch (question.questionType) {
+    case QuestionType.MULTIPLE_CHOICE:
+      const selectedOption = question.multipleChoiceOptions.find(
+        (o) => o.id === questionResponse.mainResponse?.multipleChoiceOptionId
+      );
+      return selectedOption?.optionText ?? "N/A";
+    case QuestionType.OPEN_ENDED:
+      return questionResponse.mainResponse.fastTranscribedText || "";
+    default:
+      return "";
+  }
+};
 
 // Modify the createExcelData function signature
 const createExcelData = (
@@ -468,6 +488,7 @@ const createExcelData = (
             orgId,
             origin,
           ),
+          responseOnly: getResponseOnly(question, response),
           followUps: response.followUpResponses.map((followUp) => ({
             transcript: getFollowUpTranscript(followUp),
             videoLink: getFollowUpQuestionVideoLink(
@@ -649,6 +670,7 @@ const formatExcelWorkbook = (excelData: ExcelData) => {
         { header: 'DATE COMPLETED', key: 'date', width: 20 },
         { header: 'FULL THREAD TRANSCRIPT', key: 'fullThreadTranscript', width: 50 },
         { header: 'QUESTION TRANSCRIPT', key: 'questionTranscript', width: 50 },
+        { header: 'RESPONSE ONLY', key: 'responseOnly', width: 50 },
       ];
   
       // Add follow-up columns dynamically
@@ -665,6 +687,7 @@ const formatExcelWorkbook = (excelData: ExcelData) => {
           date: response.date,
           fullThreadTranscript: response.fullThreadTranscript,
           questionTranscript: response.questionTranscript,
+          responseOnly: response.responseOnly,
         };
         
         response.followUps.forEach((followUp, index) => {
@@ -696,6 +719,7 @@ const formatExcelWorkbook = (excelData: ExcelData) => {
   
     return workbook;
   };
+
 
 const createStudyDataExport = async (req: Request, res: ExpressResponse) => {
   const { studyId } = req.params;
