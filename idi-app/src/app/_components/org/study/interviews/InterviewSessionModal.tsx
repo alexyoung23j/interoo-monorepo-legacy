@@ -130,7 +130,6 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
     useMediaDownload({
       orgId: orgId,
       studyId: studyId,
-      questionId: selectedResponseQuestionId ?? "",
     });
 
   useEffect(() => {
@@ -301,6 +300,7 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
         currentResponseId: selectedResponseId,
         fileName: `${interviewSession.study.title}_Question_${selectedResponseQuestionId}_Response_${selectedResponseId}`,
         isAudio: currentResponseContentType?.split("/")[0] === "audio",
+        questionId: selectedResponseQuestionId ?? null,
       });
     } catch (error) {
       console.error("Download failed:", error);
@@ -420,7 +420,7 @@ const InterviewSessionModal: React.FC<InterviewSessionModalProps> = ({
                         },
                       },
                       {
-                        text: `Download All Videos`,
+                        text: `Download All Recordings`,
                         icon: (
                           <DownloadSimple
                             size={16}

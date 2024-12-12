@@ -63,7 +63,6 @@ const QuestionModalLeftContent: React.FC<QuestionModalLeftContentProps> = ({
     useMediaDownload({
       orgId: study.organizationId,
       studyId: study.id,
-      questionId: question.id,
     });
 
   const { data: themes } = useThemes(study.id);
@@ -183,6 +182,7 @@ const QuestionModalLeftContent: React.FC<QuestionModalLeftContentProps> = ({
               currentResponseContentType,
               currentResponseId,
               fileName: `${study.title}_Question_${question.questionOrder + 1}_Response_${currentResponseId}`,
+              questionId: question.id,
             })
           }
           disabled={isDownloading || !currentResponseMediaUrl}

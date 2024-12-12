@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { ExtendedResponse } from "@shared/types";
 import { useToast } from "@/hooks/use-toast";
 import { useMediaDownload } from "@/hooks/useMediaDownload";
 import { useInterviewSessionMediaUrls } from "@/hooks/useInterviewSessionMediaUrls";
 import BasicConfirmationModal from "@/app/_components/reusable/BasicConfirmationModal";
+import { ClipLoader } from "react-spinners";
 
 interface DownloadInterviewVideosModalProps {
   isOpen: boolean;
@@ -36,7 +37,6 @@ const DownloadInterviewVideosModal: React.FC<
   const { handleDownload } = useMediaDownload({
     orgId,
     studyId,
-    questionId: undefined,
   });
   const { fetchMediaUrlDirectly } = useInterviewSessionMediaUrls({
     studyId,
@@ -57,7 +57,7 @@ const DownloadInterviewVideosModal: React.FC<
 
   const getFileName = (response: ExtendedResponse) => {
     const baseName = participantName ?? "anonymous";
-    const questionNumber = response.question?.questionOrder ?? 0;
+    const questionNumber = (response.question?.questionOrder ?? -1) + 1;
     const followUpNumber = response.followUpQuestion
       ? `_followup${response.followUpQuestion.followUpQuestionOrder}`
       : "";
@@ -69,7 +69,14 @@ const DownloadInterviewVideosModal: React.FC<
     const selectedIds = Array.from(selectedResponses);
     const { id: toastId, update } = toast({
       title: "Download Progress",
-      description: `Downloading 0/${selectedIds.length} files`,
+      description: (
+        <div className="flex flex-row items-center space-x-2">
+          <ClipLoader size={16} color="#587785" />
+          <span className="text-theme-900">
+            Downloading 0/{selectedIds.length} files
+          </span>
+        </div>
+      ),
       duration: Infinity,
     });
 
@@ -85,8 +92,6 @@ const DownloadInterviewVideosModal: React.FC<
           response.questionId,
         );
 
-        console.log("mediaUrl", mediaUrl);
-
         if (!mediaUrl?.signedUrl || !mediaUrl?.contentType) {
           console.error(`No media URL available for response ${response.id}`);
           continue;
@@ -98,6 +103,8 @@ const DownloadInterviewVideosModal: React.FC<
           currentResponseId: response.id,
           fileName: getFileName(response),
           isAudio: mediaUrl.contentType === "audio",
+          questionId: response.questionId,
+          showToasts: false,
         });
 
         completed++;
@@ -114,9 +121,9 @@ const DownloadInterviewVideosModal: React.FC<
 
     update({
       id: toastId,
-      title: "Download Complete",
+      title: "Download Complete 🎉",
       description: `Successfully downloaded ${completed}/${selectedIds.length} files`,
-      duration: 3000,
+      duration: Infinity,
     });
     onClose();
   };
@@ -129,22 +136,36 @@ const DownloadInterviewVideosModal: React.FC<
     }
   };
 
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedResponses(new Set(responses.map((r) => r.id)));
+    } else {
+      setSelectedResponses(new Set());
+    }
+  }, [isOpen, responses]);
+
+  const handleClose = () => {
+    setSelectedResponses(new Set());
+    onClose();
+  };
+
   return (
     <BasicConfirmationModal
       isOpen={isOpen}
-      onOpenChange={onClose}
+      onOpenChange={handleClose}
       title="Select Responses to Download"
-      subtitle="Select which responses you'd like to download"
-      onCancel={onClose}
+      subtitle="Select which responses you'd like to download. Leave this tab open while downloading."
+      onCancel={handleClose}
       onConfirm={handleBulkDownload}
       confirmButtonText={`Download ${selectedResponses.size} Files`}
       body={
-        <div className="flex flex-col gap-4 py-4">
+        <div className="flex flex-col gap-2 pb-2">
           <div className="flex items-center gap-2">
             <Checkbox
               id="select-all"
               checked={selectedResponses.size === responses.length}
               onCheckedChange={toggleAll}
+              className="data-[state=checked]:bg-theme-900"
             />
             <label
               htmlFor="select-all"
@@ -153,9 +174,11 @@ const DownloadInterviewVideosModal: React.FC<
               Select All
             </label>
           </div>
-          <div className="flex flex-col gap-2">
+          <div className="h-px w-full bg-theme-200" />
+
+          <div className="scrollbar-thumb-theme-900 scrollbar-track-theme-200 flex max-h-[600px] flex-col gap-2 overflow-y-auto scrollbar-thin">
             {mainQuestions.map((question) => (
-              <div key={question.id} className="flex flex-col gap-1">
+              <div key={question.id} className="flex flex-col gap-2">
                 <div className="flex items-center gap-2">
                   <Checkbox
                     id={question.id}
@@ -172,9 +195,9 @@ const DownloadInterviewVideosModal: React.FC<
                   />
                   <label
                     htmlFor={question.id}
-                    className="text-sm text-theme-900"
+                    className="max-w-[400px] truncate text-sm text-theme-900"
                   >
-                    Question {question.question?.questionOrder ?? 0}:{" "}
+                    Question {(question.question?.questionOrder ?? -1) + 1}:{" "}
                     {question.question?.title}
                   </label>
                 </div>
@@ -182,7 +205,7 @@ const DownloadInterviewVideosModal: React.FC<
                   (followUp) => (
                     <div
                       key={followUp.id}
-                      className="ml-6 flex items-center gap-2"
+                      className="ml-3 flex items-center gap-2"
                     >
                       <Checkbox
                         id={followUp.id}
@@ -199,7 +222,7 @@ const DownloadInterviewVideosModal: React.FC<
                       />
                       <label
                         htmlFor={followUp.id}
-                        className="text-sm text-theme-600"
+                        className="max-w-[400px] truncate text-sm font-light text-theme-900"
                       >
                         Follow-up{" "}
                         {followUp.followUpQuestion?.followUpQuestionOrder}:{" "}
