@@ -66,7 +66,10 @@ const DownloadInterviewVideosModal: React.FC<
   };
 
   const handleBulkDownload = async () => {
+    onClose();
+
     const selectedIds = Array.from(selectedResponses);
+
     const { id: toastId, update } = toast({
       title: "Download Progress",
       description: (
