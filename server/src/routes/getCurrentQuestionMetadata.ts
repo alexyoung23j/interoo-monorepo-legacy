@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import path from "path";
 import { bucket, bucketName, prisma } from "../index";
 import { CurrentQuestionMetadataRequest } from "../../../shared/types";
+import { v4 as uuidv4 } from 'uuid';
 import axios from "axios";
 
 const router = Router();
@@ -29,7 +30,7 @@ const getCurrentQuestionMetadata = async (req: Request, res: Response) => {
 
     const responseId = newResponse.id;
     const basePath = path.join(organizationId, studyId, questionId, responseId);
-    const fileName = 'recording';
+    const fileName = `recording_original_${uuidv4()}`;
     const filePath = path.join(basePath, fileName);
 
     const [signedUrl] = await bucket.file(filePath).getSignedUrl({

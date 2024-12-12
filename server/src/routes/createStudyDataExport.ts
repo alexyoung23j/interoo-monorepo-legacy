@@ -347,7 +347,6 @@ interface InterviewData {
   participantEmail: string;
   dateCompleted: Date;
   duration: string;
-  fullTranscript: string;
   videoLink: string;
 }
 
@@ -357,6 +356,7 @@ interface QuestionResponseData {
   fullThreadTranscript: string;
   questionTranscript: string;
   questionVideoLink: string;
+  responseOnly: string;
   followUps: {
     transcript: string;
     videoLink: string;
@@ -375,6 +375,25 @@ interface ExcelData {
   incompleteInterviews: InterviewData[];
   questions: QuestionData[];
 }
+
+const getResponseOnly = (
+  question: ProcessedQuestion,
+  questionResponse: QuestionResponse
+): string => {
+  if (!questionResponse.mainResponse) return "";
+
+  switch (question.questionType) {
+    case QuestionType.MULTIPLE_CHOICE:
+      const selectedOption = question.multipleChoiceOptions.find(
+        (o) => o.id === questionResponse.mainResponse?.multipleChoiceOptionId
+      );
+      return selectedOption?.optionText ?? "N/A";
+    case QuestionType.OPEN_ENDED:
+      return questionResponse.mainResponse.fastTranscribedText || "";
+    default:
+      return "";
+  }
+};
 
 // Modify the createExcelData function signature
 const createExcelData = (
@@ -407,7 +426,6 @@ const createExcelData = (
       participantEmail: interview.participantEmail,
       dateCompleted: new Date(interview.lastUpdatedTime || ""),
       duration: "", // Duration (blank for now)
-      fullTranscript: getFullTranscript(interview),
       videoLink: getInterviewVideoLink(interview, orgId, origin),
     }),
   );
@@ -430,7 +448,6 @@ const createExcelData = (
       participantEmail: interview.participantEmail,
       dateCompleted: new Date(interview.lastUpdatedTime || ""),
       duration: "", // Duration (blank for now)
-      fullTranscript: getFullTranscript(interview),
       videoLink: getInterviewVideoLink(interview, orgId, origin),
     }),
   );
@@ -468,6 +485,7 @@ const createExcelData = (
             orgId,
             origin,
           ),
+          responseOnly: getResponseOnly(question, response),
           followUps: response.followUpResponses.map((followUp) => ({
             transcript: getFollowUpTranscript(followUp),
             videoLink: getFollowUpQuestionVideoLink(
@@ -615,7 +633,6 @@ const formatExcelWorkbook = (excelData: ExcelData) => {
         { header: 'PARTICIPANT EMAIL', key: 'participantEmail', width: 20 },
         { header: 'DATE COMPLETED', key: 'dateCompleted', width: 20 },
         { header: 'DURATION', key: 'duration', width: 15 },
-        { header: 'FULL INTERVIEW TRANSCRIPT', key: 'fullTranscript', width: 50 },
         { header: 'RECORDING LINK', key: 'videoLink', width: 50 }
       ],
       excelData.completedInterviews,
@@ -632,7 +649,6 @@ const formatExcelWorkbook = (excelData: ExcelData) => {
         { header: 'PARTICIPANT EMAIL', key: 'participantEmail', width: 20 },
         { header: 'DATE UPDATED', key: 'dateCompleted', width: 20 },
         { header: 'DURATION', key: 'duration', width: 15 },
-        { header: 'FULL INTERVIEW TRANSCRIPT', key: 'fullTranscript', width: 50 },
         { header: 'RECORDING LINK', key: 'videoLink', width: 50 }
       ],
       excelData.incompleteInterviews,
@@ -650,7 +666,12 @@ const formatExcelWorkbook = (excelData: ExcelData) => {
         { header: 'FULL THREAD TRANSCRIPT', key: 'fullThreadTranscript', width: 50 },
         { header: 'QUESTION TRANSCRIPT', key: 'questionTranscript', width: 50 },
       ];
-  
+
+      // Only add MULTIPLE CHOICE RESPONSE column for multiple choice questions
+      if (questionData.responses.some(r => r.questionTranscript.includes("Multiple Choice Selection:"))) {
+        columns.push({ header: 'MULTIPLE CHOICE RESPONSE', key: 'responseOnly', width: 50 });
+      }
+
       // Add follow-up columns dynamically
       const maxFollowUps = Math.max(...questionData.responses.map(r => r.followUps.length));
       for (let i = 1; i <= maxFollowUps; i++) {
@@ -666,6 +687,11 @@ const formatExcelWorkbook = (excelData: ExcelData) => {
           fullThreadTranscript: response.fullThreadTranscript,
           questionTranscript: response.questionTranscript,
         };
+
+        // Only add responseOnly if it's a multiple choice question
+        if (response.questionTranscript.includes("Multiple Choice Selection:")) {
+          transcriptRow.responseOnly = response.responseOnly;
+        }
         
         response.followUps.forEach((followUp, index) => {
           transcriptRow[`followUp${index + 1}Transcript`] = followUp.transcript;
@@ -696,6 +722,7 @@ const formatExcelWorkbook = (excelData: ExcelData) => {
   
     return workbook;
   };
+
 
 const createStudyDataExport = async (req: Request, res: ExpressResponse) => {
   const { studyId } = req.params;

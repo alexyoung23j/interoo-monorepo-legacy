@@ -55,9 +55,9 @@ const convertAndDownloadMedia = async (req: Request, res: Response) => {
       ffmpegCommand
         .videoCodec('libx264')
         .audioCodec('aac')
-        .videoBitrate('1000k')  // Adjust video bitrate as needed
-        .audioBitrate('128k')   // Adjust audio bitrate as needed
-        .outputOptions('-vf scale=1280:-1')  // Scale video to 720p, maintain aspect ratio
+        .videoBitrate('1000k')
+        .audioBitrate('128k')
+        .outputOptions('-vf scale=1280:trunc(ow/a/2)*2')  // This ensures height is even
         .toFormat('mp4');
     }
 
@@ -72,7 +72,9 @@ const convertAndDownloadMedia = async (req: Request, res: Response) => {
         console.error('FFmpeg error:', err.message);
         console.error('FFmpeg stdout:', stdout);
         console.error('FFmpeg stderr:', stderr);
-        res.status(500).json({ error: 'Conversion failed', details: err.message });
+        if (!res.headersSent) {
+          res.status(500).json({ error: 'Conversion failed', details: err.message });
+        }
       })
       .on('end', () => {
         console.log('FFmpeg process completed');
