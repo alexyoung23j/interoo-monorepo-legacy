@@ -22,6 +22,7 @@ import { getSignedReadUrlRoute } from "./routes/getSignedReadUrl";
 import { resetStudyThemesRoute } from './routes/resetStudyThemes';
 import { createInterviewTranscriptExportRoute } from "./routes/createInterviewTranscriptExport";
 import { smartLeadWebhookRoute } from "./routes/smartleadWebhook";
+import { createThemeQuotesExportRoute } from "./routes/createThemeQuotesExport";
 
 // Configuration and Setup
 const rootDir = path.resolve(__dirname, "../..");
@@ -121,6 +122,7 @@ app.use("/api/getSignedReadUrl", getSignedReadUrlRoute);
 app.use("/api/reset-study-themes", resetStudyThemesRoute);
 app.use("/api/create-interview-transcript-export", createInterviewTranscriptExportRoute);
 app.use('/api/webhook/smartlead', smartLeadWebhookRoute);
+app.use("/api/create-theme-quotes-export", createThemeQuotesExportRoute);
 
 // Server Startup
 const startServer = () => {

@@ -9,7 +9,14 @@ import {
   FollowUpQuestion,
   Favorite,
 } from "@shared/generated/client";
-import { Star, Trash, ArrowSquareOut, X } from "@phosphor-icons/react";
+import {
+  Star,
+  Trash,
+  ArrowSquareOut,
+  X,
+  Download,
+  DownloadSimple,
+} from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import QuoteTextField, {
   HighlightReference,
@@ -21,6 +28,7 @@ import { api } from "@/trpc/react";
 import { useToast } from "@/hooks/use-toast";
 import BasicConfirmationModal from "@/app/_components/reusable/BasicConfirmationModal";
 import ThemeQuoteCard, { ExtendedQuote } from "./ThemeQuoteCard";
+import { useDownloadThemeQuotes } from "@/hooks/useDownloadThemeQuotes";
 
 interface ThemeDetailsViewProps {
   theme: Theme & {
@@ -205,19 +213,32 @@ const ThemeDetailsView: React.FC<ThemeDetailsViewProps> = ({
     setQuoteToDelete(null);
   };
 
+  const { handleDownload, isDownloading } = useDownloadThemeQuotes({
+    themeId: theme.id,
+    themeName: theme.name,
+  });
+
   return (
     <>
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-1">
           <div className="flex w-full items-start justify-between gap-3">
             <div className="text-lg font-semibold">{theme.name}</div>
-            <div
-              className="cursor-pointer"
-              onClick={() => {
-                onClose();
-              }}
-            >
-              <X size={24} className="text-theme-900" />
+            <div className="flex flex-row gap-2">
+              <div className="cursor-pointer" onClick={handleDownload}>
+                <DownloadSimple
+                  size={24}
+                  className={`text-theme-900 hover:text-theme-600`}
+                />
+              </div>
+              <div
+                className="cursor-pointer"
+                onClick={() => {
+                  onClose();
+                }}
+              >
+                <X size={24} className="text-theme-900" />
+              </div>
             </div>
           </div>
           <p className="text-sm text-theme-600">{theme.description}</p>
