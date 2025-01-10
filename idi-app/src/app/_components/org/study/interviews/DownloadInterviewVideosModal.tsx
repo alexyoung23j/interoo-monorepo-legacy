@@ -162,7 +162,7 @@ const DownloadInterviewVideosModal: React.FC<
       onConfirm={handleBulkDownload}
       confirmButtonText={`Download ${selectedResponses.size} Files`}
       body={
-        <div className="flex max-h-[600px] flex-col gap-2 overflow-y-auto pb-2">
+        <div className="flex max-h-[70vh] flex-col gap-2 overflow-y-auto pb-2">
           <div className="flex items-center gap-2">
             <Checkbox
               id="select-all"
