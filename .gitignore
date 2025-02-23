@@ -18,3 +18,4 @@ server/src/gcs-credentials.json
 # Ignore analysis results and generated data
 scripts/analysis_results.json
 scripts/generated_data.json
+server/src/smartlead_service_account_credentials.json
